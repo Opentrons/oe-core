@@ -34,3 +34,6 @@
 [submodule "layers/openembedded-core"]
 	path = layers/openembedded-core
 	url = https://github.com/openembedded/openembedded-core.git
+[submodule "layers/meta-opentrons"]
+	path = layers/meta-opentrons
+	url = https://github.com/Opentrons/meta-opentrons.git
