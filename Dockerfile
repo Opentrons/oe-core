@@ -38,7 +38,8 @@ ENV PROJECT ot3
 # name of the group and user is ot3.
 ARG host_uid=1001
 ARG host_gid=1001
-RUN groupadd -g $host_gid $USER_NAME && useradd -g $host_gid -m -s /bin/bash -u $host_uid $USER_NAME
+RUN groupadd -g $host_gid $USER_NAME || true \
+    && useradd -g $host_gid -m -s /bin/bash -u $host_uid $USER_NAME
 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
@@ -62,4 +63,4 @@ ENV BUILD_OUTPUT_DIR /home/$USER_NAME/oe-core/build
 
 WORKDIR $BUILD_INPUT_DIR
 
-CMD ${BUILD_INPUT_DIR}/start.sh
+CMD id && ls -l ${BUILD_INPUT_DIR} && ${BUILD_INPUT_DIR}/start.sh || true
