@@ -43,8 +43,9 @@ RUN groupadd -g $host_gid $USER_NAME || true \
 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
-VOLUME /home/$USER_NAME/oe-core
-RUN chown -hR $USER_NAME:$USER_NAME /home/$USER_NAME/oe-core
+RUN mkdir /volumes
+VOLUME /volumes/oe-core
+RUN chown -hR $USER_NAME:$USER_NAME /volumes
 
 # Perform the Yocto build as user ot3 (not as root).
 # NOTE: The USER command does not set the environment variable HOME.
@@ -58,9 +59,9 @@ RUN git config --global user.name "Opentrons" && \
 
 # Create the directory structure for the Yocto build in the container. The lowest two directory
 # levels must be the same as on the host.
-ENV BUILD_INPUT_DIR /home/$USER_NAME/oe-core
-ENV BUILD_OUTPUT_DIR /home/$USER_NAME/oe-core/build
+ENV BUILD_INPUT_DIR /volumes/oe-core
+ENV BUILD_OUTPUT_DIR ${BUILD_INPUT_DIR}/build
 
 WORKDIR $BUILD_INPUT_DIR
 
-CMD id && ls -l ${BUILD_INPUT_DIR} && ${BUILD_INPUT_DIR}/start.sh || true
+CMD ${BUILD_INPUT_DIR}/start.sh
