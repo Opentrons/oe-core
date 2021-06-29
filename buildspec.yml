@@ -10,6 +10,7 @@ phases:
       - docker build --build-arg "host_uid=1000" --build-arg "host_git=1000" --tag "ot3-image:latest" .
   build:
     commands:
+      - echo ${CODEBUILD_SRC_DIR}
       - docker run --mount type=bind,src=${CODEBUILD_SRC_DIR},dst=/home/ot3/oe-core,consistency=delegated ot3-image:latest
 
 cache:
@@ -17,7 +18,7 @@ cache:
     - build/tmp
 
 artifacts:
-  base_directory: build/deploy
+  base-directory: build/deploy
   files:
     - '**/*'
-  enable_symlinks: 'yes'
+  enable-symlinks: 'yes'
