@@ -6,7 +6,7 @@ phases:
   pre_build:
     commands:
       - git submodule update --init
-      - docker build --build-arg "host_uid=1000" --build_arg "host_git=1000" --tag "ot3-image:latest"
+      - docker build --build-arg "host_uid=1000" --build-arg "host_git=1000" --tag "ot3-image:latest"
   build:
     commands:
       docker run --mount type=bind,src=$CODEBUILD_SRC_DIR,dst=/home/ot3/oe-core,consistency=delegated ot3-image:latest
