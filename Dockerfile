@@ -27,7 +27,7 @@ RUN locale-gen en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
-env USER_NAME opentrons-ci
+ENV USER_NAME opentrons-ci
 ENV PROJECT ot3
 
 # The running container writes all the build artifacts to a host directory (outside the container).
