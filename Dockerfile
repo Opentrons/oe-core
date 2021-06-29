@@ -38,7 +38,7 @@ ENV PROJECT ot3
 ARG host_uid=1001
 ARG host_gid=1001
 ARG username=ot3
-RUN groupadd -g $host_gid $username || 0\
+RUN groupadd -g $host_gid $username || true \
     && useradd -g $host_gid -m -s /bin/bash -u $host_uid $username
 
 
