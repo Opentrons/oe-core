@@ -37,30 +37,28 @@ ENV PROJECT ot3
 # name of the group and user is ot3.
 ARG host_uid=1001
 ARG host_gid=1001
-ARG username=ot3
-RUN groupadd -g $host_gid $username || true \
-    && useradd -g $host_gid -m -s /bin/bash -u $host_uid $username
-
+ENV USERNAME=opentrons-ci
 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
-VOLUME /home/$username/oe-core
+VOLUME /home/$USER_NAME/oe-core
 
 # Perform the Yocto build as user ot3 (not as root).
 # NOTE: The USER command does not set the environment variable HOME.
 
 # By default, docker runs as root. However, Yocto builds should not be run as root, but as a 
 # normal user. Hence, we switch to the newly created user ot3.
-USER $username
+USER $USER_NAME
 
 RUN git config --global user.name "Opentrons" && \
     git config --global user.email engineering@opentrons.com
 
 # Create the directory structure for the Yocto build in the container. The lowest two directory
 # levels must be the same as on the host.
-ENV BUILD_INPUT_DIR /home/$username/oe-core
-ENV BUILD_OUTPUT_DIR /home/$username/oe-core/build
+ENV BUILD_INPUT_DIR /home/$USER_NAME/oe-core
+ENV BUILD_OUTPUT_DIR /home/$USER_NAME/oe-core/build
 
 WORKDIR $BUILD_INPUT_DIR
 
+USER $USERNAME
 CMD ${BUILD_INPUT_DIR}/start.sh
