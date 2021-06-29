@@ -62,4 +62,4 @@ ENV BUILD_OUTPUT_DIR /home/$USER_NAME/oe-core/build
 WORKDIR $BUILD_INPUT_DIR
 
 USER $USER_NAME
-CMD /home/ot3/start.sh
+CMD start.sh
