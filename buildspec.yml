@@ -5,6 +5,7 @@ env:
 phases:
   pre_build:
     commands:
+      - git config --global submodule.fetchJobs $((`nproc`-1))
       - git submodule update --init
       - docker build --build-arg "host_uid=1000" --build-arg "host_git=1000" --tag "ot3-image:latest" .
   build:
