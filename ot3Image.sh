@@ -25,5 +25,5 @@ done
 shift $((OPTIND - 1))
 
 
-docker build --build-arg "host_uid=1000"   --build-arg "host_gid=1000" --tag "ot3-image:latest" .
+docker build --build-arg "username=`whoami`" --build-arg "host_uid=`id -u`"   --build-arg "host_gid=`id -g`" --tag "ot3-image:latest" .
 docker run -it --mount type=bind,src=$PWD,dst=/home/ot3/oe-core,consistency=delegated ot3-image:latest
