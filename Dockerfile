@@ -43,6 +43,7 @@ RUN groupadd -g $host_gid $USER_NAME && useradd -g $host_gid -m -s /bin/bash -u 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
 VOLUME /home/$USER_NAME/oe-core
+RUN chown -hR $USER_NAME:$USER_NAME /home/$USER_NAME/oe-core
 
 # Perform the Yocto build as user ot3 (not as root).
 # NOTE: The USER command does not set the environment variable HOME.
