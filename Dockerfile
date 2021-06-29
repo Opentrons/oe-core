@@ -27,6 +27,7 @@ RUN locale-gen en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 
+env USER_NAME opentrons-ci
 ENV PROJECT ot3
 
 # The running container writes all the build artifacts to a host directory (outside the container).
@@ -37,7 +38,7 @@ ENV PROJECT ot3
 # name of the group and user is ot3.
 ARG host_uid=1001
 ARG host_gid=1001
-ENV USER_NAME opentrons-ci
+RUN groupadd -g $host_gid $USER_NAME && useradd -g $host_gid -m -s /bin/bash -u $host_uid $USER_NAME
 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
