@@ -1,0 +1,13 @@
+version: 0.2
+
+env:
+  shell: bash
+
+phases:
+  build:
+    commands:
+      - echo "testtestestestest" > test.txt
+
+artifacts:
+  files:
+    - test.txt
