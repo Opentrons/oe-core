@@ -37,7 +37,7 @@ ENV PROJECT ot3
 # name of the group and user is ot3.
 ARG host_uid=1001
 ARG host_gid=1001
-ENV USERNAME=opentrons-ci
+ENV USER_NAME opentrons-ci
 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
@@ -60,5 +60,4 @@ ENV BUILD_OUTPUT_DIR /home/$USER_NAME/oe-core/build
 
 WORKDIR $BUILD_INPUT_DIR
 
-USER $USERNAME
 CMD ${BUILD_INPUT_DIR}/start.sh
