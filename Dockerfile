@@ -38,7 +38,8 @@ ENV PROJECT ot3
 ARG host_uid=1001
 ARG host_gid=1001
 ARG username=ot3
-RUN groupadd -g $host_gid $username && useradd -g $host_gid -m -s /bin/bash -u $host_uid $username
+RUN groupadd -g $host_gid $username || 0\
+    && useradd -g $host_gid -m -s /bin/bash -u $host_uid $username
 
 
 # This volume should have the containing directory mounted into it. This is done because the
