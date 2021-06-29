@@ -20,7 +20,7 @@ RUN apt-get -y install software-properties-common && \
 
 # By default, Ubuntu uses dash as an alias for sh. Dash does not support the source command
 # needed for setting up the build environment in CMD. Use bash as an alias for sh.
-RUN chsh -s /bin/bash
+RUN rm /bin/sh && ln -s bash /bin/sh
 
 # Set the locale to en_US.UTF-8, because the Yocto build fails without any locale set.
 RUN locale-gen en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
