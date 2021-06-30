@@ -63,4 +63,4 @@ ENV BUILD_OUTPUT_DIR ${BUILD_INPUT_DIR}/build
 
 WORKDIR $BUILD_INPUT_DIR
 
-CMD ${BUILD_INPUT_DIR}/start.sh
+CMD mount && ls -l /volumes/oe-core && ${BUILD_INPUT_DIR}/start.sh
