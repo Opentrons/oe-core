@@ -45,8 +45,7 @@ RUN groupadd -g $host_gid $USER_NAME || true \
 # containing directory may change frequently and should not be cached.
 RUN mkdir /volumes
 VOLUME /volumes/oe-core
-RUN chown -hR $USER_NAME:$USER_NAME /volumes
-RUN chmod ug+rw /volumes
+RUN chown -hR $USER_NAME:$USER_NAME /volumes && chmod -R ug+rw /volumes
 
 # Perform the Yocto build as user ot3 (not as root).
 # NOTE: The USER command does not set the environment variable HOME.
