@@ -39,12 +39,14 @@ ENV PROJECT ot3
 ARG host_uid=1001
 ARG host_gid=1001
 RUN groupadd -g $host_gid $USER_NAME || true \
-    && useradd -g $host_gid -m -s /bin/bash -u $host_uid $USER_NAME
+    && useradd -g $host_gid -m -s /bin/bash -u $host_uid $USER_NAME || true \
+    && usermod -aG sudo $USER_NAME \
+    && echo "$USER_NAME  ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
 RUN mkdir -p /volumes/oe-core
-RUN chown -hR $USER_NAME:$USER_NAME /volumes && chmod -R ug+rw /volumes
+
 
 # Perform the Yocto build as user ot3 (not as root).
 # NOTE: The USER command does not set the environment variable HOME.
@@ -63,4 +65,4 @@ ENV BUILD_OUTPUT_DIR ${BUILD_INPUT_DIR}/build
 
 WORKDIR $BUILD_INPUT_DIR
 
-CMD mount && ls -l /volumes/oe-core && ${BUILD_INPUT_DIR}/start.sh
+CMD sudo chown -hR $USER_NAME:$USER_NAME /volumes && chmod -R ug+rw /volumes && ${BUILD_INPUT_DIR}/start.sh
