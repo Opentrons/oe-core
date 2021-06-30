@@ -17,5 +17,7 @@ export BITBAKEDIR=${THISDIR}/tools/bitbake
 . ./layers/openembedded-core/oe-init-build-env ./build
 
 ls -la .
+rm -rf ./build/tmp/*
+ls -la .
 BB_NUMBER_THREADS=$((`nproc`-1)) bitbake tdx-reference-minimal-image
 ls -la .
