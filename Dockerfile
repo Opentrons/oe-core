@@ -19,8 +19,9 @@ RUN apt-get update && apt-get -y install gawk wget git-core diffstat unzip texin
 RUN rm /bin/sh && ln -s bash /bin/sh
 
 # Set the locale to en_US.UTF-8, because the Yocto build fails without any locale set.
-RUN locale-gen en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 ENV USER_NAME opentrons-ci
