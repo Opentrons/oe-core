@@ -7,7 +7,7 @@ phases:
   pre_build:
     commands:
       - git config --global submodule.fetchJobs $((`nproc`-1))
-      - git submodule update --init
+      - ./update.sh
       - docker build --tag "ot3-image:latest" .
   build:
     commands:
