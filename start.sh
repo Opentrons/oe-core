@@ -14,10 +14,6 @@ pushd ${THISDIR}
 patch ./layers/meta-toradex-nxp/recipes-kernel/linux/linux-toradex_5.4-2.3.x.bb ./linux-toradex_5.4-2.3.x.patch
 
 export BITBAKEDIR=${THISDIR}/tools/bitbake
-. export
+. layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
-ls -la .
-rm -rf ./build/tmp/*
-ls -la .
 BB_NUMBER_THREADS=$((`nproc`-1)) bitbake tdx-reference-minimal-image
-ls -la .
