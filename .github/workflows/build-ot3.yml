@@ -1,0 +1,31 @@
+name: 'Build OT3 image'
+
+on:
+  push:
+    tags-ignore:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  invoke-build:
+    name: 'invoking codebuild build'
+    timeout-minutes: 480
+    runs-on: 'ubuntu-18.04'
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Run CodeBuild
+        id: codebuild
+        uses: aws-actions/aws-codebuild-run-build@v1.0.3
+        with:
+          project-name: ${{ secrets.AWS_CODEBUILD_PROJECT_NAME }}
+      - name: Post results
+        uses: slackapi/slack-github-action@v1.14.0
+        with:
+          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\"}"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
