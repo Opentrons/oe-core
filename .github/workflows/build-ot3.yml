@@ -28,6 +28,6 @@ jobs:
       - name: Post results
         uses: slackapi/slack-github-action@v1.14.0
         with:
-          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\"}"
+          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"https://d2irdh6zupqygx.cloudfront.net/${{steps.codebuild.outputs.aws-build-id}}/ot3-oe/opentron/toradex-minimal.tar\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
