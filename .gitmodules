@@ -1,0 +1,43 @@
+[submodule "layers/meta-freescale"]
+	path = layers/meta-freescale
+	url = https://github.com/Freescale/meta-freescale.git
+[submodule "layers/meta-freescale-3rdparty"]
+	path = layers/meta-freescale-3rdparty
+	url = https://github.com/Freescale/meta-freescale-3rdparty
+[submodule "layers/meta-freescale-distro"]
+	path = layers/meta-freescale-distro
+	url = https://github.com/Freescale/meta-freescale-distro.git
+[submodule "layers/meta-openembedded"]
+	path = layers/meta-openembedded
+	url = https://github.com/openembedded/meta-openembedded.git
+[submodule "layers/meta-qt5"]
+	path = layers/meta-qt5
+	url = https://github.com/meta-qt5/meta-qt5.git
+[submodule "layers/meta-toradex-bsp-common"]
+	path = layers/meta-toradex-bsp-common
+	url = https://git.toradex.com/meta-toradex-bsp-common.git
+[submodule "layers/meta-toradex-demos"]
+	path = layers/meta-toradex-demos
+	url = https://git.toradex.com/meta-toradex-demos.git
+[submodule "layers/meta-toradex-distro"]
+	path = layers/meta-toradex-distro
+	url = https://git.toradex.com/meta-toradex-distro.git
+[submodule "layers/meta-toradex-nxp"]
+	path = layers/meta-toradex-nxp
+	url = https://git.toradex.com/meta-toradex-nxp.git
+[submodule "layers/meta-toradex-tegra"]
+	path = layers/meta-toradex-tegra
+	url = https://git.toradex.com/meta-toradex-tegra.git
+[submodule "layers/meta-yocto"]
+	path = layers/meta-yocto
+	url = https://git.yoctoproject.org/git/meta-yocto
+[submodule "layers/openembedded-core"]
+	path = layers/openembedded-core
+	url = https://github.com/openembedded/openembedded-core.git
+[submodule "layers/meta-opentrons"]
+	path = layers/meta-opentrons
+	url = https://github.com/Opentrons/meta-opentrons.git
+	branch = opentrons-recipe
+[submodule "tools/bitbake"]
+	path = tools/bitbake
+	url = https://github.com/openembedded/bitbake.git

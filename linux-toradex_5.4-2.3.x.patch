@@ -1,0 +1,8 @@
+10c10
+<     git://git.toradex.com/linux-toradex.git;protocol=https;branch=${SRCBRANCH};name=machine \
+---
+>     git://git.toradex.com/linux-toradex.git;protocol=http;branch=${SRCBRANCH};name=machine \
+25c25
+< SRCREV_machine = "64dbf17bb33e10d844b01fd7294104cd4f1b8c5b"
+---
+> SRCREV_machine = "2dd6306225361e47a9ef40f6a81a5487920a09ab"
