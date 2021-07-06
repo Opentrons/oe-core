@@ -13,9 +13,6 @@ phases:
     commands:
       - echo ${CODEBUILD_SRC_DIR}
       - docker run --mount type=bind,src=${CODEBUILD_SRC_DIR},dst=/volumes/oe-core,consistency=delegated ot3-image:latest
-cache:
-  paths:
-    - downloads/**/*
 artifacts:
   base-directory: build/deploy
   files:
