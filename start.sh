@@ -20,4 +20,4 @@ BB_NUMBER_THREADS=$((`nproc`-1)) bitbake tdx-reference-minimal-image
 
 cd ${THISDIR}
 mkdir -p build/deploy/opentrons
-cp $(find build/deploy/verdin-imx8mm/ | grep Reference-Minimal-Image-Tezi | head -n 1) build/deploy/opentrons/opentrons-image.tar
+cp $(find build/deploy/images/verdin-imx8mm/ | grep Reference-Minimal-Image-Tezi | head -n 1) build/deploy/opentrons/opentrons-image.tar
