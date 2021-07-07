@@ -17,3 +17,7 @@ export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
 BB_NUMBER_THREADS=$((`nproc`-1)) bitbake tdx-reference-minimal-image
+
+cd ${THISDIR}
+mkdir -p build/deploy/opentrons
+cp $(find build/deploy/images/verdin-imx8mm/ | grep Reference-Minimal-Image-Tezi | head -n 1) build/deploy/opentrons/opentrons-image.tar
