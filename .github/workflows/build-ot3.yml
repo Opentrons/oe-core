@@ -25,9 +25,14 @@ jobs:
         uses: aws-actions/aws-codebuild-run-build@v1.0.3
         with:
           project-name: ${{ secrets.AWS_CODEBUILD_PROJECT_NAME }}
+      - name: Build result URL
+        id: result-url
+        run: |
+          buildid=$(echo '${{ steps.codebuild.outputs.aws-build-id }}' | cut -d: -f2-)
+          echo "::set-output name=url::https://d2irdh6zupqygx.cloudfront.net/${buildid}/ot3-oe/opentrons/opentrons-image.tar"
       - name: Post results
         uses: slackapi/slack-github-action@v1.14.0
         with:
-          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"https://d2irdh6zupqygx.cloudfront.net/${{steps.codebuild.outputs.aws-build-id}}/ot3-oe/opentron/toradex-minimal.tar\"}"
+          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-url.output.url}}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
