@@ -1,0 +1,2 @@
+RUN_DAEMON="yes"
+OPTIONS="-l -s /provide/boot"
