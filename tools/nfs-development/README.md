@@ -11,9 +11,9 @@ Once the proper bootloader is on the system, it will be configured to talk to a 
 
 ## setup
 
-Get the verdin running easyinstaller, either because you just unboxed it or through the [recovery mode](https://developer.toradex.com/knowledge-base/imx-recovery-mode#Verdin_SoM_Family) procedure. Then EXTRACT the image checked in here as `initial-setup.tar.gz` to an sd card, put the sd card in the toradex, and it'll install.
+Get the verdin running easyinstaller, either because you just unboxed it or through the [recovery mode](https://developer.toradex.com/knowledge-base/imx-recovery-mode#Verdin_SoM_Family) procedure. Then EXTRACT the image checked in here as `netboot-image.tar` to an sd card, put the sd card in the toradex, and install it from easyboot.
 
-On a linux machine or vm, install docker and lxc (if on ubuntu)
+On a linux machine or vm, install docker and lxc. Make sure that nfs-server or nfs-kernel-server or whatever your distro calls it is not installed, because it conflicts with what the docker container does.
 
 
 ## general use
