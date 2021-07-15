@@ -29,14 +29,31 @@ The docker container is provided basically for convenience in installing most of
 - When you run the script that builds and executes the docker container, you're going to need `sudo`, because the container has to interact with the kernel to actually serve nfs - it's run by the kernel. That means the script runs the container with `CAP_SYS_ADMIN`.
 - For the same reason, the host kernel will have to be running the nfs server modules. The container should take care of it, but be aware.
 
-### setup steps
-- Put netboot-image.tar on the verdin by installing it from easyboot, which is also here as a zipfile
-- Copy ot3-bootserver.env.template to ot3-bootserver.env
-- Identify the network interface that you want to give to dhcp by name. This is the name that comes up in ifconfig. Put this name in ot3-bootserver.env's IFACE variable.
-- Find the verdin's MAC address. This is toradex's prefix 00:14:2D and then the serial in hex. Per [their docs](https://developer.toradex.com/knowledge-base/mac-address), for instance serial 002-0004380 is MAC 00:14:2D:00:11:1C, and serial  02226142 is MAC 00:14:2D:21:F7:DE. Put this mac in ot3-bootserver.env's VERDIN_MAC variable.
-- Figure out the networking settings you want to use. DHCPD is going to create a second network, and your machine could get confused if you give it the same IP range as the one you're connected to for the internet. The two common LAN IP ranges are 192.168.0.0/16 and 10.10.0.0/16; pick the one you aren't using and set that as the DHCP_ADDRESS_BASE value.
-- Make sure that the interface you're giving dhcpd is set to a static IP of address 1 in the IP range you gave, either 192.168.0.1 or 10.10.0.1.
-- Boot the verdin with it connected directly to the computer running dhcp.
+## one-setup manual steps
 
-### run steps
-- run `./start.sh`. you can optionally provide a path to an image, like `./start.sh /path/to/opentrons-image.tar`, in which case the image will be automatically extracted (including recursively) to the right place. If you don't provide this, whatever's in the `provide/` directory just gets provided, including possibly nothing if you haven't set anything up. If you want to set it up manually, extract the contents of the root filesystem to `provide/root/`, and put the `Image.gz` in `provide/boot/`.
+These have to be done by hand because they depend on stuff about the board or about random sd cards or whatever.
+
+### putting the basic image on the verdin
+
+We need to put netboot-image.tar on the verdin by installing it from easyboot. netboot-image is a simple system image that contains a u-boot binary, some basic hardware support device trees, and an environment file that tells the bootloader to use the network. Everything else is provided via the network.
+
+1. Get into the easyinstaller. For more detail see the [toradex docs on recovery mode](https://developer.toradex.com/knowledge-base/imx-recovery-mode#Enter_recovery_mode-8); if you just unpacked the board, it shipped with easyinstaller and will go into it as soon as you boot 
+2. Unpack netboot-image.tar onto an sd card or usb drive and plug it into the verdin
+3. That's it! It should autoinstall and you'll get a popup saying it's ok to reboot. You can do that now, or wait, doesn't matter.
+
+### prepping your system
+
+There are also some manual items to get through before running the docker container, which relies pretty heavily on being linux, sorry.
+
+1. Copy ot3-bootserver.env.template to ot3-bootserver.env. This provides some configuration values that you need to fill out:
+  a. Identify the network interface that you want to give to dhcp by name. This is the name that comes up in ifconfig. Put this name in ot3-bootserver.env's IFACE variable.
+  b. Find the verdin's MAC address. This is toradex's prefix 00:14:2D and then the serial in hex. Per [their docs](https://developer.toradex.com/knowledge-base/mac-address), for instance serial 002-0004380 is MAC 00:14:2D:00:11:1C, and serial  02226142 is MAC 00:14:2D:21:F7:DE. Put this mac in ot3-bootserver.env's VERDIN_MAC variable.
+  c. Figure out the networking settings you want to use. DHCPD is going to create a second network, and your machine could get confused if you give it the same IP range as the one you're connected to for the internet. The two common LAN IP ranges are 192.168.0.0/16 and 10.10.0.0/16; pick the one you aren't using and set that as the DHCP_ADDRESS_BASE value.
+2. Make sure that the interface you're giving dhcpd is set to a static IP of address 1 in the IP range you gave, either 192.168.0.1 or 10.10.0.1.
+3. Get a system image from somewhere, find its location, and run `IMAGE=/path/to/image.tar make docker-build`, which will in addition to making the docker container unzip the image properly for serving via nfs. You can also unzip it into the provide dirs.
+4. Plug the verdin's ethernet port into the interface you just specified on your computer.
+
+## run steps
+
+Once the image is in place, the verdin is connected and running netboot, all you should need to do is `make docker-run`. This will run and detach the docker container with the name `ot3-bootserver`. Then reset the verdin and it should (eventually) come up.
+
