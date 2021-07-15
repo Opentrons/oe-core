@@ -123,10 +123,10 @@ check-image-exists:
 
 .PHONY: check-no-hostservices
 check-no-hostservices:
-	$(if $(or $(shell ps -e | grep nfsd),$(shell ps -e | grep rpc)),$(error $(hostservices_error)))
+	$(if $(or $(shell ps -e | grep nfsd),$(shell ps -e | grep rpc[^i])),$(error $(hostservicesmsg)))
 
 .PHONY: check
-check: check-route-exists check-route-not-default check-iface-route check-image-exists do-setup-msg
+check: check-route-exists check-route-not-default check-iface-route check-no-hostservices check-image-exists do-setup-msg
 
 
 .PHONY: docker-run
