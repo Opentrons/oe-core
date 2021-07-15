@@ -25,45 +25,61 @@ else ifeq ($(IFACE), CHANGEME)
   $(error Please set your iface in ot3-bootserver.env)
 endif
 
-ifndef SPECROUTE
-  define warnmsg
+define noroutemsg
 
-  There is no entry in the route table for the selected DHCP subnet stub
-  $(DHCP_SUBNET_STUB).0. This either means your board is not plugged in
-  to an ethernet interface, or you have not yet set the iface for the board
-  to the static ip $(DHCP_SUBNET_STUB).1. This will not break anything but
-  the rest of this makefile probably will not work.
-  endef
-$(warning $(warnmsg))
-else ifeq ($(DEFROUTE), $(SPECROUTE))
-  define errmsg
-
-    The default route goes through the same network interface
-    as the subnet you have specified to use for boot ($(DEFROUTE)).
-    Running this as specified will break your network. Make sure
-    you are using a different subnet for the boot provider than
-    the one you use to connect to the internet
-  endef
-  $(error $(errmsg))
-else ifneq ($(IFACEROUTE),$(DHCP_SUBNET_STUB).0)
-  define warnmsg
-
-    The route for the specified network iface $(IFACE) does not map to $(DHCP_SUBNET_STUB).0,
-    but $(IFACEROUTE). This mismatch will make dhcpd fail.
-  endef
-  $(warning (warnmsg))
-endif
-
-define infomsg
-
-  The current boot server configuration is
-    - Looking for a verdin at mac $(VERDIN_MAC)
-    - Providing DHCP, bootp, and nfs on network $(DHCP_SUBNET_STUB).0/224 which
-      is via interface $(SPECROUTE)
-    - Container will have the name $(CONTAINER_NAME)
-    - Serving from $(WORKDIR)/provide
+There is no entry in the route table for the selected DHCP subnet stub
+$(DHCP_SUBNET_STUB).0. This either means your board is not plugged in
+to an ethernet interface, or you have not yet set the iface for the board
+to the static ip $(DHCP_SUBNET_STUB).1. This will not break anything but
+the rest of this makefile probably will not work.
 endef
-$(info $(infomsg))
+
+
+define defaultroutemsg
+
+The default route goes through the same network interface
+as the subnet you have specified to use for boot ($(DEFROUTE)).
+Running this as specified will break your network. Make sure
+you are using a different subnet for the boot provider than
+the one you use to connect to the internet
+endef
+
+define badroutemsg
+
+  The route for the specified network iface $(IFACE) does not map to $(DHCP_SUBNET_STUB).0,
+  but $(IFACEROUTE). This mismatch will make dhcpd fail.
+endef
+
+define setupmsg
+
+The current boot server configuration is
+  - Looking for a verdin at mac $(VERDIN_MAC)
+  - Providing DHCP, bootp, and nfs on network $(DHCP_SUBNET_STUB).0/224 which
+    is via interface $(SPECROUTE)
+  - Container will have the name $(CONTAINER_NAME)
+  - Serving from $(WORKDIR)/provide
+endef
+
+define noimgmsg
+
+No content is present to be served by NFS. Either extract an OE image such that its
+rootfs tarball is in $(WORKDIR)/provide/root and its bootfs tarball is in
+$(WORKDIR)/provide/boot, or run make again while providing an IMAGE=/path/to/image.tar
+definition
+endef
+
+define hostservicesmsg
+
+The system is currently running one or more nfs daemon processes (ps -e | grep nfsd has
+results) or sunrpc registration hosts (ps -e | grep rpc has results). This can happen
+if the container previously failed, if you have nfs-kernel-server installed and running
+on the host, or for some other mysterious reason. Unfortunately, the mechanisms of nfs
+mean that you can really only run nfs on either the container or the host, and trying on
+both makes a bunch of stuff in the container silently fail. You should remove
+nfs-kernel-server, or stop and mask rpcd.bind and nfs and everything involved in host
+systemd; and if you already did that and are getting this message, there are some left
+over processes that you need to kill -9 until nothing named nfsd is running on the host.
+endef
 
 .PHONY: config
 config: \
@@ -77,20 +93,48 @@ docker-build:\
   $(WORKDIR)/config/dhcpd.conf \
   $(WORKDIR)/config/tftpd-hpa \
   $(WORKDIR)/provide/boot $(WORKDIR)/provide/root \
-  $(WORKDIR)/Dockerfile $(WORKDIR)/run.sh
-	docker build --tag "ot3-bootserver:latest" $(WORKDIR)
+  $(WORKDIR)/config/Dockerfile $(WORKDIR)/config/run.sh
+	docker build --tag "ot3-bootserver:latest" $(WORKDIR)/config
 
 .PHONY: apparmor-prep
 apparmor-prep: $(WORKDIR)/config/varfs-apparmor-profile
 	echo APPARMOR APPARMOR
 	sudo apparmor_parser -r -W $<
 
+.PHONY: check-route-exists
+check-route-exists:
+	$(if $(SPECROUTE),,$(warning $(noroutemsg)))
+
+.PHONY: check-route-not-default
+check-route-not-default:
+	$(if $(filter $(DEFROUTE),$(SPECROUTE)), $(error $(defaultroutemsg)))
+
+.PHONY: check-iface-route
+check-iface-route:
+	$(if $(filter $(DEFROUTE),$(DHCP_SUBNET_STUB).0),,$(warning $(badroutemsg)))
+
+.PHONY: do-setup-msg
+do-setup-msg:
+	$(info $(infomsg))
+
+.PHONY: check-image-exists
+check-image-exists:
+	$(if $(wildcard $(WORKDIR)/provide/root/*),,$(error $(noimgmsg)))
+
+.PHONY: check-no-hostservices
+check-no-hostservices:
+	$(if $(or $(shell ps -e | grep nfsd),$(shell ps -e | grep rpc)),$(error $(hostservices_error)))
+
+.PHONY: check
+check: check-route-exists check-route-not-default check-iface-route check-image-exists do-setup-msg
+
+
 .PHONY: docker-run
-docker-run: docker-build $(if $(filter yes,$(INSERT_APPARMOR)), apparmor-prep)
+docker-run: stop docker-build check $(if $(filter yes,$(INSERT_APPARMOR)), apparmor-prep)
 	docker run                                                                     \
 	--name $(CONTAINER_NAME)                                                       \
     --net host                                                                     \
-	-e NFS_LOG_LEVEL=DEBUG                                                         \
+	-e NFS_LOG_LEVEL=DEBUG                                         \
 	-d                                                                             \
 	--cap-add SYS_ADMIN                                                            \
     --cap-add SYS_MODULE                                                           \
@@ -165,10 +209,3 @@ $(WORKDIR)/config/%: config/% $(WORKDIR)/config ot3-bootserver.env
     -e "s/VERDIN_MAC/$(VERDIN_MAC)/g" \
     -e "s/IFACE/$(IFACE)/g" \
 	config/$* > $@
-
-# copy in files used by docker
-$(WORKDIR)/Dockerfile: Dockerfile
-	cp Dockerfile $(WORKDIR)/Dockerfile
-
-$(WORKDIR)/run.sh: $(WORKDIR) ./run.sh
-	cp ./run.sh $(WORKDIR)/run.sh
