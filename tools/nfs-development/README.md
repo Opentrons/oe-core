@@ -30,12 +30,13 @@ The docker container is provided basically for convenience in installing most of
 - For the same reason, the host kernel will have to be running the nfs server modules. The container should take care of it, but be aware.
 
 ### setup steps
+- Put netboot-image.tar on the verdin by installing it from easyboot, which is also here as a zipfile
 - Copy ot3-bootserver.env.template to ot3-bootserver.env
 - Identify the network interface that you want to give to dhcp by name. This is the name that comes up in ifconfig. Put this name in ot3-bootserver.env's IFACE variable.
 - Find the verdin's MAC address. This is toradex's prefix 00:14:2D and then the serial in hex. Per [their docs](https://developer.toradex.com/knowledge-base/mac-address), for instance serial 002-0004380 is MAC 00:14:2D:00:11:1C, and serial  02226142 is MAC 00:14:2D:21:F7:DE. Put this mac in ot3-bootserver.env's VERDIN_MAC variable.
 - Figure out the networking settings you want to use. DHCPD is going to create a second network, and your machine could get confused if you give it the same IP range as the one you're connected to for the internet. The two common LAN IP ranges are 192.168.0.0/16 and 10.10.0.0/16; pick the one you aren't using and set that as the DHCP_ADDRESS_BASE value.
 - Make sure that the interface you're giving dhcpd is set to a static IP of address 1 in the IP range you gave, either 192.168.0.1 or 10.10.0.1.
-- Install the `netboot` image on the verdin using easyinstall
+- Boot the verdin with it connected directly to the computer running dhcp.
 
 ### run steps
 - run `./start.sh`. you can optionally provide a path to an image, like `./start.sh /path/to/opentrons-image.tar`, in which case the image will be automatically extracted (including recursively) to the right place. If you don't provide this, whatever's in the `provide/` directory just gets provided, including possibly nothing if you haven't set anything up. If you want to set it up manually, extract the contents of the root filesystem to `provide/root/`, and put the `Image.gz` in `provide/boot/`.
