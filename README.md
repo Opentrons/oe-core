@@ -33,4 +33,4 @@ You'll get moved to `build`. Then you can run `bitbake`. To check recipe errors 
 
 The images built by this repo can be installed with easyinstall on a toradex. That requires putting the verdin in recovery mode with easyinstall running from ram via libuuu and then putting the image on some removable storage, inserting it into the verdin, and writing it to the mmc.
 
-You can also boot the verdin from an ethernet connection directly to a host machine; see tools/nfs-development for more.
+You can also boot the verdin from an ethernet connection directly to a host machine; see dev/nfs for more.
