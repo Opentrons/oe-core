@@ -96,7 +96,7 @@ docker-run: docker-build $(if $(filter yes,$(INSERT_APPARMOR)), apparmor-prep)
     --cap-add SYS_MODULE                                                           \
 	--mount type=bind,src=$(WORKDIR)/provide,dst=/provide                          \
     --mount type=bind,src=/lib/modules,dst=/lib/modules,readonly                   \
-	$(if $(filter yes,$(INSERT_APPARMOR)), --security-opt apparmor=erichough-nfs) \
+	$(if $(filter yes,$(INSERT_APPARMOR)), --security-opt apparmor=erichough-nfs)  \
 	-p ${DHCP_SUBNET_STUB}.1::2049  -p ${DHCP_SUBNET_STUB}.1::2049/udp             \
     -p ${DHCP_SUBNET_STUB}.1::111   -p ${DHCP_SUBNET_STUB}.1::111/udp              \
     -p ${DHCP_SUBNET_STUB}.1::32765 -p ${DHCP_SUBNET_STUB}.1::32765/udp            \
