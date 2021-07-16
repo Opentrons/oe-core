@@ -57,3 +57,17 @@ There are also some manual items to get through before running the docker contai
 
 Once the image is in place, the verdin is connected and running netboot, all you should need to do is `make docker-run`. This will run and detach the docker container with the name `ot3-bootserver`. Then reset the verdin and it should (eventually) come up.
 
+The makefile has some useful customization options above and beyond ot3-bootserver.env which are set with prepended environment variables, such as
+
+- `WORKDIR`: Set to change the location where the config files are put, the docker container is built, and data is served. For instance, you could run `WORKDIR=/var/srv/ot3 make docker-run`
+- `NOCHECK`: Skip the checks on the host networking setup that try and prevent you from taking down your internet-connected network by giving a rogue DHCP server access to it. Be careful! Example: `NOCHECK=1 make docker-run`
+- `IMAGE`: Provide a path to an image to unzip to the service dir. Example: `IMAGE=~/Downloads/opentrons-image.tar make docker-build`
+- `CONTAINER_NAME`: Customize the container name (default ot3-bootserver). Example: `CONTAINER_NAME=mycontainer make docker-run`. Note that if you have a container running already and you run `CONTAINER_NAME=asdasd make docker-run` then the old container won't get stopped.
+- `INSERT_APPARMOR`: Set to no to prevent the system from installing an apparmor exemption for the container. Could be useful if you're running on a host that doesn't use apparmor. Example: `INSERT_APPARMOR=no make docker-run`
+
+There are also a couple useful intermediate targets:
+- `config` will write the config files, editing in the values from ot3-bootserver.env, but do nothing else
+- `docker-build` will just build the container
+- `docker-run` builds and runs the container
+- `monitor` builds, runs, and tails the logs from the container. Hit ctrl-c to stop looking at the logs; the container will still run
+- `check` runs all the networking checks

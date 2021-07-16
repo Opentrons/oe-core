@@ -1,11 +1,12 @@
 # This makefile provides all the setup required to create a working
 # bootserver for an ot-3.
 
-WORKDIR ?= work
+WORKDIR ?= "$(shell pwd)/work"
 SHELL := bash
 IMAGE ?=
 CONTAINER_NAME ?= "ot3-bootserver"
 INSERT_APPARMOR ?= yes
+NOCHECK ?=
 
 include ./ot3-bootserver.env
 
@@ -15,7 +16,7 @@ include ./ot3-bootserver.env
 
 DEFROUTE := $(shell route | awk '/default/{print $$NF}')
 SPECROUTE := $(word 1, $(shell route | awk '/$(DHCP_SUBNET_STUB).0/{print $$NF}'))
-IFACEROUTE := $(word 1, $(shell route | awk '/$(IFACEF/{print $1})'))
+IFACEROUTE := $(word 1, $(shell route | awk '/$(IFACE)/{print $$1}'))
 
 ifeq ($(VERDIN_MAC), CHANGEME)
   $(error Please set the verdins MAC address in ot3-bootserver.env)
@@ -130,7 +131,7 @@ check: check-route-exists check-route-not-default check-iface-route check-no-hos
 
 
 .PHONY: docker-run
-docker-run: stop docker-build check $(if $(filter yes,$(INSERT_APPARMOR)), apparmor-prep)
+docker-run: stop docker-build $(if $(NOCHECK),,check) $(if $(filter yes,$(INSERT_APPARMOR)), apparmor-prep)
 	docker run                                                                     \
 	--name $(CONTAINER_NAME)                                                       \
     --net host                                                                     \
