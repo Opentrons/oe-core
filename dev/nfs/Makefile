@@ -182,7 +182,7 @@ $(WORKDIR)/provide/boot: $(shell ls $(WORKDIR)/unzip/*.bootfs.tar.xz) set-image
 	cd $(WORKDIR)/provide/boot && tar xf $<
 
 $(WORKDIR)/provide/root: $(word 2, $(sort $(shell ls $(WORKDIR)/unzip/*.tar.xz))) set-image
-	cd $(WORKDIR)/provide/root && tar xf $<
+	cd $(WORKDIR)/provide/root && sudo tar --preserve-owner xpf $<
 
 else
 $(WORKDIR)/provide/boot: $(WORKDIR)/provide
