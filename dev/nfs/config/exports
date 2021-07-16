@@ -1,1 +1,1 @@
-/provide/root DHCP_SUBNET_STUB.9(rw,sync,wdelay,insecure)
+/provide/root DHCP_SUBNET_STUB.9(rw,sync,wdelay,insecure,no_root_squash)
