@@ -184,7 +184,7 @@ $(WORKDIR)/provide/boot: $(shell ls $(WORKDIR)/unzip/*.bootfs.tar.xz) set-image
 
 $(WORKDIR)/provide/root: $(word 2, $(sort $(shell ls $(WORKDIR)/unzip/*.tar.xz))) set-image
 	mkdir -p $(WORKDIR)/provide/root
-	cd $(WORKDIR)/provide/root && sudo tar --preserve-owner xpf $<
+	cd $(WORKDIR)/provide/root && sudo tar --same-owner -xpf $<
 
 else
 $(WORKDIR)/provide/boot: $(WORKDIR)/provide
