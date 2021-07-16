@@ -179,9 +179,11 @@ set-image: $(WORKDIR)
 # bootfs in it, and the rootfs... is just the second item of a lexical
 # sort of a *.tar.xz glob.
 $(WORKDIR)/provide/boot: $(shell ls $(WORKDIR)/unzip/*.bootfs.tar.xz) set-image
+	mkdir -p $(WORKDIR)/provide/boot
 	cd $(WORKDIR)/provide/boot && tar xf $<
 
 $(WORKDIR)/provide/root: $(word 2, $(sort $(shell ls $(WORKDIR)/unzip/*.tar.xz))) set-image
+	mkdir -p $(WORKDIR)/provide/root
 	cd $(WORKDIR)/provide/root && sudo tar --preserve-owner xpf $<
 
 else
