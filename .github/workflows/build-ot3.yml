@@ -45,4 +45,5 @@ jobs:
         with:
           payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-url.outputs.url}}\", \"partitionImage\":\"${{steps.result-wic-gz.outputs.wic-gz-url}}\", \"partitionImageBmap\":\"${{steps.result-wic-bmap.outputs.wic-bmap-url}}\"}"
         env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
