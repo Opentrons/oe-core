@@ -31,16 +31,16 @@ jobs:
           buildid=$(echo '${{ steps.codebuild.outputs.aws-build-id }}' | cut -d: -f2-)
           echo "::set-output name=url::https://d2irdh6zupqygx.cloudfront.net/${buildid}/ot3-oe/opentrons/opentrons-image.tar"
       - name: Build WIC bmap URL
-	id: result-wic-bmap-url
+	id: result-wic-bmap
 	run: echo "::set-output name=wic-bmap-url::https://d2irdh6zupqygx.cloudfront.net/${buildid}/ot3-oe/opentrons/opentrons-ot3-image-verdin-imx8mm.wic.bmap"
       - name: Build WIC gz URL
-	id: result-wic-gz-url
+	id: result-wic-gz
 	run: echo "::set-output name=wic-gz-url::https://d2irdh6zupqygx.cloudfront.net/${buildid}/ot3-oe/opentrons/opentrons-ot3-image-verdin-imx8mm.wic.gz"
       - name: Post results
         uses: slackapi/slack-github-action@v1.14.0
         with:
           payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-url.outputs.url}}\"
-                   \"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-wic-gz-url.outputs.wic-gz-url}}\"
-\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-wic-bmap-url.output.wic-bmap-url}}\"}"
+                   \"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-wic-gz.outputs.wic-gz-url}}\"
+\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-wic-bmap.output.wic-bmap-url}}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
