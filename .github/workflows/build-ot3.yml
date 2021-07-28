@@ -30,7 +30,7 @@ jobs:
         run: |
           buildid=$(echo '${{ steps.codebuild.outputs.aws-build-id }}' | cut -d: -f2-)
           echo "::set-output name=url::https://d2irdh6zupqygx.cloudfront.net/${buildid}/ot3-oe/opentrons/opentrons-image.tar"
-      - name: Build WIC bmap 
+      - name: Build WIC bmap
 	id: result-wic-bmap
 	run: |
           buildid=$(echo '${{ steps.codebuild.outputs.aws-build-id }}' | cut -d: -f2-)
