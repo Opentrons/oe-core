@@ -43,15 +43,6 @@ jobs:
       - name: Post results
         uses: slackapi/slack-github-action@v1.14.0
         with:
-          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-url.outputs.url}}\"}"
+          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-url.outputs.url}}\" \"partitionImage\":\"${{steps.result-wic-gz.outputs.wic-gz-url}}\" \"partitionImageBmap\":\"${{steps.result-wic-bmap.outputs.wic-bmap-url}}\"}"
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      - name: Post WIC bmap
-        uses: slackapi/slack-github-action@v1.14.0
-        with:
-          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-wic-bamp.outputs.wic-bmap-url}}\"}"
-      - name: Post WIC gz 
-        uses: slackapi/slack-github-action@v1.14.0
-        with:
-          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/ot3-builds?prefix=${{ steps.codebuild.outputs.aws-build-id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"image\":\"${{steps.result-wic-gz.outputs.wic-gz-url}}\"}"
 
