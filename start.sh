@@ -20,7 +20,7 @@ cleanup () {
 DEFAULT_TARGET=opentrons-ot3-image
 THISDIR="${1}"
 shift
-TARGET="${1:-${opentrons-ot3-image}}"
+TARGET="${1:-${DEFAULT_TARGET}}"
 shift
 
 trap cleanup EXIT
