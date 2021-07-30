@@ -1,26 +1,43 @@
 #! /bin/bash
 
+# Wrapper for bitbake and openembedded builds usable both inside
+# and outside a docker container.
+#
+# One mandatory argument that provides the top directory (required
+# for docker support). Run like
+# ./start.sh .
+#
+# or, from some other directory, /path/to/this/file/start.sh
+#
+# Any subsequent arguments are passed to the main bitbake invocation,
+# and will replace the default target if they are present
 set -x
 
 cleanup () {
   popd >/dev/null
 }
 
+DEFAULT_TARGET=opentrons-ot3-image
+THISDIR="${1}"
+shift
+TARGET="${1:-${opentrons-ot3-image}}"
+shift
+
 trap cleanup EXIT
 
-THISDIR=$(dirname ${0})
+sudo chown -hR $USER_NAME:$USER_NAME ${THISDIR} && chmod -R ug+rw ${THISDIR}
 pushd ${THISDIR}
 
-patch ./layers/meta-toradex-nxp/recipes-kernel/linux/linux-toradex_5.4-2.3.x.bb ./linux-toradex_5.4-2.3.x.patch
+patch -f ./layers/meta-toradex-nxp/recipes-kernel/linux/linux-toradex_5.4-2.3.x.bb ./linux-toradex_5.4-2.3.x.patch
 
 export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
-BB_NUMBER_THREADS=$((`nproc`-1)) bitbake opentrons-ot3-image 
+BB_NUMBER_THREADS=$((`nproc`-1)) bitbake ${TARGET} "$@"
 
 cd ${THISDIR}
 mkdir -p build/deploy/opentrons
-cp $(find build/deploy/images/verdin-imx8mm/ | grep opentrons-ot3-image-Tezi | head -n 1) build/deploy/opentrons/opentrons-image.tar
+find . -name "opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons \;
 find . -name opentrons-ot3-image-verdin-imx8mm.wic.bmap -exec cp {} build/deploy/opentrons \;
 find . -name opentrons-ot3-image-verdin-imx8mm.wic.gz -exec cp {} build/deploy/opentrons \;
 

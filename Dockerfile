@@ -59,7 +59,9 @@ RUN git config --global user.name "Opentrons" && \
 # levels must be the same as on the host.
 ENV BUILD_INPUT_DIR /volumes/oe-core
 ENV BUILD_OUTPUT_DIR ${BUILD_INPUT_DIR}/build
+COPY start.sh /start.sh
+RUN sudo chown $USER_NAME:$USER_NAME /start.sh && chmod ug+rwx /start.sh
 
 WORKDIR $BUILD_INPUT_DIR
 
-CMD sudo chown -hR $USER_NAME:$USER_NAME /volumes && chmod -R ug+rw /volumes && ${BUILD_INPUT_DIR}/start.sh
+ENTRYPOINT ["/start.sh", "/volumes/oe-core"]
