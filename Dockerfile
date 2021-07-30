@@ -24,8 +24,7 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
-ENV USER_NAME opentrons-ci
-ENV PROJECT ot3
+
 
 # The running container writes all the build artifacts to a host directory (outside the container).
 # The container can only write files to host directories, if it uses the same user ID and
@@ -35,6 +34,9 @@ ENV PROJECT ot3
 # name of the group and user is ot3.
 ARG host_uid=1001
 ARG host_gid=1001
+ARG username=opentrons-ci
+ENV USER_NAME ${username}
+ENV PROJECT ot3
 RUN groupadd -g $host_gid $USER_NAME || true \
     && useradd -g $host_gid -m -s /bin/bash -u $host_uid $USER_NAME || true \
     && usermod -aG sudo $USER_NAME \
@@ -59,7 +61,9 @@ RUN git config --global user.name "Opentrons" && \
 # levels must be the same as on the host.
 ENV BUILD_INPUT_DIR /volumes/oe-core
 ENV BUILD_OUTPUT_DIR ${BUILD_INPUT_DIR}/build
+COPY start.sh /start.sh
+RUN sudo chown $USER_NAME:$USER_NAME /start.sh && chmod ug+rwx /start.sh
 
 WORKDIR $BUILD_INPUT_DIR
 
-CMD sudo chown -hR $USER_NAME:$USER_NAME /volumes && chmod -R ug+rw /volumes && ${BUILD_INPUT_DIR}/start.sh
+ENTRYPOINT ["/start.sh", "/volumes/oe-core"]
