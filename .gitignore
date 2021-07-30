@@ -1,0 +1,9 @@
+.DS_Store
+.idea
+*.log
+tmp/
+
+build/
+-build/conf
+downloads/
+sstate-cache/
