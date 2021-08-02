@@ -26,3 +26,4 @@ cache:
     - 'build/tmp/'
     - 'build/cache/'
     - 'build/downloads/'
+    - 'build/work/'
