@@ -11,7 +11,7 @@
 #
 # Any subsequent arguments are passed to the main bitbake invocation,
 # and will replace the default target if they are present
-set -x
+set -x -e -o pipefail
 
 cleanup () {
   popd >/dev/null
