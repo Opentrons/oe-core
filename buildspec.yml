@@ -19,3 +19,9 @@ artifacts:
     - 'opentrons/*'
     - 'images/**/*'
   enable-symlinks: 'yes'
+
+cache:
+  paths:
+    - 'build/tmp'
+    - 'build/cache'
+    - 'build/downloads'
