@@ -23,6 +23,6 @@ artifacts:
 
 cache:
   paths:
-    - 'build/tmp/**/*'
-    - 'build/cache/**/*'
-    - 'build/downloads/**/*'
+    - 'build/tmp/'
+    - 'build/cache/'
+    - 'build/downloads/'
