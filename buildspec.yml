@@ -16,7 +16,7 @@ phases:
   post_build:
     commands:
       - mkdir -p build/deploy/opentrons
-      - find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons \;
+      - find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/opentrons-image.tar \;
       - find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.bmap -exec cp {} build/deploy/opentrons \;
       - find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.gz -exec cp {} build/deploy/opentrons \;
 artifacts:
