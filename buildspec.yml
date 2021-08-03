@@ -9,7 +9,6 @@ phases:
       - git config --global submodule.fetchJobs $((`nproc`-1))
       - ./update.sh
       - docker build --tag "ot3-image:latest" .
-      - rm -rf ./build/cache
   build:
     commands:
       - echo ${CODEBUILD_SRC_DIR}
