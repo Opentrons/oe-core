@@ -34,10 +34,4 @@ export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
 BB_NUMBER_THREADS=$((`nproc`-1)) bitbake ${TARGET} "$@"
-
-cd ${THISDIR}
-mkdir -p build/deploy/opentrons
-find . -name "opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons \;
-find . -name opentrons-ot3-image-verdin-imx8mm.wic.bmap -exec cp {} build/deploy/opentrons \;
-find . -name opentrons-ot3-image-verdin-imx8mm.wic.gz -exec cp {} build/deploy/opentrons \;
-
+exit $?
