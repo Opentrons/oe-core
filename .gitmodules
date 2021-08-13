@@ -1,7 +1,7 @@
 [submodule "layers/meta-freescale"]
 	path = layers/meta-freescale
-	url = git@github.com:Opentrons/meta-freescale.git
-	branch = dunfell
+	url = https://github.com/Opentrons/meta-freescale.git
+	branch = dunfell-fix-gtk
 [submodule "layers/meta-freescale-3rdparty"]
 	path = layers/meta-freescale-3rdparty
 	url = https://github.com/Freescale/meta-freescale-3rdparty
