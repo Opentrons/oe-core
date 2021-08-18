@@ -42,3 +42,17 @@
 [submodule "tools/bitbake"]
 	path = tools/bitbake
 	url = https://github.com/openembedded/bitbake.git
+[submodule "layers/meta-browser"]
+	path = layers/meta-browser
+	url = https://github.com/OSSystems/meta-browser
+[submodule "layers/meta-clang"]
+	path = layers/meta-clang
+	url = https://github.com/kraj/meta-clang
+	branch = dunfell
+[submodule "layers/meta-python2"]
+	path = layers/meta-python2
+	url = git://git.openembedded.org/meta-python2
+	branch = dunfell
+[submodule "tools/gclient"]
+	path = tools/gclient
+	url = https://chromium.googlesource.com/chromium/tools/depot_tools.git
