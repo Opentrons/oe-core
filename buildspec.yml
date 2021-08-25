@@ -30,5 +30,5 @@ cache:
   paths:
     - 'build/tmp/'
     - 'build/cache/'
-    - 'build/downloads/'
+    - 'downloads/'
     - 'build/work/'
