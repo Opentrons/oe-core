@@ -26,9 +26,9 @@ artifacts:
     - 'images/**/*'
   enable-symlinks: 'yes'
 
-  cache:
-    paths:
-      - 'build/tmp/'
-      - 'build/cache/'
-      - 'build/downloads/'
-      - 'build/work/
+cache:
+  paths:
+    - 'build/tmp/'
+    - 'build/cache/'
+    - 'build/downloads/'
+    - 'build/work/'
