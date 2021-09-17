@@ -28,7 +28,4 @@ artifacts:
 
 cache:
   paths:
-    - 'build/tmp/'
-    - 'build/cache/'
     - 'downloads/'
-    - 'build/work/'
