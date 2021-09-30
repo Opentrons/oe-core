@@ -37,7 +37,7 @@
 [submodule "layers/meta-opentrons"]
 	path = layers/meta-opentrons
 	url = https://github.com/Opentrons/meta-opentrons.git
-	branch = main
+	branch = ot3-hw-proj-recipe-RET-226
 [submodule "tools/bitbake"]
 	path = tools/bitbake
 	url = https://github.com/openembedded/bitbake.git
