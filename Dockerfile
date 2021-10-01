@@ -10,7 +10,6 @@ RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONT
 # without them. curl is used for brining in the repo tool. repo tool uses git, so thats being instaled here aswell.
 
 RUN apt-get update \
-    && apt-get -y upgrade \
     && apt-get -y install \
     gawk wget git-core diffstat unzip texinfo gcc-multilib \
     build-essential chrpath socat cpio python python3-pexpect \
