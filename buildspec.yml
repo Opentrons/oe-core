@@ -6,6 +6,7 @@ env:
 phases:
   pre_build:
     commands:
+      - apt-get update && apt-get upgrade -y ca-certificates
       - git config --global submodule.fetchJobs $((`nproc`-1))
       - ./update.sh
       - docker build --tag "ot3-image:latest" .
