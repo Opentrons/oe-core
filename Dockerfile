@@ -9,10 +9,12 @@ RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONT
 # tar, locales and cpio are not listed in the official Yocto / Toradex BSP documentation. The build, however, fails
 # without them. curl is used for brining in the repo tool. repo tool uses git, so thats being instaled here aswell.
 
-RUN apt-get update && apt-get -y install gawk wget git-core diffstat unzip texinfo gcc-multilib \
-     build-essential chrpath socat cpio python python3-pexpect \
-     xz-utils debianutils iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl1.2-dev \
-     pylint3 xterm tar locales curl git sudo
+RUN apt-get update \
+    && apt-get -y install \
+    gawk wget git-core diffstat unzip texinfo gcc-multilib \
+    build-essential chrpath socat cpio python python3-pexpect \
+    xz-utils debianutils iputils-ping python3-git python3-jinja2 \
+    libegl1-mesa libsdl1.2-dev  pylint3 xterm tar locales curl git sudo
 
 # By default, Ubuntu uses dash as an alias for sh. Dash does not support the source command
 # needed for setting up the build environment in CMD. Use bash as an alias for sh.
