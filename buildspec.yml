@@ -29,4 +29,4 @@ artifacts:
 
 cache:
   paths:
-    - 'build/downloads/'
+    - 'downloads/'
