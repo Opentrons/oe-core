@@ -16,10 +16,11 @@ phases:
       - docker run --mount type=bind,src=${CODEBUILD_SRC_DIR},dst=/volumes/oe-core,consistency=delegated ot3-image:latest
   post_build:
     commands:
-      - mkdir -p build/deploy/opentrons
+      - mkdir -p build/deploy/opentrons/buildstats
       - find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/opentrons-image.tar \;
       - find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.bmap -exec cp {} build/deploy/opentrons \;
       - find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.gz -exec cp {} build/deploy/opentrons \;
+      - find ./build/tmp/buildstats -exec cp {} build/deploy/opentrons/buildstats \;
 artifacts:
   base-directory: build/deploy
   files:
