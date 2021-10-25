@@ -30,4 +30,4 @@ artifacts:
 
 cache:
   paths:
-    - 'downloads/'
+    - 'downloads/**/*'
