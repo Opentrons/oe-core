@@ -20,6 +20,7 @@ phases:
       - find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/opentrons-image.tar \;
       - find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.bmap -exec cp {} build/deploy/opentrons \;
       - find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.gz -exec cp {} build/deploy/opentrons \;
+      - tar czf ./build/deploy/opentrons/buildstats.tar.gz ./build/tmp/buildstats
 artifacts:
   base-directory: build/deploy
   files:
@@ -29,4 +30,5 @@ artifacts:
 
 cache:
   paths:
-    - 'downloads/'
+    - 'downloads/**/*'
+    - 'sstate-cache/**/*'
