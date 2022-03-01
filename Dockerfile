@@ -1,6 +1,6 @@
-# Use Ubuntu LTS as the basis for the Docker image.
+# Use debian buster on 3.6 (old yocto version) as the basis for the Docker image.
 
-FROM python:3.6-buster
+FROM python:3.6.15-slim-buster
 
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
