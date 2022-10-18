@@ -1,0 +1,20 @@
+[Unit]
+Description=Opentrons Robot HTTP Server
+Requires=nginx.service
+After=nginx.service
+
+[Service]
+Type=notify
+ExecStart=python3 -m uvicorn robot_server:app --uds /run/aiohttp.sock --ws wsproto
+StateDirectory=opentrons-robot-server
+Environment=OT_API_FF_enableOT3HardwareController=true
+Environment=RUNNING_ON_PI=true
+Environment=PYTHONPATH=/opt/opentrons-robot-server:/usr/lib/python3.8/site-packages
+Environment=OT_ROBOT_SERVER_persistence_directory=%S/opentrons-robot-server
+Restart=on-failure
+TimeoutStartSec=3min
+After=opentrons-ot3-canbus
+Wants=opentrons-ot3-canbus
+
+[Install]
+WantedBy=multi-user.target

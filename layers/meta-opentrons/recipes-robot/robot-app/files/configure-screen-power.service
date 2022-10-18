@@ -1,0 +1,10 @@
+[Unit]
+Description=Configure the TPS 65154 power supply for the screen
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/setup-tps65154.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

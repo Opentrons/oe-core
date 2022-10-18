@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: Apache-2
+/*
+ * Copyright 2020-2021 Opentrons
+ */
+
+// Force usb1 to peripheral mode since the connector on-the-go id
+// pin is not connected
+
+/dts-v1/;
+/plugin/;
+
+/ {
+  compatible = "toradex,verdin-imx8mm";
+};
+
+&usbotg1 {
+    dr_mode = "peripheral";
+};
