@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: Apache-2
+/*
+ * Copyright 2020-2021 Opentrons
+ */
+
+// Verdin DSI to LVDS Adapter with connected ATM0700L61-CT display (7 inch) with a
+// resolution of 1024x600 pixel. Semicustom from AZ Displays.
+
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "toradex,verdin-imx8mm";
+};
+
+&lvds_ti_sn65dsi83 {
+    ti,dsi-lanes = <4>;
+    ti,height-mm = <86>;
+    ti,lvds-bpp = <24>;
+    ti,lvds-format = <2>;
+    ti,width-mm = <154>;
+
+    display-timings {
+        native-mode = <&lvds_timing0>;
+
+        lvds_timing0: atm0700l61_2whc {
+            clock-frequency = <51200000>;
+            hactive = <1024 1024 1024>;
+            hfront-porch = <16 160 216>;
+            hback-porch = <160 160 160>;
+            hsync-len = <1 70 140>;
+            vactive = <600 600 600>;
+            vfront-porch = <1 12 127>;
+            vback-porch = <23 23 23>;
+            vsync-len = <1 10 20>;
+            de-active = <1>;
+            pixelclk-active = <0>;
+        };
+    };
+};

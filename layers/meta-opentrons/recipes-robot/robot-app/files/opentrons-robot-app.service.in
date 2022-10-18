@@ -1,0 +1,14 @@
+[Unit]
+Description=Start the Opentrons Robot App
+After=weston@root.service
+Requires=weston@root.service
+
+[Service]
+Restart=on-failure
+Type=forking
+Environment=@@application-environment@@
+ExecStart=/usr/bin/opentrons-robot-app.sh
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

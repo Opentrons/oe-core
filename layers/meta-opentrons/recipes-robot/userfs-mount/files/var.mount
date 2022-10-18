@@ -1,0 +1,13 @@
+[Unit]
+Description=The /var directory for the robot.
+Requires=userfs.mount
+After=userfs.mount
+
+[Mount]
+What=/userfs/var
+Where=/var
+Type=none
+Options=rbind
+
+[Install]
+WantedBy=multi-user.target

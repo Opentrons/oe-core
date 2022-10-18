@@ -1,0 +1,13 @@
+# legacy modules, generally not compatible with ot3
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ee93", ATTRS{idVendor}=="04d8", SYMLINK+="ot_module_tempdeck%n"
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ee90", ATTRS{idVendor}=="04d8", SYMLINK+="ot_module_magdeck%n"
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ee5a", ATTRS{idVendor}=="04d8", SYMLINK+="ot_module_avrdude_bootloader%n"
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ed8c", ATTRS{idVendor}=="04d8", SYMLINK+="ot_module_thermocycler%n"
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ed12", ATTRS{idVendor}=="04d8", SYMLINK+="ot_module_samba_bootloader%n"
+# adafruit feather m0 board for dev:
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="800b", ATTRS{idVendor}=="239a", SYMLINK+="ot_module_thermocycler%n"
+
+# these boards are compatible with ot3
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="4853", ATTRS{idVendor}=="0483", SYMLINK+="ot_module_heatershaker%n"
+# gen2 thermocycler on stm32:
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ed8d", ATTRS{idVendor}=="0483", SYMLINK+="ot_module_thermocycler%n"
