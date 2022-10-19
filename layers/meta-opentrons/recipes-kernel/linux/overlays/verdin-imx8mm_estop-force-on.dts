@@ -1,0 +1,22 @@
+// SPDX-License-Identifier: Apache-2
+/*
+ * Copyright 2020-2021 Opentrons
+ */
+
+// Force the estop pin to high on startup
+
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "toradex,verdin-imx8mm";
+};
+
+&iomuxc {
+    /* Verdin GPIO_3(pulled-up as active-low) *
+    pinctrl_gpio3: gpio3grp {
+        fsl,pins = <
+            MX8MM_IOMUXC_UART3_RXD_GPIO5_IO26       0x146   /* SODIMM 210 */
+        >;
+    };
+};
