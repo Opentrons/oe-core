@@ -13,7 +13,7 @@
 };
 
 &iomuxc {
-    /* Verdin GPIO_3(pulled-up as active-low) *
+    /* Verdin GPIO_3(pulled-up as active-low) */
     pinctrl_gpio3: gpio3grp {
         fsl,pins = <
             0x244 0x4AC 0x000 0x5 0x0 0x146   /* SODIMM 210 */
