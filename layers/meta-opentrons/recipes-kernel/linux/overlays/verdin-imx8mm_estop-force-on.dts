@@ -16,7 +16,7 @@
     /* Verdin GPIO_3(pulled-up as active-low) *
     pinctrl_gpio3: gpio3grp {
         fsl,pins = <
-            MX8MM_IOMUXC_UART3_RXD_GPIO5_IO26       0x146   /* SODIMM 210 */
+            0x244 0x4AC 0x000 0x5 0x0 0x146   /* SODIMM 210 */
         >;
     };
 };
