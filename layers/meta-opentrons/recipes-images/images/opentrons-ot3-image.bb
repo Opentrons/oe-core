@@ -85,9 +85,9 @@ fakeroot do_add_rootfs_version() {
 
     # add hostname and machine-info
     printf "opentrons" > ${IMAGE_ROOTFS}/etc/hostname
-    printf "PRETTY_HOSTNAME=opentrons" >> "${IMAGE_ROOTFS}/etc/machine-info"
+    printf "PRETTY_HOSTNAME=opentrons\n" > "${IMAGE_ROOTFS}/etc/machine-info"
     # TODO(ba, 2022-10-18): add proper mechanism for setting DEPLOYMENT
-    printf "DEPLOYMENT=development" >> "${IMAGE_ROOTFS}/etc/machine-info"
+    printf "DEPLOYMENT=development\n" >> "${IMAGE_ROOTFS}/etc/machine-info"
 }
 
 fakeroot do_create_filesystem() {
