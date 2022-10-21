@@ -167,11 +167,12 @@ python do_create_opentrons_manifest() {
     opentrons_json_output = "%s/VERSION.json" % d.getVar('DEPLOY_DIR_IMAGE')
     robot_server_version = "%s/opentrons-robot-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
     update_server_version = "%s/opentrons-update-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
+    usb_bridge_version = "%s/opentrons-usb-bridge-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
 
     # grab the versions
-    opentrons_versions = [robot_server_version, update_server_version]
+    opentrons_versions = [robot_server_version, update_server_version, usb_bridge_version]
     for version_path in opentrons_versions:
-        if os.path.exists(robot_server_version):
+        if os.path.exists(version_path):
             bb.note("opentrons %s exists!" % version_path)
             try:
                 with open(version_path, 'r') as fh:
