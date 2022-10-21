@@ -29,3 +29,9 @@
         >;
     };
 };
+
+&genericPeripheral {
+    pinctrl-names = "default";
+    pinctrl-0 = <&my_pinctrl>;
+    status = "okay";
+};
