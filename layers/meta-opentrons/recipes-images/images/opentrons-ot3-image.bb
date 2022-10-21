@@ -35,7 +35,7 @@ IMAGE_INSTALL += " \
     userfs-mount robot-app-wayland-launch robot-app \
     opentrons-robot-server opentrons-update-server \
     python3 python3-misc python3-modules \
-    opentrons-usb-bridge
+    opentrons-usb-bridge \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
