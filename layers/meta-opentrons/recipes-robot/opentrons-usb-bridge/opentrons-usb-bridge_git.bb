@@ -37,8 +37,8 @@ do_compile_append() {
 }
 
 do_install_append() {
-  install -d ${D}/${systemd_unitdir}
-  install -m 0644 ${WORKDIR}/opentrons-usb-bridge.service ${D}/${systemd_unitdir}/opentrons-usb-bridge.service
+  install -d ${D}/${systemd_system_unitdir}
+  install -m 0644 ${WORKDIR}/opentrons-usb-bridge.service ${D}/${systemd_system_unitdir}/opentrons-usb-bridge.service
 }
 
 inherit pipenv_app_bundle
