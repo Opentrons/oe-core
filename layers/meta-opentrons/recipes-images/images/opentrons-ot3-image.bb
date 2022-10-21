@@ -40,7 +40,7 @@ IMAGE_INSTALL += " \
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
 # port. Luckily, they are only recommended so it is easy to filter them out.
-NO_RECOMMENDATIONS += " libusbgx libusbgx-examples"
+PACKAGE_EXCLUDE = "libusbgx libusbgx-examples"
 
 # Prefix to the resulting deployable tarball name
 export IMAGE_BASENAME = "opentrons-ot3-image"
