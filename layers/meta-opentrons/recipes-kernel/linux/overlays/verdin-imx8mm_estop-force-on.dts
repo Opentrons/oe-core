@@ -17,13 +17,13 @@
 &iomuxc {
     pinctrl-names = "default";
     pinctrl-0 = <&pinctrl_gpio1>, <&pinctrl_gpio2>,
-            <&pinctrl_gpio3>, <&pinctrl_gpio4>,
+            <&my_pinctrl>, <&pinctrl_gpio4>,
             <&pinctrl_gpio7>, <&pinctrl_gpio8>,
             <&pinctrl_gpio_hog1>, <&pinctrl_gpio_hog2>, <&pinctrl_gpio_hog3>,
             <&pinctrl_pmic_tpm_ena>;
 
     /* Verdin GPIO_3(pulled-up as active-low) */
-    pinctrl_gpio3: gpio3grp {
+    my_pinctrl: estop_group {
         fsl,pins = <
             MX8MM_IOMUXC_UART3_RXD_GPIO5_IO26 0x146   /* SODIMM 210 */
         >;
