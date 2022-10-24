@@ -51,14 +51,50 @@ USERFS_DIR = "${WORKDIR}/userfs"
 SYSTEMFS_OUTPUT = "${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.systemfs.ext4"
 USERFS_OUTPUT = "${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.userfs.ext4"
 
+# create the opentrons ot3 manifest (VERSION.json) file
+python do_create_opentrons_manifest() {
+    bb.note("Create the manifest json for for ot3-system.zip")
+    import json
+    import os
+
+    opentrons_manifest = {}
+    opentrons_json_output = "%s/VERSION.json" % d.getVar('DEPLOY_DIR_IMAGE')
+    robot_server_version = "%s/opentrons-robot-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
+    update_server_version = "%s/opentrons-update-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
+    usb_bridge_version = "%s/opentrons-usb-bridge-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
+
+    # grab the versions
+    opentrons_versions = [robot_server_version, update_server_version, usb_bridge_version]
+    for version_path in opentrons_versions:
+        if os.path.exists(version_path):
+            bb.note("opentrons %s exists!" % version_path)
+            try:
+                with open(version_path, 'r') as fh:
+                    opentrons_manifest.update(json.load(fh))
+            except JSONDecodeError:
+                bb.error("Could not load opentrons version file - %s" % version_path)
+
+    # create the VERSION.json file
+    with open(opentrons_json_output, 'w') as fh:
+        json.dump(opentrons_manifest, fh, indent=4)
+}
+
 # add the rootfs version to the welcome banner
-add_rootfs_version() {
+fakeroot do_add_rootfs_version() {
     printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) \\\n \\\l\n" > ${IMAGE_ROOTFS}/etc/issue
     printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) %%h\n" > ${IMAGE_ROOTFS}/etc/issue.net
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue.net
+
+    # add the VERSION.json file
+    cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}/etc/VERSION.json
+
+    # add hostname and machine-info
+    printf "opentrons" > ${IMAGE_ROOTFS}/etc/hostname
+    printf "PRETTY_HOSTNAME=opentrons\n" > "${IMAGE_ROOTFS}/etc/machine-info"
+    # TODO(ba, 2022-10-18): add proper mechanism for setting DEPLOYMENT
+    printf "DEPLOYMENT=development\n" >> "${IMAGE_ROOTFS}/etc/machine-info"
 }
-ROOTFS_POSTPROCESS_COMMAND += "add_rootfs_version;"
 
 fakeroot do_create_filesystem() {
     # this will create the systemfs tree
@@ -154,35 +190,7 @@ python do_create_tezi_manifest(){
             json.dump(tezi_manifest, fd, indent=4)
     else:
         bb.error("Toradex manifest file not found - %s" % tezi_manifest_path)
-        exit()
-}
-
-# create the opentrons ot3 manifest
-python do_create_opentrons_manifest() {
-    bb.note("Create the manifest json for for ot3-system.zip")
-    import json
-    import os
-
-    opentrons_manifest = {}
-    opentrons_json_output = "%s/VERSION.json" % d.getVar('DEPLOY_DIR_IMAGE')
-    robot_server_version = "%s/opentrons-robot-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
-    update_server_version = "%s/opentrons-update-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
-    usb_bridge_version = "%s/opentrons-usb-bridge-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
-
-    # grab the versions
-    opentrons_versions = [robot_server_version, update_server_version, usb_bridge_version]
-    for version_path in opentrons_versions:
-        if os.path.exists(version_path):
-            bb.note("opentrons %s exists!" % version_path)
-            try:
-                with open(version_path, 'r') as fh:
-                    opentrons_manifest.update(json.load(fh))
-            except JSONDecodeError:
-                bb.error("Could not load opentrons version file - %s" % version_path)
-
-    # create the VERSION.json file
-    with open(opentrons_json_output, 'w') as fh:
-        json.dump(opentrons_manifest, fh, indent=4)
+        exit(1)
 }
 
 # create the tezi ot3 image
@@ -208,17 +216,23 @@ do_create_opentrons_ot3() {
 }
 
 do_create_filesystem[depends] += "virtual/fakeroot-native:do_populate_sysroot"
-do_create_tezi_ot3[cleandirs] += "virtual/fakeroot-native:do_populate_sysroot"
-do_create_tezi_ot3[dirs] += "${DEPLOY_DIR_IMAGE}"
+do_add_rootfs_version[depends] += "virtual/fakeroot-native:do_populate_sysroot"
+do_add_rootfs_version[prefuncs] += "do_create_opentrons_manifest"
+
 do_create_tezi_manifest[dirs] += "${DEPLOY_DIR_IMAGE}"
 do_create_tezi_manifest[prefuncs] += "do_image_teziimg"
+
+do_create_tezi_ot3[depends] += "virtual/fakeroot-native:do_populate_sysroot"
+do_create_tezi_ot3[dirs] += "${DEPLOY_DIR_IMAGE}"
 do_create_tezi_ot3[prefuncs] += "do_image_teziimg do_create_filesystem"
+
 do_create_opentrons_manifest[cleandirs] += "${DIPLOY_DIR_IMAGE}/opentrons-versions/"
 do_create_opentrons_ot3[prefuncs] += "do_create_filesystem"
 do_create_opentrons_ot3[dirs] += "${DIPLOY_DIR_IMAGE}"
 
-addtask do_create_filesystem after do_image_complete before do_populate_lic_deploy
+addtask do_create_opentrons_manifest after do_image_complete before do_populate_lic_deploy
+addtask do_add_rootfs_version after do_create_opentrons_manifest before do_populate_lic_deploy
+addtask do_create_filesystem after do_add_rootfs_version before do_populate_lic_deploy
 addtask do_create_tezi_manifest after do_create_filesystem before do_populate_lic_deploy
 addtask do_create_tezi_ot3 after do_create_tezi_manifest before do_populate_lic_deploy
-addtask do_create_opentrons_manifest after do_create_tezi_ot3 before do_populate_lic_deploy
-addtask do_create_opentrons_ot3 after do_create_opentrons_manifest before do_populate_lic_deploy
+addtask do_create_opentrons_ot3 after do_create_tezi_ot3 before do_populate_lic_deploy
