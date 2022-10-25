@@ -43,8 +43,8 @@ MACHINE_NAME ?= "${MACHINE}"
 IMAGE_NAME = "${MACHINE_NAME}_${IMAGE_BASENAME}"
 SYSTEMFS_DIR = "${WORKDIR}/systemfs"
 USERFS_DIR = "${WORKDIR}/userfs"
-SYSTEMFS_OUTPUT = "${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.systemfs.ext4"
-USERFS_OUTPUT = "${IMGDEPLOYDIR}/${IMAGE_LINK_NAME}.userfs.ext4"
+SYSTEMFS_OUTPUT = "${IMGDEPLOYDIR}/systemfs.ext4"
+USERFS_OUTPUT = "${IMGDEPLOYDIR}/userfs.ext4"
 
 # create the opentrons ot3 manifest (VERSION.json) file
 python do_create_opentrons_manifest() {
@@ -112,7 +112,7 @@ fakeroot do_create_filesystem() {
     mkfs.ext4 -F ${USERFS_OUTPUT} -d ${USERFS_DIR}
 
     # compress the systemfs.ext4
-    xz -f -k -c -9 ${XZ_DEFAULTS} --check=crc32 ${SYSTEMFS_OUTPUT} > ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.systemfs.ext4.xz
+    xz -f -k -c -9 ${XZ_DEFAULTS} --check=crc32 ${SYSTEMFS_OUTPUT} > ${DEPLOY_DIR_IMAGE}/systemfs.xz
 
     # create the systemfs and userfs tarball
     tar --xattrs --xattrs-include=* --sort=name --format=posix --numeric-owner -cf ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.systemfs.tar -C ${SYSTEMFS_DIR} ./
@@ -202,11 +202,10 @@ do_create_opentrons_ot3() {
     cd ${DEPLOY_DIR_IMAGE}/
 
     # compute the sha256sum
-    sha256sum ${IMAGE_LINK_NAME}.systemfs.ext4.xz > systemfs.xz.256
+    sha256sum systemfs.xz | cut -d " " -f 1 > systemfs.xz.sha256
 
     # create the zip file
-    zip ot3-system.zip ${IMAGE_LINK_NAME}.systemfs.ext4.xz systemfs.xz.256 \
-    VERSION.json
+    zip ot3-system.zip systemfs.xz systemfs.xz.sha256 VERSION.json
 }
 
 do_create_filesystem[depends] += "virtual/fakeroot-native:do_populate_sysroot"
