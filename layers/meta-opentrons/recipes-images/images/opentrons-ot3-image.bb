@@ -60,13 +60,16 @@ python do_create_opentrons_manifest() {
     # grab the versions
     opentrons_versions = [robot_server_version, update_server_version]
     for version_path in opentrons_versions:
-        if os.path.exists(robot_server_version):
-            bb.note("opentrons %s exists!" % version_path)
-            try:
-                with open(version_path, 'r') as fh:
-                    opentrons_manifest.update(json.load(fh))
-            except json.JSONDecodeError:
-                bb.error("Could not load opentrons version file - %s" % version_path)
+        if not os.path.exists(version_path):
+            bb.error("version file does not exist - %s" % version_path)
+            exit()
+
+        try:
+           with open(version_path, 'r') as fh:
+                opentrons_manifest.update(json.load(fh))
+        except json.JSONDecodeError:
+            bb.error("Could not load opentrons version file - %s" % version_path)
+            exit()
 
     # create the VERSION.json file
     with open(opentrons_json_output, 'w') as fh:
