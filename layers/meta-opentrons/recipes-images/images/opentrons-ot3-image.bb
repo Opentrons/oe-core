@@ -65,7 +65,7 @@ python do_create_opentrons_manifest() {
             try:
                 with open(version_path, 'r') as fh:
                     opentrons_manifest.update(json.load(fh))
-            except JSONDecodeError:
+            except json.JSONDecodeError:
                 bb.error("Could not load opentrons version file - %s" % version_path)
 
     # create the VERSION.json file
