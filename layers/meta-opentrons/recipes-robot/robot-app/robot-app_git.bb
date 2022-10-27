@@ -45,6 +45,12 @@ fakeroot do_install(){
     # really needs to get the system version. So we remove the local versions.
     rm ${DESTDIR}/libEGL.so ${DESTDIR}/libGLESv2.so ${DESTDIR}/libvulkan.so.1
 
+    # This is needed to remove node_gyp_bins which contains symlinks outside the root
+    # @see https://github.com/nodejs/node-gyp/issues/2713
+    # @see https://github.com/nodejs/node-gyp/pull/2721
+    #cd ${DESTDIR}
+    bbnote "${DESTDIR} something"
+    find -type d -name node_gyp_bins -exec rm -rf "{}" \;
 }
 
 REQUIRED_DISTRO_FEATURES = "x11"
