@@ -27,7 +27,8 @@ trap cleanup EXIT
 
 sudo chown -hR $USER_NAME:$USER_NAME ${THISDIR} && chmod -R ug+rw ${THISDIR}
 pushd ${THISDIR}
-
+pwd
+ls .
 patch -f ./layers/meta-toradex-nxp/recipes-kernel/linux/linux-toradex_5.4-2.3.x.bb ./linux-toradex_5.4-2.3.x.patch
 
 export BITBAKEDIR=${THISDIR}/tools/bitbake
