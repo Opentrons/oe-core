@@ -1,0 +1,41 @@
+name: 'Build OT3 image on github workflows'
+
+on:
+  push:
+    branches:
+      - '*'
+    tags_ignore:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  run-build:
+    name: 'Building images'
+    timeout-minutes: 120
+    runs-on: 'oe-core-large'
+    steps:
+      - name: Fetch sources
+        uses: 'actions/checkout@v3'
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Build container
+        run: docker build --tag "ot3-image:latest"
+      - name: Build image
+        run: |
+          docker run --mount type=bind,src=`pwd`,dst=/volumes/oe-core,consistency=delegated ot3-image:latest
+      - name: Gather results
+        run: |
+          mkdir -p build/deploy/opentrons
+          find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/opentrons-image.tar \;
+          find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.bmap -exec cp {} build/deploy/opentrons \;
+          find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.gz -exec cp {} build/deploy/opentrons \;
+          tar czf ./build/deploy/opentrons/buildstats.tar.gz ./build/tmp/buildstats
+      - name: Upload results
+        uses: actions/upload-artifact@v3
+        with:
+          name: opentrons-image
+          path: build/deploy/opentrons/**/*
