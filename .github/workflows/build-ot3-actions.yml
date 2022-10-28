@@ -33,7 +33,7 @@ jobs:
       - name: 'install and configure sysstat'
         run: |
           sudo apt-get -y install sysstat
-          sudo sed -e -i 's/ENABLED="false"/ENABLED="true"/g' /etc/default/sysstat
+          sudo sed -i -e 's/ENABLED="false"/ENABLED="true"/g' /etc/default/sysstat
           sudo systemctl enable sysstat
           sudo service sysstat restart
       - name: Build image
