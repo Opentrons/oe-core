@@ -6,6 +6,8 @@ on:
       - '*'
     tags-ignore:
       - '*'
+    paths_ignore:
+      -  .github/workflows/build-ot3-actions.yml
   workflow_dispatch:
 
 jobs:

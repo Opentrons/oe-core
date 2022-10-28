@@ -24,8 +24,9 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Build container
         run: |
-          cp start.sh ${{ env.RUNNER_TEMP }}/
-          docker build -f ${{ env.GITHUB_WORKSPACE }}/Dockerfile --tag "ot3-image:latest" ${RUNNER_TEMP}
+          tmp_dir=$(mktemp -d -t ci-XXXXXXX)
+          cp start.sh $tmp_dir/
+          docker build -f ${{ env.GITHUB_WORKSPACE }}/Dockerfile --tag "ot3-image:latest" $tmp_dir
       - name: Build image
         run: |
           docker run --mount type=bind,src=${{ env.GITHUB_WORKSPACE }},dst=/volumes/oe-core,consistency=delegated ot3-image:latest
