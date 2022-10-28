@@ -23,7 +23,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: Build container
-        run: docker build --tag "ot3-image:latest"
+        run: |
+          tmp_dir=$(mktemp -d -t ci-XXXXXXX)
+          cp start.sh ${tmp_dir}/
+          docker build --tag "ot3-image:latest" ${tmp_dir}
       - name: Build image
         run: |
           docker run --mount type=bind,src=`pwd`,dst=/volumes/oe-core,consistency=delegated ot3-image:latest
