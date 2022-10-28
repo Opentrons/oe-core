@@ -26,10 +26,10 @@ jobs:
         run: |
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
           cp start.sh $tmp_dir/
-          docker build -f ${{ env.GITHUB_WORKSPACE }}/Dockerfile --tag "ot3-image:latest" $tmp_dir
+          docker build -f ./Dockerfile --tag "ot3-image:latest" $tmp_dir
       - name: Build image
         run: |
-          docker run --mount type=bind,src=${{ env.GITHUB_WORKSPACE }},dst=/volumes/oe-core,consistency=delegated ot3-image:latest
+          docker run --mount type=bind,src=$PWD,dst=/volumes/oe-core,consistency=delegated ot3-image:latest
       - name: Gather results
         run: |
           mkdir -p build/deploy/opentrons
