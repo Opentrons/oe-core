@@ -29,7 +29,10 @@ jobs:
           docker build -f ./Dockerfile --tag "ot3-image:latest" $tmp_dir
       - name: Build image
         run: |
-          docker run --mount type=bind,src=$PWD,dst=/volumes/oe-core,consistency=delegated ot3-image:latest
+          echo "docker run --mount type=bind,src=$PWD,dst=/volumes/oe-core,consistency=delegated ot3-image:latest"
+          echo "docker run --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated ot3-image:latest"
+
+          docker run --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated ot3-image:latest
       - name: Gather results
         run: |
           mkdir -p build/deploy/opentrons
