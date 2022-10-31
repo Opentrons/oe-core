@@ -30,12 +30,6 @@ jobs:
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
           cp start.sh $tmp_dir/
           docker build -f ./Dockerfile --tag "ot3-image:latest" $tmp_dir
-      - name: 'install and configure sysstat'
-        run: |
-          sudo apt-get -y install sysstat
-          sudo sed -i -e 's/ENABLED="false"/ENABLED="true"/g' /etc/default/sysstat
-          sudo systemctl enable sysstat
-          sudo service sysstat restart
       - name: Build image
         run: |
           echo "docker run --mount type=bind,src=$PWD,dst=/volumes/oe-core,consistency=delegated ot3-image:latest"
@@ -54,9 +48,3 @@ jobs:
         with:
           name: opentrons-image
           path: build/deploy/opentrons/**/*
-      - name: Upload sysstat data
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: sysstat-data
-          path: /var/log/sysstat/**/*
