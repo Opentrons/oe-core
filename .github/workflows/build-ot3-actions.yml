@@ -11,7 +11,7 @@ on:
 jobs:
   run-build:
     name: 'Building images'
-    timeout-minutes: 180
+    timeout-minutes: 360
     runs-on: 'self-hosted'
     steps:
       - name: Fetch sources
