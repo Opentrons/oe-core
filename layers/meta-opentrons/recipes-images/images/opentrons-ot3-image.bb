@@ -45,6 +45,8 @@ SYSTEMFS_DIR = "${WORKDIR}/systemfs"
 USERFS_DIR = "${WORKDIR}/userfs"
 SYSTEMFS_OUTPUT = "${IMGDEPLOYDIR}/systemfs.ext4"
 USERFS_OUTPUT = "${IMGDEPLOYDIR}/userfs.ext4"
+# max rootfs partition size in mb
+MAX_SYSTEMFS_SIZE = "1536"
 
 # create the opentrons ot3 manifest (VERSION.json) file
 python do_create_opentrons_manifest() {
@@ -103,15 +105,28 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
 
-    # get size of the filesystem trees
-    SYSTEMFS_SIZE=$(du -Lbks ${SYSTEMFS_DIR} | cut -f1)
-    USERFS_SIZE=$(du -Lbks ${USERFS_DIR} | cut -f1)
- 
-    # create sparse file a bit larger than source dir
-    dd if=/dev/zero of=${SYSTEMFS_OUTPUT} seek=${SYSTEMFS_SIZE}w bs=1024 count=0
+    # calculate size of the filesystem trees
+    SYSTEMFS_SIZE=$(du -ks ${SYSTEMFS_DIR} | cut -f1)
+    USERFS_SIZE=$(du -ks ${USERFS_DIR} | cut -f1)
+
+    # add 3% to the actual size so mkfs has extra space
+    SYSTEMFS_SIZE=`expr $SYSTEMFS_SIZE + $SYSTEMFS_SIZE \* 3 / 100`
+    USERFS_SIZE=`expr $USERFS_SIZE + $USERFS_SIZE \* 3 / 100`
+
+    # make sure we dont go over the rootfs partition size limit
+    MAX_SYSTEMFS_SIZE_BYTES=`expr ${MAX_SYSTEMFS_SIZE} \* 100`
+    bbnote "CALCULATED: ${SYSTEMFS_SIZE} MAX_SIZE: ${MAX_SYSTEMFS_SIZE_BYTES}"
+    if [ "${SYSTEMFS_SIZE}" -gt "${MAX_SYSTEMFS_SIZE_BYTES}" ]; then
+        bberror "Calculated rootfs is larger than partition size - ${SYSTEMFS_SIZE} > ${MAX_SYSTEMFS_SIZE_BYTES}"
+        exit 1
+    fi
+
+    # create the systemfs
+    dd if=/dev/zero of=${SYSTEMFS_OUTPUT} seek=${SYSTEMFS_SIZE} count=60 bs=1024
     mkfs.ext4 -F ${SYSTEMFS_OUTPUT} -d ${SYSTEMFS_DIR}
 
-    dd if=/dev/zero of=${USERFS_OUTPUT} seek=${USERFS_SIZE}b bs=1024 count=0
+    # create the userfs
+    dd if=/dev/zero of=${USERFS_OUTPUT} seek=${USERFS_SIZE} count=60 bs=1024
     mkfs.ext4 -F ${USERFS_OUTPUT} -d ${USERFS_DIR}
 
     # compress the systemfs.ext4
@@ -147,7 +162,7 @@ python do_create_tezi_manifest(){
                     }
                 },
                 {
-                    "partition_size_nominal": 1536,
+                    "partition_size_nominal": int(d.getVar("MAX_SYSTEMFS_SIZE")),
                     "want_maximised": False,
                     "content": {
                         "label": "RFS",
@@ -157,7 +172,7 @@ python do_create_tezi_manifest(){
                     }
                 },
                 {
-                    "partition_size_nominal": 1536,
+                    "partition_size_nominal": int(d.getVar('MAX_SYSTEMFS_SIZE')),
                     "want_maximised": False,
                     "content": {
                         "label": "RFS2",
