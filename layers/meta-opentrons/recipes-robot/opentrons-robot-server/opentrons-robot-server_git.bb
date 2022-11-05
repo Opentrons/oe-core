@@ -29,7 +29,7 @@ PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq "
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = "./../hardware"
 
-do_compile_append () {
+do_compile_append() {
     # create json file to be used in VERSION.json
     python3 ${S}/scripts/python_build_utils.py robot-server dump_br_version > ${DEPLOY_DIR_IMAGE}/opentrons-robot-server-version.json
     # dont include scripts

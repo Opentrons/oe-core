@@ -41,10 +41,8 @@ IMAGE_INSTALL += " \
 export IMAGE_BASENAME = "opentrons-ot3-image"
 MACHINE_NAME ?= "${MACHINE}"
 IMAGE_NAME = "${MACHINE_NAME}_${IMAGE_BASENAME}"
-SYSTEMFS_DIR = "${WORKDIR}/systemfs"
 USERFS_DIR = "${WORKDIR}/userfs"
-SYSTEMFS_OUTPUT = "${IMGDEPLOYDIR}/systemfs.ext4"
-USERFS_OUTPUT = "${IMGDEPLOYDIR}/userfs.ext4"
+USERFS_OUTPUT = "${DEPLOY_DIR_IMAGE}/userfs.ext4"
 # max rootfs partition size in mb
 MAX_SYSTEMFS_SIZE = "1536"
 
@@ -77,6 +75,7 @@ python do_create_opentrons_manifest() {
     with open(opentrons_json_output, 'w') as fh:
         json.dump(opentrons_manifest, fh, indent=4)
 }
+ROOTFS_POSTPROCESS_COMMAND += "do_create_opentrons_manifest; "
 
 # add the rootfs version to the welcome banner
 fakeroot do_add_rootfs_version() {
@@ -94,50 +93,28 @@ fakeroot do_add_rootfs_version() {
     # TODO(ba, 2022-10-18): add proper mechanism for setting DEPLOYMENT
     printf "DEPLOYMENT=development\n" >> "${IMAGE_ROOTFS}/etc/machine-info"
 }
+ROOTFS_POSTPROCESS_COMMAND += "do_add_rootfs_version; "
 
 fakeroot do_create_filesystem() {
-    # this will create the systemfs tree
-    rsync -aH --chown=root:root ${IMAGE_ROOTFS}/ ${SYSTEMFS_DIR} \
-    --exclude='/home/*' --exclude '/var/*' --delete-excluded
-
     # create the userfs tree
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/home ${USERFS_DIR}/
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
 
     # calculate size of the filesystem trees
-    SYSTEMFS_SIZE=$(du -ks ${SYSTEMFS_DIR} | cut -f1)
     USERFS_SIZE=$(du -ks ${USERFS_DIR} | cut -f1)
 
     # add 3% to the actual size so mkfs has extra space
-    SYSTEMFS_SIZE=`expr $SYSTEMFS_SIZE + $SYSTEMFS_SIZE \* 3 / 100`
     USERFS_SIZE=`expr $USERFS_SIZE + $USERFS_SIZE \* 3 / 100`
-
-    # make sure we dont go over the rootfs partition size limit
-    MAX_SYSTEMFS_SIZE_BYTES=`expr ${MAX_SYSTEMFS_SIZE} \* 100`
-    bbnote "CALCULATED: ${SYSTEMFS_SIZE} MAX_SIZE: ${MAX_SYSTEMFS_SIZE_BYTES}"
-    if [ "${SYSTEMFS_SIZE}" -gt "${MAX_SYSTEMFS_SIZE_BYTES}" ]; then
-        bberror "Calculated rootfs is larger than partition size - ${SYSTEMFS_SIZE} > ${MAX_SYSTEMFS_SIZE_BYTES}"
-        exit 1
-    fi
-
-    # create the systemfs
-    dd if=/dev/zero of=${SYSTEMFS_OUTPUT} seek=${SYSTEMFS_SIZE} count=60 bs=1024
-    mkfs.ext4 -F ${SYSTEMFS_OUTPUT} -d ${SYSTEMFS_DIR}
 
     # create the userfs
     dd if=/dev/zero of=${USERFS_OUTPUT} seek=${USERFS_SIZE} count=60 bs=1024
     mkfs.ext4 -F ${USERFS_OUTPUT} -d ${USERFS_DIR}
 
-    # compress the systemfs.ext4
-    xz -f -k -c -9 ${XZ_DEFAULTS} --check=crc32 ${SYSTEMFS_OUTPUT} > ${DEPLOY_DIR_IMAGE}/systemfs.xz
-
-    # create the systemfs and userfs tarball
-    tar --xattrs --xattrs-include=* --sort=name --format=posix --numeric-owner -cf ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.systemfs.tar -C ${SYSTEMFS_DIR} ./
+    # create the userfs tarball
     tar --xattrs --xattrs-include=* --sort=name --format=posix --numeric-owner -cf ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar -C ${USERFS_DIR} ./
 
     # compress the tarball
-    xz -f -k -c -9 ${XZ_DEFAULTS} --check=crc32 ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.systemfs.tar > ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.systemfs.tar.xz
     xz -f -k -c -9 ${XZ_DEFAULTS} --check=crc32 ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar > ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar.xz
 }
 
@@ -168,7 +145,7 @@ python do_create_tezi_manifest(){
                         "label": "RFS",
                         "filesystem_type": "ext4",
                         "mkfs_options": "-E nodiscard",
-                        "filename": "%s.systemfs.tar.xz" % (d.getVar('IMAGE_LINK_NAME')),
+                        "filename": "%s.tar.xz" % (d.getVar('IMAGE_LINK_NAME')),
                     }
                 },
                 {
@@ -178,7 +155,7 @@ python do_create_tezi_manifest(){
                         "label": "RFS2",
                         "filesystem_type": "ext4",
                         "mkfs_options": "-E nodiscard",
-                        "filename": "%s.systemfs.tar.xz" % (d.getVar('IMAGE_LINK_NAME')),
+                        "filename": "%s.tar.xz" % (d.getVar('IMAGE_LINK_NAME')),
                     }
                 },
                 {
@@ -194,6 +171,11 @@ python do_create_tezi_manifest(){
     if os.path.exists(tezi_manifest_path):
         with open(tezi_manifest_path, 'r') as fd:
             tezi_manifest = json.load(fd)
+
+            # enable image autoinstall
+            tezi_manifest['autoinstall'] = True
+
+            # setup the partitions
             for blockdev in tezi_manifest.get('blockdevs', []):
                 if 'mmcblk0' in blockdev.get('name'):
                     blockdev['partitions'] = ot3_partitions
@@ -211,13 +193,14 @@ fakeroot do_create_tezi_ot3() {
     's,^,${TEZI_IMAGE_NAME}-Tezi_${TEZI_VERSION}/,' -chf  \
     ${DEPLOY_DIR_IMAGE}/${TEZI_IMAGE_NAME}-Tezi_${TEZI_VERSION}.tar -C \
     ${DEPLOY_DIR_IMAGE} toradexlinux.png marketing.tar prepare.sh wrapup.sh \
-    LA_OPT_NXP_SW.html ${IMAGE_LINK_NAME}.systemfs.tar.xz ${IMAGE_LINK_NAME}.userfs.tar.xz \
+    LA_OPT_NXP_SW.html ${IMAGE_LINK_NAME}.tar.xz ${IMAGE_LINK_NAME}.userfs.tar.xz \
     ${IMAGE_LINK_NAME}.bootfs.tar.xz u-boot-initial-env-sd imx-boot image.json
 }
 
 # create the opentrons ot3 image
 do_create_opentrons_ot3() {
     cd ${DEPLOY_DIR_IMAGE}/
+    mv opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
 
     # compute the sha256sum
     sha256sum systemfs.xz | cut -d " " -f 1 > systemfs.xz.sha256
@@ -227,23 +210,12 @@ do_create_opentrons_ot3() {
 }
 
 do_create_filesystem[depends] += "virtual/fakeroot-native:do_populate_sysroot"
-do_add_rootfs_version[depends] += "virtual/fakeroot-native:do_populate_sysroot"
-do_add_rootfs_version[prefuncs] += "do_create_opentrons_manifest"
-
-do_create_tezi_manifest[dirs] += "${DEPLOY_DIR_IMAGE}"
 do_create_tezi_manifest[prefuncs] += "do_image_teziimg"
 
 do_create_tezi_ot3[depends] += "virtual/fakeroot-native:do_populate_sysroot"
-do_create_tezi_ot3[dirs] += "${DEPLOY_DIR_IMAGE}"
 do_create_tezi_ot3[prefuncs] += "do_image_teziimg do_create_filesystem"
 
-do_create_opentrons_manifest[cleandirs] += "${DIPLOY_DIR_IMAGE}/opentrons-versions/"
-do_create_opentrons_ot3[prefuncs] += "do_create_filesystem"
-do_create_opentrons_ot3[dirs] += "${DIPLOY_DIR_IMAGE}"
-
-addtask do_create_opentrons_manifest after do_image_complete before do_populate_lic_deploy
-addtask do_add_rootfs_version after do_create_opentrons_manifest before do_populate_lic_deploy
-addtask do_create_filesystem after do_add_rootfs_version before do_populate_lic_deploy
+addtask do_create_filesystem after do_image_complete before do_populate_lic_deploy
 addtask do_create_tezi_manifest after do_create_filesystem before do_populate_lic_deploy
 addtask do_create_tezi_ot3 after do_create_tezi_manifest before do_populate_lic_deploy
 addtask do_create_opentrons_ot3 after do_create_tezi_ot3 before do_populate_lic_deploy

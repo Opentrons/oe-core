@@ -10,13 +10,18 @@ SRC_URI_append = " file://userfs.mount \
 	file://var.mount \
 	file://data.mount \
 "
-FILES_${PN} += "${systemd_unitdir}/system/userfs.mount \
+FILES_${PN} += "/userfs \
+        ${systemd_unitdir}/system/userfs.mount \
         ${systemd_unitdir}/system/home.mount \
         ${systemd_unitdir}/system/var.mount \
         ${systemd_unitdir}/system/data.mount \
 "
 
 do_install_append() {
+  # create the userfs dir
+  install -d ${D}/userfs
+
+  # install the mount files
   install -d ${D}/${systemd_unitdir}/system
   install -m 0644 ${WORKDIR}/userfs.mount ${D}/${systemd_unitdir}/system
   install -m 0644 ${WORKDIR}/home.mount ${D}/${systemd_unitdir}/system
