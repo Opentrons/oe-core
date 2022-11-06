@@ -37,6 +37,7 @@ IMAGE_INSTALL += " \
     python3 python3-misc python3-modules \
  "
 
+ROBOT_MODEL = "OT-3 Standard"
 # Prefix to the resulting deployable tarball name
 export IMAGE_BASENAME = "opentrons-ot3-image"
 MACHINE_NAME ?= "${MACHINE}"
@@ -52,7 +53,13 @@ python do_create_opentrons_manifest() {
     import json
     import os
 
-    opentrons_manifest = {}
+    opentrons_manifest = {
+        'robot_model': d.getVar('ROBOT_MODEL'),
+        'build_type': os.getenv('OT_BUILD_TYPE', 'unknown/dev'),
+        'openembedded_version': d.getVar('version', 'unknown'),
+        'openembedded_sha': d.getVar('version', 'unknown'),
+        'openembedded_branch': d.getVar('version', 'unknown')
+    }
     opentrons_json_output = "%s/VERSION.json" % d.getVar('DEPLOY_DIR_IMAGE')
     robot_server_version = "%s/opentrons-robot-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
     update_server_version = "%s/opentrons-update-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
