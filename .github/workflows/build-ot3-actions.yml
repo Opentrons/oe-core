@@ -32,7 +32,7 @@ jobs:
           docker build -f ./Dockerfile --tag "ot3-image:latest" $tmp_dir
       - name: Apply CI config overrides
         run: |
-          echo "" >> .build/conf/local.conf
+          echo "" >> ./build/conf/local.conf
           echo "DL_DIR = /volumes/cache/downloads" >> ./build/conf/local.conf
           echo "SSTATE_DIR = /volumes/cache/sstate" >> ./build/conf/local.conf
       - name: Download sources
