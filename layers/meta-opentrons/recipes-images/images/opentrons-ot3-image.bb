@@ -54,7 +54,7 @@ python do_create_opentrons_manifest() {
     import os
 
     opentrons_manifest = {
-        'robot_model': d.getVar('ROBOT_MODEL'),
+        'robot_type': d.getVar('ROBOT_TYPE'),
         'build_type': os.getenv('OT_BUILD_TYPE', 'unknown/dev'),
         'openembedded_version': d.getVar('version', 'unknown'),
         'openembedded_sha': d.getVar('version', 'unknown'),
