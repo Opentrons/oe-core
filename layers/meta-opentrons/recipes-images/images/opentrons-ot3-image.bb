@@ -108,6 +108,9 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
 
+    # cleanup userfs dirs from rootfs
+    rm -rf ${IMAGE_ROOTFS}/{home/*,var/*}
+
     # calculate size of the filesystem trees
     USERFS_SIZE=$(du -ks ${USERFS_DIR} | cut -f1)
 
