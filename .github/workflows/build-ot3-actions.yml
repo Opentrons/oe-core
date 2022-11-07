@@ -33,8 +33,8 @@ jobs:
       - name: Apply CI config overrides
         run: |
           echo "" >> ./build/conf/local.conf
-          echo "DL_DIR = /volumes/cache/downloads" >> ./build/conf/local.conf
-          echo "SSTATE_DIR = /volumes/cache/sstate" >> ./build/conf/local.conf
+          echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
+          echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
       - name: Download sources
         run: |
           docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=/home/ec2-user/actions-runner/cache,dst=/volumes/cache,consistency=delegated ot3-image:latest opentrons-ot3-image --runall=fetch
