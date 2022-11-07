@@ -26,6 +26,7 @@ shift
 trap cleanup EXIT
 
 sudo chown -hR $USER_NAME:$USER_NAME ${THISDIR} && chmod -R ug+rw ${THISDIR}
+sudo chown -hR $USER_NAME:$USER_NAME /volumes/cache && chmod -R ug+rw /volumes/cache
 pushd ${THISDIR}
 patch -f ./layers/meta-toradex-nxp/recipes-kernel/linux/linux-toradex_5.4-2.3.x.bb ./linux-toradex_5.4-2.3.x.patch
 
