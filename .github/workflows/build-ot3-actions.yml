@@ -38,7 +38,7 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          synccommand=aws s3 sync s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
+          synccommand="aws s3 sync s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
           echo $synccommand
           $synccommand
       - name: Download sources
