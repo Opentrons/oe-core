@@ -22,9 +22,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.ROBOT_STACK_AWS_REGION }}
       - name: Build container
         run: |
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
