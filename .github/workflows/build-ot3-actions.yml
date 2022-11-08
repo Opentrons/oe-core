@@ -38,7 +38,7 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          synccommand="aws s3 sync ${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
+          synccommand=aws s3 sync s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
           echo $synccommand
           $synccommand
       - name: Download sources
@@ -57,7 +57,7 @@ jobs:
       - name: Push S3 cache
         shell: bash
         run: |
-          aws s3 sync ${LOCAL_CACHE:-./cache} ${S3_CACHE_ARN/arn:aws:s3:::/}
+          aws s3 sync ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
       - name: Gather results
         run: |
           mkdir -p build/deploy/opentrons
@@ -69,4 +69,4 @@ jobs:
         shell: bash
         run: |
           cd build/deploy/
-          aws s3 cp --acl=public-read --recursive opentrons ${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          aws s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
