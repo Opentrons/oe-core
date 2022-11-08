@@ -14,8 +14,8 @@ jobs:
     timeout-minutes: 480
     strategy:
       matrix:
-        build-env: ['dev']
-    runs-on: ['self-hosted', ${{matrix.build-env}}]
+        build_env: ['dev']
+    runs-on: ['self-hosted', ${{matrix.build_env}}]
     steps:
       - name: Fetch sources
         uses: 'actions/checkout@v3'
@@ -30,7 +30,7 @@ jobs:
           aws configure set output json --profile identity
         shell: bash
       - name: Add dev infra config
-        if: matrix.build-env == 'dev'
+        if: matrix.build_env == 'dev'
         run: |
           aws configure set region us-east-2 --profile deploy
           aws configure set role_arn arn:aws:iam::699250785121:role/administrator --profile deploy
