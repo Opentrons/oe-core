@@ -38,7 +38,9 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          aws s3 sync ${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}
+          synccommand="aws s3 sync ${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
+          echo $synccommand
+          $synccommand
       - name: Download sources
         run: |
           docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated ot3-image:latest opentrons-ot3-image --runall=fetch
@@ -48,6 +50,10 @@ jobs:
       - name: Prune images
         if: always()
         run: docker image prune -af
+      - name: Remove poisoned cache
+        if: failure()
+        run: |
+          rm -rf ${LOCAL_CACHE:-./cache}/*
       - name: Push S3 cache
         shell: bash
         run: |
