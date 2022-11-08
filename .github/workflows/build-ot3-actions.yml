@@ -12,7 +12,10 @@ jobs:
   run-build:
     name: 'Building images'
     timeout-minutes: 480
-    runs-on: 'self-hosted'
+    strategy:
+      matrix:
+        - build-env: ['dev']
+    runs-on: ['self-hosted', ${{matrix.build-env}}]
     steps:
       - name: Fetch sources
         uses: 'actions/checkout@v3'
@@ -20,11 +23,25 @@ jobs:
           submodules: true
           fetch-depth: 0
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.ROBOT_STACK_AWS_REGION }}
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }} --profile identity
+          aws configure set aws_secret_access_key ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }} --profile identity
+          aws configure set region us-east-2 --profile identity
+          aws configure set output json --profile identity
+        shell: bash
+      - name: Add dev infra config
+        if: matrix.build-env == 'dev'
+        run: |
+          aws configure set region us-east-2 --profile deploy
+          aws configure set role_arn arn:aws:iam::699250785121:role/administrator --profile deploy
+          aws configure set source_profile identity --profile deploy
+      - name: add staging or prod infra config
+        if: matrix.build_env != 'dev'
+        run: |
+          aws configure set region us-east-2 --profile deploy
+          aws configure set role_arn arn:aws:iam::879285218407:role/administrator --profile deploy
+          aws configure set source_profile identity --profile deploy
+        shell: bash
       - name: Build container
         run: |
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
@@ -38,7 +55,7 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          synccommand="aws s3 sync s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
+          synccommand="aws --profile=deploy s3 sync s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
           echo $synccommand
           $synccommand
       - name: Download sources
@@ -57,7 +74,7 @@ jobs:
       - name: Push S3 cache
         shell: bash
         run: |
-          aws s3 sync ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
+          aws --profile=deploy s3 sync ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
       - name: Gather results
         run: |
           mkdir -p build/deploy/opentrons
@@ -69,4 +86,4 @@ jobs:
         shell: bash
         run: |
           cd build/deploy/
-          aws s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          aws --profile=deploy s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
