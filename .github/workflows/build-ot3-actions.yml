@@ -10,11 +10,11 @@ on:
 
 jobs:
   run-build:
-    name: 'Building images'
-    timeout-minutes: 480
     strategy:
       matrix:
-        build_env: [dev]
+        build_env: ['dev']
+    name: 'Building images on ${{ matrix.build_env }}'
+    timeout-minutes: 480
     runs-on: [self-hosted, ${{matrix.build_env}}]
     steps:
       - name: Fetch sources
