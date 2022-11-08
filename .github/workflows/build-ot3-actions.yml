@@ -12,7 +12,7 @@ jobs:
   run-build:
     strategy:
       matrix:
-        build_env: ['dev']
+        build_env: ['stage-dev']
     name: 'Building images on ${{ matrix.build_env }}'
     timeout-minutes: 480
     runs-on: ['self-hosted', '${{matrix.build_env}}']
@@ -30,13 +30,13 @@ jobs:
           aws configure set output json --profile identity
         shell: bash
       - name: Add dev infra config
-        if: matrix.build_env == 'dev'
+        if: matrix.build_env == 'stage-dev'
         run: |
           aws configure set region us-east-2 --profile deploy
           aws configure set role_arn arn:aws:iam::699250785121:role/administrator --profile deploy
           aws configure set source_profile identity --profile deploy
       - name: add staging or prod infra config
-        if: matrix.build_env != 'dev'
+        if: matrix.build_env != 'stage-dev'
         run: |
           aws configure set region us-east-2 --profile deploy
           aws configure set role_arn arn:aws:iam::879285218407:role/administrator --profile deploy
