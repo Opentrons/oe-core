@@ -35,24 +35,32 @@ jobs:
           echo "" >> ./build/conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
+      - name: Pull S3 cache
+        shell: bash
+        run: |
+          aws s3 sync ${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}
       - name: Download sources
         run: |
-          docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=/home/ec2-user/actions-runner/cache,dst=/volumes/cache,consistency=delegated ot3-image:latest opentrons-ot3-image --runall=fetch
+          docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
         run: |
-          docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=/home/ec2-user/actions-runner/cache,dst=/volumes/cache,consistency=delegated ot3-image:latest
+          docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated ot3-image:latest
       - name: Prune images
         if: always()
         run: docker image prune -af
+      - name: Push S3 cache
+        shell: bash
+        run: |
+          aws s3 sync ${LOCAL_CACHE:-./cache} ${S3_CACHE_ARN/arn:aws:s3:::/}
       - name: Gather results
         run: |
           mkdir -p build/deploy/opentrons
-          find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/opentrons-image.tar \;
-          find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.bmap -exec cp {} build/deploy/opentrons \;
-          find ./build/deploy/images -name opentrons-ot3-image-verdin-imx8mm.wic.gz -exec cp {} build/deploy/opentrons \;
+          find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/ot3-fullimage.tar \;
+          find ./build/deploy/images -name "ot3-system.zip" -exec cp {} build/deploy/opentrons \;
+          find ./build/deploy/images -name "VERSION.json" -exec cp {} build/deploy/opentrons \;
           tar czf ./build/deploy/opentrons/buildstats.tar.gz ./build/tmp/buildstats
-      - name: Upload results
-        uses: actions/upload-artifact@v3
-        with:
-          name: opentrons-image
-          path: build/deploy/opentrons/**/*
+      - name: Upload results to S3
+        shell: bash
+        run: |
+          cd build/deploy/
+          aws s3 cp --acl=public-read --recursive opentrons ${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
