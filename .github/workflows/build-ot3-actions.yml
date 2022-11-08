@@ -14,8 +14,8 @@ jobs:
     timeout-minutes: 480
     strategy:
       matrix:
-        build_env: ['dev']
-    runs-on: ['self-hosted', ${{matrix.build_env}}]
+        build_env: [dev]
+    runs-on: [self-hosted, ${{matrix.build_env}}]
     steps:
       - name: Fetch sources
         uses: 'actions/checkout@v3'
