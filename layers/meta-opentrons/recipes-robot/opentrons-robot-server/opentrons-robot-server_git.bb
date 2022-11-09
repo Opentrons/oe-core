@@ -30,8 +30,6 @@ PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = "./../hardware"
 
 do_compile_append() {
-    # create json file to be used in VERSION.json
-    python3 ${S}/scripts/python_build_utils.py robot-server dump_br_version > ${DEPLOY_DIR_IMAGE}/opentrons-robot-server-version.json
     # dont include scripts
     rm -rf ${PIPENV_APP_BUNDLE_SOURCE_VENV}/opentrons/resources/scripts
 }
@@ -39,6 +37,10 @@ do_compile_append() {
 addtask do_write_systemd_dropfile after do_compile before do_install
 
 do_install_append () {
+    # create json file to be used in VERSION.json
+    install -d ${D}/opentrons_versions
+    python3 ${S}/scripts/python_build_utils.py robot-server dump_br_version > ${D}/opentrons_versions/opentrons-robot-server-version.json
+
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-robot-server.service ${D}${systemd_system_unitdir}/opentrons-robot-server.service
     install -d ${D}${systemd_system_unitdir}/opentrons-robot-server.service.d

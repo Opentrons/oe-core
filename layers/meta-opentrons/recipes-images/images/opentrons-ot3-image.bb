@@ -5,7 +5,7 @@ LICENSE = "apache-2"
 
 inherit core-image image_type_tezi
 
-DEPENDS += "rsync-native zip-native"
+DEPENDS += "rsync-native zip-native opentrons-robot-server opentrons-update-server"
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
 IMAGE_LINGUAS = "en-us"
@@ -60,29 +60,31 @@ python do_create_opentrons_manifest() {
         'openembedded_sha': d.getVar('version', 'unknown'),
         'openembedded_branch': d.getVar('version', 'unknown')
     }
-    opentrons_json_output = "%s/VERSION.json" % d.getVar('DEPLOY_DIR_IMAGE')
-    robot_server_version = "%s/opentrons-robot-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
-    update_server_version = "%s/opentrons-update-server-version.json" % (d.getVar('DEPLOY_DIR_IMAGE'))
 
-    # grab the versions
-    opentrons_versions = [robot_server_version, update_server_version]
-    for version_path in opentrons_versions:
-        if not os.path.exists(version_path):
-            bb.error("version file does not exist - %s" % version_path)
+    # check that we have the expected version files and write them to the VERSION.json
+    expected_opentrons_versions = ["opentrons-robot-server-version.json", \
+                                   "opentrons-update-server-version.json"]
+
+    opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')
+    for version_file in os.listdir(opentrons_versions_dir):
+        if version_file not in expected_opentrons_versions:
+            bb.error("version file does not exist - %s" % version_file)
             exit()
 
         try:
-           with open(version_path, 'r') as fh:
+           version_filepath = os.path.join(opentrons_versions_dir, version_file)
+           with open(version_filepath, 'r') as fh:
                 opentrons_manifest.update(json.load(fh))
-        except json.JSONDecodeError:
-            bb.error("Could not load opentrons version file - %s" % version_path)
+        except (FileNotFoundError, json.JSONDecodeError):
+            bb.error("Could not load opentrons version file - %s" % version_filepath)
             exit()
 
     # create the VERSION.json file
+    opentrons_json_output = "%s/VERSION.json" % d.getVar('DEPLOY_DIR_IMAGE')
     with open(opentrons_json_output, 'w') as fh:
         json.dump(opentrons_manifest, fh, indent=4)
 }
-ROOTFS_POSTPROCESS_COMMAND += "do_create_opentrons_manifest; "
+ROOTFS_PREPROCESS_COMMAND += "do_create_opentrons_manifest; "
 
 # add the rootfs version to the welcome banner
 fakeroot do_add_rootfs_version() {
@@ -108,8 +110,8 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
 
-    # cleanup userfs dirs from rootfs
-    rm -rf ${IMAGE_ROOTFS}/{home/*,var/*}
+    # cleanup dirs from rootfs
+    rm -rf ${IMAGE_ROOTFS}/{home/*,var/*,unit_tests,opentrons_versions}
 
     # calculate size of the filesystem trees
     USERFS_SIZE=$(du -ks ${USERFS_DIR} | cut -f1)
