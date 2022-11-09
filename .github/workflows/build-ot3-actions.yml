@@ -84,6 +84,18 @@ jobs:
           tar czf ./build/deploy/opentrons/buildstats.tar.gz ./build/tmp/buildstats
       - name: Upload results to S3
         shell: bash
+        id: 'upload-results'
         run: |
           cd build/deploy/
           aws --profile=deploy s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          root_url=${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          echo "{version-file-url}={$root_url/VERSION.json}" >> $GITHUB_OUTPUT
+          echo "{system-url}={$root_url/ot3-system.zip}" >> $GITHUB_OUTPUT
+          echo "{fullimage-url}={$root_url/ot3-fullimage.tar}" >> $GITHUB_OUTPUT
+      - name: Post results
+        if: ${{ matrix.build_env == 'stage-prod' }}
+        uses: slackapi/slack-github-action@v1.14.0
+        with:
+          payload: "{\"s3-url\":\"https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"full-image\":\"${{steps.upload-results.outputs.fullimage-url}}\", \"system-update\":\"${{steps.upload-results.outputs.system-url}}\", \"version-file\":\"${{steps.upload-results.outputs.version-file-url}}\"}"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
