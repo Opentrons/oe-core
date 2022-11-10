@@ -26,19 +26,23 @@ runs:
         aws configure set aws_secret_access_key ${{ inputs.secret_access_key }} --profile identity
         aws configure set region ${{ inputs.region }} --profile identity
         aws configure set output json --profile identity
+      shell: bash
     - name: configure dev creds
       if: ${{ contains('dev', inputs.stage) }}
       run: |
         aws configure set region us-east-2 --profile deploy
         aws configure set role_arn arn:aws:iam::699250785121:role/administrator --profile deploy
         aws configure set source_profile identity --profile deploy
+      shell: bash
     - name: configure staging or prod creds
       if: ${{ !contains('dev', inputs.stage) }}
       run: |
         aws configure set region us-east-2 --profile deploy
         aws configure set role_arn arn:aws:iam::879285218407:role/administrator --profile deploy
         aws configure set source_profile identity --profile deploy
+      shell: bash
     - name: set output profile
       id: decide-profile-name
       run: |
         echo "profile_name=deploy" >> $GITHUB_OUTPUT
+      shell: bash
