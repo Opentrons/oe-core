@@ -30,7 +30,6 @@ jobs:
           secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           stage: ${{ matrix.build_env }}
-        shell: bash
       - name: Build container
         run: |
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
