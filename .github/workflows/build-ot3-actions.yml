@@ -57,7 +57,7 @@ jobs:
         if: always()
         run: docker image prune -af
       - name: Remove poisoned cache
-        if: failure()
+        if: ${{ !success() }}
         run: |
           rm -rf ${LOCAL_CACHE:-./cache}/*
       - name: Push S3 cache
