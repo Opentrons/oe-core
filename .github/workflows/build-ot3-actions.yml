@@ -39,6 +39,7 @@ jobs:
         run: |
           echo "" >> ./build/conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
+          echo 'GIT_DIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
       - name: Pull S3 cache
         shell: bash
@@ -62,7 +63,7 @@ jobs:
       - name: Push S3 cache
         shell: bash
         run: |
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 sync --delete ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 sync --delete --no-follow-symlinks ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
       - name: Gather results
         run: |
           mkdir -p build/deploy/opentrons
