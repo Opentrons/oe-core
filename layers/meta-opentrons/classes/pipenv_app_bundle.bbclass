@@ -6,6 +6,9 @@ inherit distutils3-base
 DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native "
 RDEPENDS_${PN} += " python3 python3-modules"
 
+# directory for version file output
+SYSROOT_DIRS += "/opentrons_versions"
+
 # Whether pipenv or poetry is the appropriate underlying dependency manager
 # parse
 PIPENV_APP_BUNDLE_PACKAGE_SOURCE ??= "pipenv"
@@ -170,4 +173,4 @@ do_install () {
         -exec install "{}" "${D}${PIPENV_APP_BUNDLE_DIR}/{}" \;
 }
 
-FILES_${PN} = "${PIPENV_APP_BUNDLE_DIR}"
+FILES_${PN} = "${PIPENV_APP_BUNDLE_DIR} /opentrons_versions"
