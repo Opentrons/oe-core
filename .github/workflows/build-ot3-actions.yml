@@ -23,7 +23,7 @@ jobs:
           submodules: true
           fetch-depth: 0
       - name: Configure AWS Credentials
-        uses: '.github/actions/aws-credentials'
+        uses: './.github/actions/aws-credentials'
         id: aws
         with:
           access_key_id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
