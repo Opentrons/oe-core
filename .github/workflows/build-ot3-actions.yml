@@ -23,24 +23,13 @@ jobs:
           submodules: true
           fetch-depth: 0
       - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }} --profile identity
-          aws configure set aws_secret_access_key ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }} --profile identity
-          aws configure set region us-east-2 --profile identity
-          aws configure set output json --profile identity
-        shell: bash
-      - name: Add dev infra config
-        if: matrix.build_env == 'stage-dev'
-        run: |
-          aws configure set region us-east-2 --profile deploy
-          aws configure set role_arn arn:aws:iam::699250785121:role/administrator --profile deploy
-          aws configure set source_profile identity --profile deploy
-      - name: add staging or prod infra config
-        if: matrix.build_env != 'stage-dev'
-        run: |
-          aws configure set region us-east-2 --profile deploy
-          aws configure set role_arn arn:aws:iam::879285218407:role/administrator --profile deploy
-          aws configure set source_profile identity --profile deploy
+        uses: '.github/actions/aws-credentials'
+        id: aws
+        with:
+          access_key_id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
+          region: us-east-2
+          stage: ${{ matrix.build_env }}
         shell: bash
       - name: Build container
         run: |
@@ -55,7 +44,7 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          synccommand="aws --profile=deploy s3 sync s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
+          synccommand="aws --profile=${{ steps.aws.outputs.profile_name }} s3 sync s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
           echo $synccommand
           $synccommand
       - name: Download sources
@@ -74,7 +63,7 @@ jobs:
       - name: Push S3 cache
         shell: bash
         run: |
-          aws --profile=deploy s3 sync ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 sync ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
       - name: Gather results
         run: |
           mkdir -p build/deploy/opentrons
@@ -87,7 +76,7 @@ jobs:
         id: 'upload-results'
         run: |
           cd build/deploy/
-          aws --profile=deploy s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "version_file_url=$root_url/VERSION.json" >> $GITHUB_OUTPUT
