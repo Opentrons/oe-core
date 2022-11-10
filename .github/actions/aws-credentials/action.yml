@@ -28,7 +28,7 @@ runs:
         aws configure set output json --profile identity
       shell: bash
     - name: configure dev creds
-      if: ${{ contains('dev', inputs.stage) }}
+      if: ${{ contains(inputs.stage, 'dev') }}
       run: |
         echo "setting creds for dev based on stage being ${{ inputs.stage }}"
         aws configure set region us-east-2 --profile deploy
@@ -36,7 +36,7 @@ runs:
         aws configure set source_profile identity --profile deploy
       shell: bash
     - name: configure staging or prod creds
-      if: ${{ !contains('dev', inputs.stage) }}
+      if: ${{ !contains(inputs.stage, 'dev') }}
       run: |
         echo "setting creds for prod and staging based on stage being ${{ inputs.stage }}"
         aws configure set region us-east-2 --profile deploy
