@@ -37,7 +37,7 @@ IMAGE_INSTALL += " \
     python3 python3-misc python3-modules \
  "
 
-ROBOT_MODEL = "OT-3 Standard"
+ROBOT_TYPE = "OT-3 Standard"
 # Prefix to the resulting deployable tarball name
 export IMAGE_BASENAME = "opentrons-ot3-image"
 MACHINE_NAME ?= "${MACHINE}"
