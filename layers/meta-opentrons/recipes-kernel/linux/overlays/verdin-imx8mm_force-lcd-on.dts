@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: Apache-2
+/*
+ * Copyright 2020-2022 Opentrons
+ */
+
+// Pull DISPL_RST_CTRL_SOM (SODIMM_44) high so the LCD turns on during startup
+
+/dts-v1/;
+/plugin/;
+
+#include <imx8mm-pinfunc.h>
+#include "dt-bindings/gpio/gpio.h"
+
+/ {
+	compatible = "toradex,verdin-imx8mm";
+};
+
+&pinctrl_sai5 {
+	fsl,pins = <
+		MX8MM_IOMUXC_SAI5_RXD1_GPIO3_IO22               0x146   /* SODIMM 44 */
+	>;
+};
+
+&sai5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_sai5>;
+	enable-gpios = <&gpio3 22 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+};
