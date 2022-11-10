@@ -43,7 +43,7 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          synccommand="aws --profile=${{ steps.aws.outputs.profile_name }} s3 sync s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
+          synccommand="aws --profile=${{ steps.aws.outputs.profile_name }} s3 sync --delete s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
           echo $synccommand
           $synccommand
       - name: Download sources
@@ -62,7 +62,7 @@ jobs:
       - name: Push S3 cache
         shell: bash
         run: |
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 sync ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 sync --delete ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
       - name: Gather results
         run: |
           mkdir -p build/deploy/opentrons
