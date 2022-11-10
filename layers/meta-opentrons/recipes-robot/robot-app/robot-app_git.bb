@@ -22,8 +22,9 @@ do_configure(){
 
 do_compile(){
     export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
-    make -C app dist
-    make -C app-shell lib
+    cd ${S}
+    make -C ${S}/app dist
+    make -C ${S}/app-shell lib
     cd ${S}/app-shell
     NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
