@@ -30,6 +30,7 @@ runs:
     - name: configure dev creds
       if: ${{ contains('dev', inputs.stage) }}
       run: |
+        echo "setting creds for dev based on stage being ${{ inputs.stage }}"
         aws configure set region us-east-2 --profile deploy
         aws configure set role_arn arn:aws:iam::699250785121:role/administrator --profile deploy
         aws configure set source_profile identity --profile deploy
@@ -37,6 +38,7 @@ runs:
     - name: configure staging or prod creds
       if: ${{ !contains('dev', inputs.stage) }}
       run: |
+        echo "setting creds for prod and staging based on stage being ${{ inputs.stage }}"
         aws configure set region us-east-2 --profile deploy
         aws configure set role_arn arn:aws:iam::879285218407:role/administrator --profile deploy
         aws configure set source_profile identity --profile deploy
