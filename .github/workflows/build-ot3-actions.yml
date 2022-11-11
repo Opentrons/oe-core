@@ -50,15 +50,17 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp"
+          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
               localzip=${cachedir}/${cachetype}.zip
               thiscache=${cachedir}/${cachetype}
               echo "Fetching cache for ${cachetype}"
+              df -h
               mkdir -p ${thiscache}
               $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} || continue
-              unzip -u -o ${localzip} -d ${thiscache}
+              df -h
+              unzip -q -u -o ${localzip} -d ${thiscache}
               df -h
           done
       - name: Download sources
@@ -77,14 +79,16 @@ jobs:
       - name: Push S3 cache
         shell: bash
         run: |
-          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp"
+          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
               localzip=${cachedir}/${cachetype}.zip
               thiscache=${cachedir}/${cachetype}
               cd ${thiscache}
               echo "Refreshing cache for ${cachetype}"
-              zip -r --filesync --symlinks  ${localzip} ./*
+              df -h
+              zip -q -r --filesync --symlinks  ${localzip} ./*
+              df -h
               ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip
           done
       - name: Gather results
