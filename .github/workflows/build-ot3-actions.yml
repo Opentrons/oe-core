@@ -24,6 +24,7 @@ jobs:
           fetch-depth: 0
       - name: Sync oe-core submodules
         run: |
+          ls -l .
           ./update.sh
       - name: Configure AWS Credentials
         uses: './.github/actions/aws-credentials'
