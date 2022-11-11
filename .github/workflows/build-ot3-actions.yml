@@ -53,15 +53,14 @@ jobs:
           aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
-              localzip=${cachedir}/../${cachetype}.zip
+              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
               thiscache=${cachedir}/${cachetype}
-              echo "Fetching cache for ${cachetype}"
-              df -h
+              echo "Fetching cache for ${cachetype} to ${localzip}"
               mkdir -p ${thiscache}
-              $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} || continue
-              df -h
-              unzip -q -u -o ${localzip} -d ${thiscache}
-              df -h
+              TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
+              echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
+              TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
+              echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
           done
       - name: Download sources
         run: |
@@ -74,18 +73,20 @@ jobs:
         run: docker image prune -af
       - name: Push S3 cache
         shell: bash
+        continue-on-error: true
         run: |
           aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
-              localzip=${cachedir}/../${cachetype}.zip
+              df -h
+              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
               thiscache=${cachedir}/${cachetype}
               cd ${thiscache}
-              echo "Refreshing cache for ${cachetype}"
-              df -h
-              zip -q -r --filesync --symlinks  ${localzip} ./*
-              df -h
-              ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip
+              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
+              TIME="%E" time zip -q -r --filesync --symlinks  ${localzip} ./* 2>elapsed
+              echo "Refreshed cache in $(cat elapsed)" || 0
+              TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
+              echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
           done
       - name: Gather results
         run: |
