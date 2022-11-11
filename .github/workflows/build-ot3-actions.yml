@@ -20,8 +20,11 @@ jobs:
       - name: Fetch sources
         uses: 'actions/checkout@v3'
         with:
-          submodules: true
+          submodules: false
           fetch-depth: 0
+      - name: Sync oe-core submodules
+        run: |
+          ./update.sh
       - name: Configure AWS Credentials
         uses: './.github/actions/aws-credentials'
         id: aws
