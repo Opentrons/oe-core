@@ -58,7 +58,7 @@ jobs:
               echo "Fetching cache for ${cachetype}"
               mkdir -p ${thiscache}
               $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} || continue
-              unzip ${localzip} -u -o -d ${thiscache}
+              unzip -u -o ${localzip} -d ${thiscache}
               df -h
           done
       - name: Download sources
