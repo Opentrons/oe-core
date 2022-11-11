@@ -25,8 +25,6 @@ jobs:
       - name: Sync oe-core submodules
         run: |
           chown `whoami` .
-          whoami
-          ls -la .
           ./update.sh
       - name: Configure AWS Credentials
         uses: './.github/actions/aws-credentials'
@@ -60,10 +58,6 @@ jobs:
       - name: Build image
         run: |
           docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated ot3-image:latest
-      - name: debug download failures
-        if: always()
-        run: |
-          du -h
       - name: Prune images
         if: always()
         run: docker image prune -af
