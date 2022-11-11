@@ -12,7 +12,7 @@ jobs:
   run-build:
     strategy:
       matrix:
-        build_env: ['stage-prod', 'stage-staging', 'stage-dev']
+        build_env: ['stage-prod']
     name: 'Building images on ${{ matrix.build_env }}'
     timeout-minutes: 480
     runs-on: ['self-hosted', '${{matrix.build_env}}']
@@ -20,28 +20,22 @@ jobs:
       - name: Fetch sources
         uses: 'actions/checkout@v3'
         with:
-          submodules: true
+          submodules: false
           fetch-depth: 0
+      - name: Sync oe-core submodules
+        run: |
+          chown -R `whoami` .
+          whoami
+          ls -la .
+          ./update.sh
       - name: Configure AWS Credentials
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }} --profile identity
-          aws configure set aws_secret_access_key ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }} --profile identity
-          aws configure set region us-east-2 --profile identity
-          aws configure set output json --profile identity
-        shell: bash
-      - name: Add dev infra config
-        if: matrix.build_env == 'stage-dev'
-        run: |
-          aws configure set region us-east-2 --profile deploy
-          aws configure set role_arn arn:aws:iam::699250785121:role/administrator --profile deploy
-          aws configure set source_profile identity --profile deploy
-      - name: add staging or prod infra config
-        if: matrix.build_env != 'stage-dev'
-        run: |
-          aws configure set region us-east-2 --profile deploy
-          aws configure set role_arn arn:aws:iam::879285218407:role/administrator --profile deploy
-          aws configure set source_profile identity --profile deploy
-        shell: bash
+        uses: './.github/actions/aws-credentials'
+        id: aws
+        with:
+          access_key_id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
+          region: us-east-2
+          stage: ${{ matrix.build_env }}
       - name: Build container
         run: |
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
@@ -51,13 +45,23 @@ jobs:
         run: |
           echo "" >> ./build/conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
+          echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
       - name: Pull S3 cache
         shell: bash
         run: |
-          synccommand="aws --profile=deploy s3 sync s3://${S3_CACHE_ARN/arn:aws:s3:::/} ${LOCAL_CACHE:-./cache}"
-          echo $synccommand
-          $synccommand
+          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
+          cachedir=${LOCAL_CACHE:-./cache}
+          for cachetype in downloads sstate git ; do
+              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+              thiscache=${cachedir}/${cachetype}
+              echo "Fetching cache for ${cachetype} to ${localzip}"
+              mkdir -p ${thiscache}
+              TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
+              echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
+              TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
+              echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
+          done
       - name: Download sources
         run: |
           docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated ot3-image:latest opentrons-ot3-image --runall=fetch
@@ -67,14 +71,23 @@ jobs:
       - name: Prune images
         if: always()
         run: docker image prune -af
-      - name: Remove poisoned cache
-        if: failure()
-        run: |
-          rm -rf ${LOCAL_CACHE:-./cache}/*
       - name: Push S3 cache
         shell: bash
+        continue-on-error: true
         run: |
-          aws --profile=deploy s3 sync ${LOCAL_CACHE:-./cache} s3://${S3_CACHE_ARN/arn:aws:s3:::/}
+          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
+          cachedir=${LOCAL_CACHE:-./cache}
+          for cachetype in downloads sstate git ; do
+              df -h
+              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+              thiscache=${cachedir}/${cachetype}
+              cd ${thiscache}
+              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
+              TIME="%E" time zip -q -r --filesync --symlinks  ${localzip} ./* 2>elapsed
+              echo "Refreshed cache in $(cat elapsed)" || 0
+              TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
+              echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
+          done
       - name: Gather results
         run: |
           mkdir -p build/deploy/opentrons
@@ -87,7 +100,7 @@ jobs:
         id: 'upload-results'
         run: |
           cd build/deploy/
-          aws --profile=deploy s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "version_file_url=$root_url/VERSION.json" >> $GITHUB_OUTPUT
@@ -100,3 +113,11 @@ jobs:
           payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Remove build data
+        if: always()
+        run: |
+          rm -rf ./*
+      - name: Remove poisoned cache
+        if: ${{ !success() }}
+        run: |
+          rm -rf ${LOCAL_CACHE:-./cache}/*
