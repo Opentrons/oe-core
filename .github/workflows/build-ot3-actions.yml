@@ -56,7 +56,7 @@ jobs:
               localzip=${cachedir}/${cachetype}.zip
               thiscache=${cachedir}/${cachetype}
               echo "Fetching cache for ${cachetype}"
-              mkdir ${thiscache}
+              mkdir -p ${thiscache}
               $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} || continue
               unzip ${localzip} -u -o -d ${thiscache}
               df -h
