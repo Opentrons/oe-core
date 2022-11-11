@@ -24,6 +24,7 @@ jobs:
           fetch-depth: 0
       - name: Sync oe-core submodules
         run: |
+          whoami
           ls -l .
           ./update.sh
       - name: Configure AWS Credentials
