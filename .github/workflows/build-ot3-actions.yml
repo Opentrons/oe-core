@@ -100,4 +100,4 @@ jobs:
       - name: Remove build data
         if: always()
         run: |
-          rm -rf .
+          rm -rf ./*
