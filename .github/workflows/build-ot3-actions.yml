@@ -25,7 +25,7 @@ jobs:
       - name: Sync oe-core submodules
         run: |
           whoami
-          ls -l .
+          ls -la .
           ./update.sh
       - name: Configure AWS Credentials
         uses: './.github/actions/aws-credentials'
