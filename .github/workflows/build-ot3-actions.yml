@@ -53,7 +53,7 @@ jobs:
           aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
-              localzip=${cachedir}/${cachetype}.zip
+              localzip=${cachedir}/../${cachetype}.zip
               thiscache=${cachedir}/${cachetype}
               echo "Fetching cache for ${cachetype}"
               df -h
@@ -72,17 +72,13 @@ jobs:
       - name: Prune images
         if: always()
         run: docker image prune -af
-      - name: Remove poisoned cache
-        if: ${{ !success() }}
-        run: |
-          rm -rf ${LOCAL_CACHE:-./cache}/*
       - name: Push S3 cache
         shell: bash
         run: |
           aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
-              localzip=${cachedir}/${cachetype}.zip
+              localzip=${cachedir}/../${cachetype}.zip
               thiscache=${cachedir}/${cachetype}
               cd ${thiscache}
               echo "Refreshing cache for ${cachetype}"
@@ -120,3 +116,7 @@ jobs:
         if: always()
         run: |
           rm -rf ./*
+      - name: Remove poisoned cache
+        if: ${{ !success() }}
+        run: |
+          rm -rf ${LOCAL_CACHE:-./cache}/*
