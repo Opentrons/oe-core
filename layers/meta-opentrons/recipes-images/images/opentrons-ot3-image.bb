@@ -50,12 +50,14 @@ MAX_SYSTEMFS_SIZE = "1536"
 # create the opentrons ot3 manifest (VERSION.json) file
 python do_create_opentrons_manifest() {
     bb.note("Create the manifest json for for ot3-system.zip")
+    import time
     import json
     import os
 
     opentrons_manifest = {
         'robot_type': d.getVar('ROBOT_TYPE'),
         'build_type': os.getenv('OT_BUILD_TYPE', 'unknown/dev'),
+        'build_timestamp': time.time(),
         'openembedded_version': d.getVar('version', 'unknown'),
         'openembedded_sha': d.getVar('version', 'unknown'),
         'openembedded_branch': d.getVar('version', 'unknown')
@@ -93,14 +95,17 @@ fakeroot do_add_rootfs_version() {
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue.net
 
+    # add datetime as version, example 202210111213
+    date +"%Y%m%d%H%M" > ${IMAGE_ROOTFS}/etc/version
+
     # add the VERSION.json file
     cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}/etc/VERSION.json
 
     # add hostname and machine-info
     printf "opentrons" > ${IMAGE_ROOTFS}/etc/hostname
-    printf "PRETTY_HOSTNAME=opentrons\n" > "${IMAGE_ROOTFS}/etc/machine-info"
+    printf "PRETTY_HOSTNAME=opentrons\n" > ${IMAGE_ROOTFS}/etc/machine-info
     # TODO(ba, 2022-10-18): add proper mechanism for setting DEPLOYMENT
-    printf "DEPLOYMENT=development\n" >> "${IMAGE_ROOTFS}/etc/machine-info"
+    printf "DEPLOYMENT=development\n" >> ${IMAGE_ROOTFS}/etc/machine-info
 }
 ROOTFS_POSTPROCESS_COMMAND += "do_add_rootfs_version; "
 
