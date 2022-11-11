@@ -110,6 +110,9 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
 
+    # create dir to persist network connections
+    mkdir -p ${USERFS_DIR}/etc/NetworkManager/system-connections
+
     # cleanup dirs from rootfs
     rm -rf ${IMAGE_ROOTFS}/{home/*,var/*,unit_tests,opentrons_versions}
 
@@ -212,7 +215,7 @@ fakeroot do_create_tezi_ot3() {
 # create the opentrons ot3 image
 do_create_opentrons_ot3() {
     cd ${DEPLOY_DIR_IMAGE}/
-    mv opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
+    cp opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
 
     # compute the sha256sum
     sha256sum systemfs.xz | cut -d " " -f 1 > systemfs.xz.sha256
