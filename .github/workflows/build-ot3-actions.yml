@@ -24,6 +24,7 @@ jobs:
           fetch-depth: 0
       - name: Sync oe-core submodules
         run: |
+          chown `whoami` .
           whoami
           ls -la .
           ./update.sh
