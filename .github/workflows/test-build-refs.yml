@@ -1,0 +1,39 @@
+on:
+  push:
+    branches:
+      - '*'
+    paths:
+      .github/workflows/test-build-refs.yml
+      .github/actions/build-refs/**/*
+
+jobs:
+  check-action:
+    name: "check build refs action"
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Fetch sources
+        uses: 'actions/checkout@v3'
+        with:
+          submodules: false
+      - name: Set up js
+        run: |
+          cd .github/actions/build-refs
+          npm install
+      - name: Format
+        run: |
+          cd .github/actions/build-refs
+          npm run format-ci
+      - name: Lint
+        run: |
+          cd .github/actions/build-refs
+          npm run lint
+      - name: Test
+        run: |
+          cd .github/actions/build-refs
+          npm run test
+      - name: Check if built
+        run: |
+          cd .github/actions/build-refs
+          npm run build
+          git update-index --refresh
+          git diff-index --quiet HEAD -- || ${{ fail() }}
