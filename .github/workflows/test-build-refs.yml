@@ -1,10 +1,12 @@
+name: "Test the build-refs js action"
+
 on:
   push:
     branches:
       - '*'
     paths:
-      .github/workflows/test-build-refs.yml
-      .github/actions/build-refs/**/*
+      - ".github/workflows/test-build-refs.yml"
+      - ".github/actions/build-refs/**/*"
 
 jobs:
   check-action:
