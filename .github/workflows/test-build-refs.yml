@@ -39,4 +39,4 @@ jobs:
           npm run build
           git update-index --refresh
           git add dist/index.js || echo "No changes from build"
-          git commit -m 'update action' && git push || "Not pushing build"
+          git commit --author='Opentrons CI <engineering@opentrons.com>' -m 'update action' && git push || "Not pushing build"
