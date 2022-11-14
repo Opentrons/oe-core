@@ -116,9 +116,6 @@ fakeroot do_create_filesystem() {
     mkdir -p ${USERFS_DIR}/data
     mkdir -p ${USERFS_DIR}/etc
 
-    # create dir to persist network connections
-    mkdir -p ${USERFS_DIR}/etc/NetworkManager/system-connection
-
     # add hostname and machine-info to userfs
     cat ${IMAGE_ROOTFS}/etc/hosts > ${USERFS_DIR}/etc/hosts
     cat ${IMAGE_ROOTFS}/etc/hostname > ${USERFS_DIR}/etc/hostname

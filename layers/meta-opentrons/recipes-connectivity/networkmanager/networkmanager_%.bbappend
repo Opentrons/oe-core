@@ -1,10 +1,10 @@
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
-SRC_URI += "file://NetworkManager-extra.conf"
+SRC_URI += "file://system-connections-location.conf"
 
-FILES_${PN} += "/etc/NetworkManager/conf.d/NetworkManager-extra.conf"
+FILES_${PN} += "/etc/NetworkManager/conf.d/system-connections-location.conf"
 
 do_install_append() {
 	install -d ${D}/etc/NetworkManager/conf.d
-	install -m 644 ${WORKDIR}/NetworkManager-extra.conf ${D}/etc/NetworkManager/conf.d/NetworkManager-extra.conf
+	install -m 644 ${WORKDIR}/system-connections-location.conf ${D}/etc/NetworkManager/conf.d/
 }
