@@ -24,7 +24,7 @@ jobs:
       - name: Format
         run: |
           cd .github/actions/build-refs
-          npm run format-ci
+          npm run format-check
       - name: Lint
         run: |
           cd .github/actions/build-refs
