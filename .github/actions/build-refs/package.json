@@ -7,7 +7,7 @@
     "test": "jest",
     "build": "ncc build action/*.ts -o dist",
     "lint": "eslint ./action/**/*.ts",
-    "lint-fix": "eslint ./*.ts --fix",
+    "lint-fix": "eslint ./action/**/*.ts --fix",
     "format": "prettier --write ./**/*",
     "format-check": "prettier --check ./**/*"
   },
@@ -21,6 +21,7 @@
     "typescript": "^4.8.4"
   },
   "devDependencies": {
+    "@octokit/types": "^8.0.0",
     "@types/jest": "^29.2.2",
     "@types/node": "^18.11.9",
     "@typescript-eslint/eslint-plugin": "^5.42.1",

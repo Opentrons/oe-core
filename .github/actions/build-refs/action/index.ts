@@ -1,184 +1,168 @@
-import * as github from "@actions/github";
-import * as core from "@actions/core";
+import { getOctokit } from '@actions/github'
+import * as core from '@actions/core'
 
-type Repo = "oe-core" | "monorepo";
+export type Repo = 'oe-core' | 'monorepo'
 
-const orderedRepos: Repo[] = ["monorepo", "oe-core"];
+const orderedRepos: Repo[] = ['monorepo', 'oe-core']
 
-type LongBranch = string;
-type LongTag = string;
-type ShortBranch = string;
-type ShortTag = string;
+export type Branch = string
+export type Tag = string
+export type Ref = Branch | Tag
 
-type Branch = LongBranch | ShortBranch;
-type Tag = LongTag | ShortTag;
+export type InputRefs = Map<Repo, Ref | null>
 
-type ShortRef = ShortBranch | ShortTag;
-type LongRef = LongBranch | LongTag;
-type Ref = ShortRef | LongRef;
+export type AttemptableTag = Tag | ':latest:'
+export type AttemptableRef = AttemptableTag | Branch
 
-type InputRefs = Map<Repo, LongRef | null>;
+export type AttemptableRefs = Map<Repo, AttemptableRef[]>
 
-type AttemptableTag = LongTag | ":latest:";
-type AttemptableRef = AttemptableTag | LongBranch;
+export type OutputRefs = Map<Repo, Ref>
 
-type AttemptableRefs = Map<Repo, AttemptableRef[]>;
-
-type OutputRefs = Map<Repo, ShortRef>;
-
-function mainRefFor(input: Repo): LongBranch {
-  return { monorepo: "refs/heads/edge", "oe-core": "refs/heads/edge" }[input];
+function mainRefFor(input: Repo): Branch {
+  return { monorepo: 'refs/heads/edge', 'oe-core': 'refs/heads/main' }[input]
 }
 
 function restDetailsFor(input: Repo): { owner: string; repo: string } {
   return {
-    monorepo: { owner: "Opentrons", repo: "opentrons" },
-    "oe-core": { owner: "Opentrons", repo: "oe-core" },
-  }[input];
+    monorepo: { owner: 'Opentrons', repo: 'opentrons' },
+    'oe-core': { owner: 'Opentrons', repo: 'oe-core' },
+  }[input]
 }
 
 function refIsMain(input: Ref, repo: Repo): boolean {
-  return mainRefFor(repo) === shortenRef(input);
+  return mainRefFor(repo) === input
 }
 
 export function authoritativeRef(inputs: InputRefs): [Ref, boolean] {
   return (
     orderedRepos
-      .map((repoName): [Ref, boolean] | null =>
-        inputs[repoName]
-          ? [inputs[repoName], refIsMain(inputs[repoName], repoName)]
+      .map((repoName): [Ref, boolean] | null => {
+        const inputRefForRepo = inputs.get(repoName)
+        return inputRefForRepo
+          ? [inputRefForRepo, refIsMain(inputRefForRepo, repoName)]
           : null
-      )
-      .find((el) => el !== null) ?? ["refs/heads/edge", true]
-  );
+      })
+      .find(el => el !== null) ?? ['refs/heads/edge', true]
+  )
 }
 
 function getInputs(): InputRefs {
   return orderedRepos.reduce((prev: InputRefs, inputName: Repo): InputRefs => {
-    const input = core.getInput(inputName);
-    return { [inputName]: input == "-" ? null : input, ...prev };
-  }, new Map());
+    const input = core.getInput(inputName)
+    return prev.set(inputName, input == '-' ? null : input)
+  }, new Map())
 }
 
-function shortenRef(ref: Ref): ShortRef {
-  if (ref.startsWith("refs/heads")) return shortenBranch(ref as Branch);
-  if (ref.startsWith("refs/tags")) return shortenTag(ref as Tag);
-  return ref;
-}
-
-function shortenBranch(branch: Branch): ShortBranch {
-  return branch.match(/(?<optionalLong>refs\/heads\/)?(?<branchName>.*)/).groups
-    .branchName;
-}
-
-function shortenTag(tag: Tag): ShortTag {
-  return tag.match(/(?<optionalLong>refs\/tags\/)?(?<tagName>.*)/).groups
-    .tagName;
+function visitRefsByType<T>(
+  ref: Ref,
+  ifBranch: (branch: Branch) => T,
+  ifTag: (tag: Tag) => T
+): T {
+  if (ref.startsWith('refs/heads')) return ifBranch(ref as Branch)
+  if (ref.startsWith('refs/tags')) return ifTag(ref as Tag)
+  throw `Ref ${ref} can't be matched to branch or tag, is it a shortref?`
 }
 
 function branchesToAttempt(
-  requesterBranch: ShortBranch,
+  requesterBranch: Branch,
   requesterIsMain: boolean,
-  requestedMain: ShortBranch
-): ShortRef[] {
+  requestedMain: Branch
+): Ref[] {
   // if this is a main-branch build, use our main branch
   if (requesterIsMain) {
-    return [requestedMain];
+    return [requestedMain]
   }
   // otherwise, use a matching branchname and then our main branch
-  return [requesterBranch, requestedMain];
+  return [requesterBranch, requestedMain]
 }
 
 function tagsToAttempt(
-  requesterTag: ShortTag,
-  requestedMain: ShortBranch
+  requesterTag: Tag,
+  requestedMain: Branch
 ): AttemptableTag[] {
-  return [requesterTag, ":latest:", requestedMain];
+  return [requesterTag, ':latest:', requestedMain]
 }
 
-function refsToAttempt(
+export function refsToAttempt(
   requesterRef: Ref,
   requesterIsMain: boolean,
-  requestedMain: ShortBranch
-): ShortRef[] {
+  requestedMain: Branch
+): Ref[] {
   ///Based on the refs from whatever was specified, return an ordered list of refs to
   // try.
-
-  if (requesterRef.startsWith("refs/heads")) {
-    return branchesToAttempt(
-      requesterRef as LongBranch,
-      requesterIsMain,
-      requestedMain
-    );
-  }
-  if (requesterRef.startsWith("refs/tags")) {
-    return tagsToAttempt(requesterRef as LongTag, requestedMain);
-  }
-  throw new Error(
-    "Could not parse input ref ${requesterRef}, defaulting to ${requestedMain}. Please use long refs"
-  );
-}
-
-async function refResolves(
-  repoName: Repo,
-  ref: AttemptableRef,
-  octokit
-): Promise<LongRef | null> {
-  core.info("looking for ${ref} on ${repoName}");
-  return octokit.rest.git.listMatchingRefs
-    .get({
-      ...restDetailsFor(repoName),
-      ref: ref,
-    })
-    .then((value) => {
-      const availableRefs = [value].flatMap((refObj) => refObj.ref);
-      core.info("refs on ${repoName} matching ${ref}: ${availableRefs}");
-      return availableRefs.includes(ref) ? ref : null;
-    });
+  return visitRefsByType(
+    requesterRef,
+    requesterBranch =>
+      branchesToAttempt(requesterBranch, requesterIsMain, requestedMain),
+    requesterTag => tagsToAttempt(requesterTag, requestedMain)
+  )
 }
 
 async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
-  const token = core.getInput("token");
-  let resolved = new Map();
-  for (const [repo, refsToAttempt] of toAttempt) {
-    const octokit = github.getOctokit(token);
+  const token = core.getInput('token')
+  let resolved = new Map()
+  for (const [repo, refList] of toAttempt) {
+    const octokit = getOctokit(token)
+
+    // this is a big function to be inline and untestable, but tookit doesn't export
+    // the type for the octokit object above so what are you gonna do
+    const refResolves = async (
+      repoName: Repo,
+      ref: AttemptableRef
+    ): Promise<Ref | null> => {
+      core.info('looking for ${ref} on ${repoName}')
+      return octokit.rest.git
+        .listMatchingRefs({
+          ...restDetailsFor(repoName),
+          ref: ref,
+        })
+        .then(value => {
+          if (value.status != 200 || !value.data) {
+            throw `Bad response from github api for ${repoName} get matching refs: ${value.status}`
+          }
+          const availableRefs = value.data.map(refObj => refObj.ref)
+          core.info('refs on ${repoName} matching ${ref}: ${availableRefs}')
+          return availableRefs.includes(ref) ? ref : null
+        })
+    }
+
     resolved.set(
       repo,
-      await Promise.all(
-        refsToAttempt.map((ref) => refResolves(repo, ref, octokit))
-      ).then((presentRefs) => presentRefs.find((maybeRef) => maybeRef !== null))
-    );
+      await Promise.all(refList.map(ref => refResolves(repo, ref))).then(
+        presentRefs => presentRefs.find(maybeRef => maybeRef !== null)
+      )
+    )
   }
-  return resolved;
+  return resolved
 }
 
 async function run() {
-  const inputs = getInputs();
-  const [authoritative, isMain] = authoritativeRef(inputs);
+  const inputs = getInputs()
+  const [authoritative, isMain] = authoritativeRef(inputs)
   const attemptable = Array.from(inputs.entries()).reduce(
     (prev: AttemptableRefs, [repoName, inputRef]): AttemptableRefs => {
       return prev.set(
         repoName,
         inputRef
-          ? [shortenRef(inputRef)]
+          ? [inputRef]
           : refsToAttempt(authoritative, isMain, mainRefFor(repoName))
-      );
+      )
     },
     new Map()
-  );
-  const resolved = await resolveRefs(attemptable);
+  )
+  const resolved = await resolveRefs(attemptable)
   resolved.forEach((ref, repo) => {
-    core.info("Resolved ${repo} to ${ref}");
-    core.setOutput(repo, shortenRef(ref));
-  });
+    core.info('Resolved ${repo} to ${ref}')
+    core.setOutput(repo, ref)
+  })
 }
 
 async function _run() {
   try {
-    await run();
-  } catch (error) {
-    core.setFailed(error.message);
+    await run()
+  } catch (error: any) {
+    core.setFailed(error.message)
   }
 }
 
-_run();
+_run()
