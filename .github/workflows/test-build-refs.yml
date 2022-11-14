@@ -38,5 +38,5 @@ jobs:
           cd .github/actions/build-refs
           npm run build
           git update-index --refresh
-          git add .github/actions/build-refs/dist/index.js || 0
-          git commit -m 'update action' && git push || 0
+          git add dist/index.js || echo "No changes from build"
+          git commit -m 'update action' && git push || "Not pushing build"
