@@ -38,7 +38,7 @@ jobs:
           cd .github/actions/build-refs
           npm run build
           git update-index --refresh
-          git config user.name='Opentrons CI'
-          git config user.email='engineering@opentrons.com'
+          git config user.name 'Opentrons CI'
+          git config user.email 'engineering@opentrons.com'
           git add dist/index.js || echo "No changes from build"
           git commit -m 'update action' && git push || echo "Not pushing build"
