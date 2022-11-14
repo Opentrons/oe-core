@@ -1,5 +1,5 @@
 import * as action from '../index'
-import type { Repo, InputRefs, Ref, Branch } from '../index'
+import type { InputRefs, Ref, Branch } from '../index'
 
 const AUTHORITATIVE_REF_TEST_SPECS: Array<
   [string, InputRefs, [string, boolean]]
