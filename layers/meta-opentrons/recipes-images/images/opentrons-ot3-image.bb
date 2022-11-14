@@ -57,7 +57,6 @@ python do_create_opentrons_manifest() {
     opentrons_manifest = {
         'robot_type': d.getVar('ROBOT_TYPE'),
         'build_type': os.getenv('OT_BUILD_TYPE', 'unknown/dev'),
-        'build_timestamp': time.time(),
         'openembedded_version': d.getVar('version', 'unknown'),
         'openembedded_sha': d.getVar('version', 'unknown'),
         'openembedded_branch': d.getVar('version', 'unknown')
@@ -94,9 +93,6 @@ do_add_rootfs_version() {
     printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) %%h\n" > ${IMAGE_ROOTFS}/etc/issue.net
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue.net
-
-    # add datetime as version, example 202210111213
-    date +"%Y%m%d%H%M" > ${IMAGE_ROOTFS}/etc/version
 
     # add the VERSION.json file
     cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}/etc/VERSION.json
