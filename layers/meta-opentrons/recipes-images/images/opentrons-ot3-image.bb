@@ -98,14 +98,12 @@ do_add_rootfs_version() {
     cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}/etc/VERSION.json
 
     # add hostname to rootfs
-    printf "" > ${IMAGE_ROOTFS}/etc/hosts
     printf "opentrons" > ${IMAGE_ROOTFS}/etc/hostname
     printf "PRETTY_HOSTNAME=opentrons\n" > ${IMAGE_ROOTFS}/etc/machine-info
     printf "DEPLOYMENT=development\n" >> ${IMAGE_ROOTFS}/etc/machine-info
 
     # cleanup
     rm -rf ${IMAGE_ROOTFS}/opentrons_versions
-    rm -rf ${IMAGE_ROOTFS}/unit_tests
 }
 ROOTFS_POSTPROCESS_COMMAND += "do_add_rootfs_version; "
 
@@ -117,7 +115,6 @@ fakeroot do_create_filesystem() {
     mkdir -p ${USERFS_DIR}/etc
 
     # add hostname and machine-info to userfs
-    cat ${IMAGE_ROOTFS}/etc/hosts > ${USERFS_DIR}/etc/hosts
     cat ${IMAGE_ROOTFS}/etc/hostname > ${USERFS_DIR}/etc/hostname
     cat ${IMAGE_ROOTFS}/etc/machine-info > ${USERFS_DIR}/etc/machine-info
 
