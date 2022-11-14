@@ -33,9 +33,10 @@ jobs:
         run: |
           cd .github/actions/build-refs
           npm run test
-      - name: Check if built
+      - name: Update built action
         run: |
           cd .github/actions/build-refs
           npm run build
           git update-index --refresh
-          git diff-index --quiet HEAD -- || ${{ fail() }}
+          git add .github/actions/build-refs/dist/index.js || 0
+          git commit -m 'update action' && git push || 0
