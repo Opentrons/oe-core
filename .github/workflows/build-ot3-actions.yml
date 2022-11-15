@@ -27,7 +27,7 @@ jobs:
   run-build:
     strategy:
       matrix:
-        build_env: [${{ inputs.infra-stage }}]
+        build_env: [ '${{ inputs.infra-stage }}' ]
     name: 'Building images on ${{ matrix.build_env }}'
     timeout-minutes: 480
     runs-on: ['self-hosted', '${{matrix.build_env}}']
