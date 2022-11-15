@@ -1,5 +1,5 @@
 name: 'Build OT3 image on github workflows'
-
+run-name: 'Building OT3 image for'
 on:
   workflow_dispatch:
     monorepo-ref:

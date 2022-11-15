@@ -1,4 +1,5 @@
 name: 'Start an OT3 image build on a git branch'
+run-name: 'Starting a branch build of OT3 software for ${{ github.ref_name }}'
 
 on:
   push:
@@ -18,6 +19,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           route: POST /repos/opentrons/oe-core/actions/workflows/build-ot3-actions.yml/dispatches
           ref: ${{ github.ref }}
-          oe-core-ref: ${{ github.ref }}
-          monorepo-ref: '-'
-          infra-stage: 'stage-prod'
+          inputs:
+            oe-core-ref: ${{ github.ref }}
+            monorepo-ref: '-'
+            infra-stage: 'stage-prod'
