@@ -22,12 +22,10 @@ jobs:
           owner: opentrons
           repo: oe-core
           workflow-id: build-ot3-actions.yml
-          body: |
+          ref: ${{github.ref}}
+          inputs: |
             {
-              "ref": "${{github.ref}}",
-              "inputs": {
-                "oe-core-ref": "${{ github.ref }}",
-                "monorepo-ref": "-",
-                "infra-stage": "stage-prod"
-              }
+              "oe-core-ref": "${{ github.ref }}",
+              "monorepo-ref": "-",
+              "infra-stage": "stage-prod"
             }
