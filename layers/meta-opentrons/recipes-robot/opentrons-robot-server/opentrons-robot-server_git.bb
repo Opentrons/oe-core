@@ -1,5 +1,6 @@
 
 inherit externalsrc
+bb_note "topdir is ${TOPDIR}"
 EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "opentrons"))}"
 
 LICENSE = "Apache-2.0"
