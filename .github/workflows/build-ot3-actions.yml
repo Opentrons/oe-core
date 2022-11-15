@@ -12,7 +12,7 @@ jobs:
   run-build:
     strategy:
       matrix:
-        build_env: ['stage-prod']
+        build_env: ['stage-dev']
     name: 'Building images on ${{ matrix.build_env }}'
     timeout-minutes: 480
     runs-on: ['self-hosted', '${{matrix.build_env}}']
