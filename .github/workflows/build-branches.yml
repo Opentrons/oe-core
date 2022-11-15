@@ -19,7 +19,12 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           route: POST /repos/opentrons/oe-core/actions/workflows/build-ot3-actions.yml/dispatches
           ref: ${{ github.ref }}
-          inputs:
-            oe-core-ref: ${{ github.ref }}
-            monorepo-ref: '-'
-            infra-stage: 'stage-prod'
+          body: |
+            {
+              "ref": "${{github.ref}}",
+              "inputs": {
+                "oe-core-ref": "${{ github.ref }}",
+                "monorepo-ref": "-",
+                "infra-stage": "stage-prod"
+              }
+            }
