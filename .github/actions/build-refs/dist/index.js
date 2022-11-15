@@ -9727,6 +9727,8 @@ var __webpack_exports__ = {};
 "use strict";
 __nccwpck_require__.r(__webpack_exports__);
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   "restAPICompliantRef": () => (/* binding */ restAPICompliantRef),
+/* harmony export */   "latestTag": () => (/* binding */ latestTag),
 /* harmony export */   "authoritativeRef": () => (/* binding */ authoritativeRef),
 /* harmony export */   "refsToAttempt": () => (/* binding */ refsToAttempt)
 /* harmony export */ });
@@ -9748,6 +9750,20 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 const orderedRepos = ['monorepo', 'oe-core'];
 function mainRefFor(input) {
     return { monorepo: 'refs/heads/edge', 'oe-core': 'refs/heads/main' }[input];
+}
+function restAPICompliantRef(input) {
+    return input.replace('refs/', '');
+}
+function latestTagPrefixFor(repo) {
+    if (repo === 'monorepo')
+        return 'refs/tags/v';
+    if (repo === 'oe-core')
+        return 'refs/tags/v';
+    throw `Unknown repo ${repo}`;
+}
+function latestTag(tagRefs) {
+    var _a, _b;
+    return (_b = (_a = tagRefs.at(-1)) === null || _a === void 0 ? void 0 : _a.ref) !== null && _b !== void 0 ? _b : null;
 }
 function restDetailsFor(input) {
     return {
@@ -9804,12 +9820,28 @@ function resolveRefs(toAttempt) {
         let resolved = new Map();
         for (const [repo, refList] of toAttempt) {
             const octokit = (0,_actions_github__WEBPACK_IMPORTED_MODULE_0__.getOctokit)(token);
+            const fetchTags = (repoName) => __awaiter(this, void 0, void 0, function* () {
+                _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`finding latest tag for ${repoName}`);
+                return octokit.rest.git
+                    .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: restAPICompliantRef(latestTagPrefixFor(repoName)) }))
+                    .then(response => {
+                    if (response.status != 200) {
+                        throw `Bad response from github api for ${repoName} get tags: ${response.status}`;
+                    }
+                    return latestTag(response.data);
+                });
+            });
             // this is a big function to be inline and untestable, but tookit doesn't export
             // the type for the octokit object above so what are you gonna do
             const refResolves = (repoName, ref) => __awaiter(this, void 0, void 0, function* () {
                 _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`looking for ${ref} on ${repoName}`);
+                const correctRef = ref === ':latest:' ? yield fetchTags(repoName) : ref;
+                if (correctRef === null) {
+                    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`couldn't find ref ${correctRef} for ${ref} on ${repoName}`);
+                    return null;
+                }
                 return octokit.rest.git
-                    .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: ref }))
+                    .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: restAPICompliantRef(correctRef) }))
                     .then(value => {
                     if (value.status != 200 || !value.data) {
                         throw `Bad response from github api for ${repoName} get matching refs: ${value.status}`;
@@ -9827,7 +9859,6 @@ function resolveRefs(toAttempt) {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const inputs = getInputs();
-        _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found inputs for monorepo: ${inputs.get('monorepo')} and oe-core: ${inputs.get('oe-core')}`);
         inputs.forEach((ref, repo) => {
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found input for ${repo}: ${ref}`);
         });

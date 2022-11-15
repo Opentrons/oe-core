@@ -22,6 +22,24 @@ function mainRefFor(input: Repo): Branch {
   return { monorepo: 'refs/heads/edge', 'oe-core': 'refs/heads/main' }[input]
 }
 
+export function restAPICompliantRef(input: Ref): string {
+  return input.replace('refs/', '')
+}
+
+export interface GitHubApiTag {
+  ref: Tag
+}
+
+function latestTagPrefixFor(repo: Repo): string {
+  if (repo === 'monorepo') return 'refs/tags/v'
+  if (repo === 'oe-core') return 'refs/tags/v'
+  throw `Unknown repo ${repo}`
+}
+
+export function latestTag(tagRefs: GitHubApiTag[]): Tag | null {
+  return (tagRefs.at(-1)?.ref as Tag | null | undefined) ?? null
+}
+
 function restDetailsFor(input: Repo): { owner: string; repo: string } {
   return {
     monorepo: { owner: 'Opentrons', repo: 'opentrons' },
@@ -104,6 +122,21 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
   for (const [repo, refList] of toAttempt) {
     const octokit = getOctokit(token)
 
+    const fetchTags = async (repoName: Repo): Promise<Ref | null> => {
+      core.info(`finding latest tag for ${repoName}`)
+      return octokit.rest.git
+        .listMatchingRefs({
+          ...restDetailsFor(repoName),
+          ref: restAPICompliantRef(latestTagPrefixFor(repoName)),
+        })
+        .then(response => {
+          if (response.status != 200) {
+            throw `Bad response from github api for ${repoName} get tags: ${response.status}`
+          }
+          return latestTag(response.data)
+        })
+    }
+
     // this is a big function to be inline and untestable, but tookit doesn't export
     // the type for the octokit object above so what are you gonna do
     const refResolves = async (
@@ -111,10 +144,16 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
       ref: AttemptableRef
     ): Promise<Ref | null> => {
       core.info(`looking for ${ref} on ${repoName}`)
+      const correctRef = ref === ':latest:' ? await fetchTags(repoName) : ref
+      if (correctRef === null) {
+        core.info(`couldn't find ref ${correctRef} for ${ref} on ${repoName}`)
+        return null
+      }
+
       return octokit.rest.git
         .listMatchingRefs({
           ...restDetailsFor(repoName),
-          ref: ref,
+          ref: restAPICompliantRef(correctRef),
         })
         .then(value => {
           if (value.status != 200 || !value.data) {
@@ -138,11 +177,6 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
 
 async function run() {
   const inputs = getInputs()
-  core.debug(
-    `found inputs for monorepo: ${inputs.get(
-      'monorepo'
-    )} and oe-core: ${inputs.get('oe-core')}`
-  )
   inputs.forEach((ref, repo) => {
     core.debug(`found input for ${repo}: ${ref}`)
   })
