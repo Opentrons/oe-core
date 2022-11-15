@@ -8,7 +8,7 @@ inputs:
     description: "ref of https://github.com/opentrons/opentrons to build"
     required: false
     default: "-"
-  oecore:
+  oe-core:
     description: "ref of https://github.com/opentrons/oe-core to build"
     required: false
     default: "-"

@@ -1,0 +1,22 @@
+name: 'Start an OT3 image build on a git branch'
+
+on:
+  push:
+    branches:
+      - '*'
+    tags-ignore:
+      - '*'
+
+jobs:
+  start-build:
+    name: 'starting a build for branch ${{ github.ref }}'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'start build'
+        uses: octokit/request-action@v2.x
+        with:
+          route: POST /repos/opentrons/oe-core/actions/workflows/build-ot3-actions.yml/dispatches
+          ref: ${{ github.ref }}
+          oe-core-ref: ${{ github.ref }}
+          monorepo-ref: '-'
+          infra-stage: 'stage-prod'
