@@ -32,7 +32,7 @@ IMAGE_INSTALL += " \
     networkmanager crda \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
-    userfs-mount robot-app-wayland-launch robot-app \
+    robot-app-wayland-launch robot-app \
     opentrons-robot-server opentrons-update-server \
     python3 python3-misc python3-modules \
  "
@@ -87,7 +87,7 @@ python do_create_opentrons_manifest() {
 ROOTFS_PREPROCESS_COMMAND += "do_create_opentrons_manifest; "
 
 # add the rootfs version to the welcome banner
-fakeroot do_add_rootfs_version() {
+do_add_rootfs_version() {
     printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) \\\n \\\l\n" > ${IMAGE_ROOTFS}/etc/issue
     printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) %%h\n" > ${IMAGE_ROOTFS}/etc/issue.net
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue
@@ -96,11 +96,13 @@ fakeroot do_add_rootfs_version() {
     # add the VERSION.json file
     cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}/etc/VERSION.json
 
-    # add hostname and machine-info
+    # add hostname to rootfs
     printf "opentrons" > ${IMAGE_ROOTFS}/etc/hostname
-    printf "PRETTY_HOSTNAME=opentrons\n" > "${IMAGE_ROOTFS}/etc/machine-info"
-    # TODO(ba, 2022-10-18): add proper mechanism for setting DEPLOYMENT
-    printf "DEPLOYMENT=development\n" >> "${IMAGE_ROOTFS}/etc/machine-info"
+    printf "PRETTY_HOSTNAME=opentrons\n" > ${IMAGE_ROOTFS}/etc/machine-info
+    printf "DEPLOYMENT=development\n" >> ${IMAGE_ROOTFS}/etc/machine-info
+
+    # cleanup
+    rm -rf ${IMAGE_ROOTFS}/opentrons_versions
 }
 ROOTFS_POSTPROCESS_COMMAND += "do_add_rootfs_version; "
 
@@ -109,9 +111,15 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/home ${USERFS_DIR}/
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
+    mkdir -p ${USERFS_DIR}/etc
+
+    # add hostname and machine-info to userfs
+    cat ${IMAGE_ROOTFS}/etc/hostname > ${USERFS_DIR}/etc/hostname
+    cat ${IMAGE_ROOTFS}/etc/machine-info > ${USERFS_DIR}/etc/machine-info
 
     # cleanup dirs from rootfs
-    rm -rf ${IMAGE_ROOTFS}/{home/*,var/*,unit_tests,opentrons_versions}
+    rm -rf ${IMAGE_ROOTFS}/home/*
+    rm -rf ${IMAGE_ROOTFS}/var/*
 
     # calculate size of the filesystem trees
     USERFS_SIZE=$(du -ks ${USERFS_DIR} | cut -f1)
@@ -212,7 +220,7 @@ fakeroot do_create_tezi_ot3() {
 # create the opentrons ot3 image
 do_create_opentrons_ot3() {
     cd ${DEPLOY_DIR_IMAGE}/
-    mv opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
+    cp opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
 
     # compute the sha256sum
     sha256sum systemfs.xz | cut -d " " -f 1 > systemfs.xz.sha256
