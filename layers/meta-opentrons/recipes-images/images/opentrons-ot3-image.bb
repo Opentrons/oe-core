@@ -50,7 +50,6 @@ MAX_SYSTEMFS_SIZE = "1536"
 # create the opentrons ot3 manifest (VERSION.json) file
 python do_create_opentrons_manifest() {
     bb.note("Create the manifest json for for ot3-system.zip")
-    import time
     import json
     import os
 
