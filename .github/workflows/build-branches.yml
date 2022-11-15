@@ -15,10 +15,13 @@ jobs:
     steps:
       - name: 'start build'
         uses: octokit/request-action@v2.x
-        with:
+        env:
           GITHUB_TOKEN: ${{ github.token }}
-          route: POST /repos/opentrons/oe-core/actions/workflows/build-ot3-actions.yml/dispatches
-          ref: ${{ github.ref }}
+        with:
+          route: POST /repos/{owner}/{repo}/actions/workflows/{workflow-id}/dispatches
+          owner: opentrons
+          repo: oe-core
+          workflow-id: build-ot3-actions.yml
           body: |
             {
               "ref": "${{github.ref}}",
