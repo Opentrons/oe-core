@@ -9807,7 +9807,7 @@ function resolveRefs(toAttempt) {
             // this is a big function to be inline and untestable, but tookit doesn't export
             // the type for the octokit object above so what are you gonna do
             const refResolves = (repoName, ref) => __awaiter(this, void 0, void 0, function* () {
-                _actions_core__WEBPACK_IMPORTED_MODULE_1__.info('looking for ${ref} on ${repoName}');
+                _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`looking for ${ref} on ${repoName}`);
                 return octokit.rest.git
                     .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: ref }))
                     .then(value => {
@@ -9815,7 +9815,7 @@ function resolveRefs(toAttempt) {
                         throw `Bad response from github api for ${repoName} get matching refs: ${value.status}`;
                     }
                     const availableRefs = value.data.map(refObj => refObj.ref);
-                    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info('refs on ${repoName} matching ${ref}: ${availableRefs}');
+                    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`refs on ${repoName} matching ${ref}: ${availableRefs}`);
                     return availableRefs.includes(ref) ? ref : null;
                 });
             });
@@ -9827,15 +9827,23 @@ function resolveRefs(toAttempt) {
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const inputs = getInputs();
+        _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found inputs for monorepo: ${inputs.get('monorepo')} and oe-core: ${inputs.get('oe-core')}`);
+        inputs.forEach((ref, repo) => {
+            _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found input for ${repo}: ${ref}`);
+        });
         const [authoritative, isMain] = authoritativeRef(inputs);
+        _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`authoritative ref is ${authoritative} (main: ${isMain})`);
         const attemptable = Array.from(inputs.entries()).reduce((prev, [repoName, inputRef]) => {
             return prev.set(repoName, inputRef
                 ? [inputRef]
                 : refsToAttempt(authoritative, isMain, mainRefFor(repoName)));
         }, new Map());
+        attemptable.forEach((refs, repo) => {
+            _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found attemptable refs for ${repo}: ${refs.join(', ')}`);
+        });
         const resolved = yield resolveRefs(attemptable);
         resolved.forEach((ref, repo) => {
-            _actions_core__WEBPACK_IMPORTED_MODULE_1__.info('Resolved ${repo} to ${ref}');
+            _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved ${repo} to ${ref}`);
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput(repo, ref);
         });
     });

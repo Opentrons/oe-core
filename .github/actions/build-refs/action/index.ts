@@ -110,7 +110,7 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
       repoName: Repo,
       ref: AttemptableRef
     ): Promise<Ref | null> => {
-      core.info('looking for ${ref} on ${repoName}')
+      core.info(`looking for ${ref} on ${repoName}`)
       return octokit.rest.git
         .listMatchingRefs({
           ...restDetailsFor(repoName),
@@ -121,7 +121,7 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
             throw `Bad response from github api for ${repoName} get matching refs: ${value.status}`
           }
           const availableRefs = value.data.map(refObj => refObj.ref)
-          core.info('refs on ${repoName} matching ${ref}: ${availableRefs}')
+          core.info(`refs on ${repoName} matching ${ref}: ${availableRefs}`)
           return availableRefs.includes(ref) ? ref : null
         })
     }
@@ -138,7 +138,16 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
 
 async function run() {
   const inputs = getInputs()
+  core.debug(
+    `found inputs for monorepo: ${inputs.get(
+      'monorepo'
+    )} and oe-core: ${inputs.get('oe-core')}`
+  )
+  inputs.forEach((ref, repo) => {
+    core.debug(`found input for ${repo}: ${ref}`)
+  })
   const [authoritative, isMain] = authoritativeRef(inputs)
+  core.debug(`authoritative ref is ${authoritative} (main: ${isMain})`)
   const attemptable = Array.from(inputs.entries()).reduce(
     (prev: AttemptableRefs, [repoName, inputRef]): AttemptableRefs => {
       return prev.set(
@@ -150,9 +159,13 @@ async function run() {
     },
     new Map()
   )
+  attemptable.forEach((refs, repo) => {
+    core.debug(`found attemptable refs for ${repo}: ${refs.join(', ')}`)
+  })
+
   const resolved = await resolveRefs(attemptable)
   resolved.forEach((ref, repo) => {
-    core.info('Resolved ${repo} to ${ref}')
+    core.info(`Resolved ${repo} to ${ref}`)
     core.setOutput(repo, ref)
   })
 }
