@@ -142,6 +142,7 @@ jobs:
           done
       - name: Gather results
         run: |
+          cd oe-core
           mkdir -p build/deploy/opentrons
           find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/ot3-fullimage.tar \;
           find ./build/deploy/images -name "ot3-system.zip" -exec cp {} build/deploy/opentrons \;
@@ -151,7 +152,7 @@ jobs:
         shell: bash
         id: 'upload-results'
         run: |
-          cd build/deploy/
+          cd oe-core/build/deploy/
           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT
