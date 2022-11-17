@@ -69,7 +69,7 @@ jobs:
           echo "opentrons-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Start check for oe-core
         id: oe-core-check-start
-        uses: 'LouisBrunner/checks-action@v1.1.1'
+        uses: 'LouisBrunner/checks-action@v1.5.0'
         with:
           token: ${{ github.token }}
           name: OT-3 Build
@@ -79,7 +79,7 @@ jobs:
           details_url: https://github.com/Opentrons/oe-core/actions/run/$GITHUB_RUN_ID
       - name: Start check for opentrons
         id: opentrons-check-start
-        uses: 'LouisBrunner/checks-action@v1.1.1'
+        uses: 'LouisBrunner/checks-action@v1.5.0'
         with:
           token: ${{ github.token }}
           name: OT-3 Build
@@ -201,7 +201,7 @@ jobs:
           [[ "${{ cancelled() }}" == "true" ]] && echo "check_status=cancelled" >> $GITHUB_OUTPUT
           [[ "${{ failure() }}" == "true" ]] && echo "check_status=failure" >> $GITHUB_OUTPUT
       - name: Update oe-core check with results
-        uses: 'LouisBrunner/checks-action@v1.1.1'
+        uses: 'LouisBrunner/checks-action@v1.5.0'
         if: always()
         with:
           token: ${{ github.token }}
@@ -212,7 +212,7 @@ jobs:
           conclusion: ${{ steps.conclusion-string.output.check_status }}
           details_url: https://github.com/Opentrons/oe-core/actions/run/$GITHUB_RUN_ID
       - name: Update opentrons check with results
-        uses: 'LouisBrunner/checks-action@v1.1.1'
+        uses: 'LouisBrunner/checks-action@v1.5.0'
         if: always()
         with:
           token: ${{ github.token }}
