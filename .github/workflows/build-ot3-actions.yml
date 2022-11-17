@@ -60,6 +60,33 @@ jobs:
           ref: ${{ steps.build-refs.outputs.monorepo }}
           repository: Opentrons/opentrons
           path: ./opentrons
+      - name: Find commit shas for checks
+        id: commit-shas
+        runs: |
+          cd $GITHUB_WORKSPACE/oe-core
+          echo "oe-core-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          cd $GITHUB_WORKSPACE/opentrons
+          echo "opentrons-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+      - name: Start check for oe-core
+        id: oe-core-check-start
+        uses: 'LouisBrunner/checks-action@v1.1.1'
+        with:
+          token: ${{ github.token }}
+          name: OT-3 Build
+          repo: Opentrons/oe-core
+          sha: ${{ steps.commit-shas.outputs.oe-core-sha }}
+          status: in-progress
+          details_url: https://github.com/Opentrons/oe-core/actions/run/$GITHUB_RUN_ID
+      - name: Start check for opentrons
+        id: opentrons-check-start
+        uses: 'LouisBrunner/checks-action@v1.1.1'
+        with:
+          token: ${{ github.token }}
+          name: OT-3 Build
+          repo: Opentrons/opentrons
+          sha: ${{ steps.commit-shas.outputs.opentrons-sha }}
+          status: in-progress
+          details_url: https://github.com/Opentrons/oe-core/actions/run/$GITHUB_RUN_ID
       - name: Sync oe-core submodules
         run: |
           chown -R `whoami` oe-core
@@ -166,6 +193,35 @@ jobs:
           payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Determine conclusion string
+        id: conclusion-string
+        if: always()
+        runs: |
+          [[ "${{ success() }}" == "true" ]] && echo "check_status=success" >> $GITHUB_OUTPUT
+          [[ "${{ cancelled() }}" == "true" ]] && echo "check_status=cancelled" >> $GITHUB_OUTPUT
+          [[ "${{ failure() }}" == "true" ]] && echo "check_status=failure" >> $GITHUB_OUTPUT
+      - name: Update oe-core check with results
+        uses: 'LouisBrunner/checks-action@v1.1.1'
+        if: always()
+        with:
+          token: ${{ github.token }}
+          id: ${{ steps.oe-core-check-start.outputs.check_id }}
+          repo: Opentrons/oe-core
+          sha: ${{ steps.commit-shas.outputs.oe-core-sha }}
+          status: completed
+          conclusion: ${{ steps.conclusion-string.output.check_status }}
+          details_url: https://github.com/Opentrons/oe-core/actions/run/$GITHUB_RUN_ID
+      - name: Update opentrons check with results
+        uses: 'LouisBrunner/checks-action@v1.1.1'
+        if: always()
+        with:
+          token: ${{ github.token }}
+          id: ${{ steps.opentrons-check-start.outputs.check_id }}
+          repo: Opentrons/opentrons
+          sha: ${{ steps.commit-shas.outputs.opentrons-sha }}
+          status: completed
+          conclusion: ${{ steps.conclusion-string.output.check_status }}
+          details_url: https://github.com/Opentrons/oe-core/actions/run/$GITHUB_RUN_ID
       - name: Remove build data
         if: always()
         run: |
