@@ -166,13 +166,6 @@ jobs:
           payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ github.ref }}\", \"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      - name: Determine conclusion string
-        id: conclusion-string
-        if: always()
-        runs: |
-          [[ "${{ success() }}" == "true" ]] && echo "check_status=success" >> $GITHUB_OUTPUT
-          [[ "${{ cancelled() }}" == "true" ]] && echo "check_status=cancelled" >> $GITHUB_OUTPUT
-          [[ "${{ failure() }}" == "true" ]] && echo "check_status=failure" >> $GITHUB_OUTPUT
       - name: Remove build data
         if: always()
         run: |
