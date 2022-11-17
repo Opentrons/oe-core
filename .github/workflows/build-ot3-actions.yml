@@ -1,33 +1,72 @@
 name: 'Build OT3 image on github workflows'
-
+run-name: 'Building OT3 image for opentrons ${{ inputs.monorepo-ref }} and oe-core ${{ inputs.oe-core-ref }}'
 on:
-  push:
-    branches:
-      - '*'
-    tags-ignore:
-      - '*'
   workflow_dispatch:
+    inputs:
+      monorepo-ref:
+        description: |
+          Ref of https://github.com/opentrons/opentrons to build. This MUST be a full ref, e.g. refs/heads/edge, or '-' to indicate not-specified. If not specified, will be determined from the oe-core ref if specified, and then default to edge.
+        required: true
+        default: '-'
+      oe-core-ref:
+        description: |
+          Ref of https://github.com/opentrons/oe-core to build. This is different from the ref specified in the github api/webUI when starting this workflow - that ref is what contains this workflow, this ref specifies what gets built. It MUST be a full ref, e.g. refs/heads/main, or '-' to indicate not-specified. If not specified, will be decided based on the monorepo ref; if that isn't specified, will be main.
+        required: true
+        default: '-'
+      infra-stage:
+        description: |
+          What infra stage to run on. This should almost always be prod; staging and dev are useful when you explicitly want to test those infra stages.
+        required: true
+        type: choice
+        options:
+          - 'stage-prod'
+          - 'stage-staging'
+          - 'stage-dev'
+        default: 'stage-prod'
 
 jobs:
   run-build:
     strategy:
       matrix:
-        build_env: ['stage-prod']
+        build_env: [ '${{ inputs.infra-stage }}' ]
     name: 'Building images on ${{ matrix.build_env }}'
     timeout-minutes: 480
     runs-on: ['self-hosted', '${{matrix.build_env}}']
     steps:
-      - name: Fetch sources
+      - name: Fetch initial sources for action
         uses: 'actions/checkout@v3'
         with:
           submodules: false
           fetch-depth: 0
+          path: ./oe-core-for-workflow
+      - name: Decide refs to build
+        id: build-refs
+        uses: './oe-core-for-workflow/.github/actions/build-refs'
+        with:
+          token: ${{ github.token }}
+          monorepo: ${{ inputs.monorepo-ref }}
+          oe-core: ${{ inputs.oe-core-ref }}
+      - name: Fetch oe-core source
+        uses: 'actions/checkout@v3'
+        with:
+          submodules: false
+          fetch-depth: 0
+          ref: ${{steps.build-refs.outputs.oe-core}}
+          path: ./oe-core
+      - name: Fetch monorepo source
+        uses: 'actions/checkout@v3'
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.build-refs.outputs.monorepo }}
+          repository: Opentrons/opentrons
+          path: ./opentrons
       - name: Sync oe-core submodules
         run: |
-          chown -R `whoami` .
-          whoami
-          ls -la .
+          chown -R `whoami` oe-core
+          chown -R `whoami` opentrons
+          cd oe-core
           ./update.sh
+          cd ..
       - name: Configure AWS Credentials
         uses: './.github/actions/aws-credentials'
         id: aws
@@ -38,15 +77,19 @@ jobs:
           stage: ${{ matrix.build_env }}
       - name: Build container
         run: |
+          cd oe-core
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
           cp start.sh $tmp_dir/
           docker build -f ./Dockerfile --tag "ot3-image:latest" $tmp_dir
+          cd ..
       - name: Apply CI config overrides
         run: |
+          cd oe-core
           echo "" >> ./build/conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
           echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
+          cd ..
       - name: Pull S3 cache
         shell: bash
         run: |
@@ -64,10 +107,19 @@ jobs:
           done
       - name: Download sources
         run: |
-          docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated ot3-image:latest opentrons-ot3-image --runall=fetch
+          here=$(pwd)
+          oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
+          monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
+          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount   ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
         run: |
-          docker run --rm --mount type=bind,src=$(pwd),dst=/volumes/oe-core,consistency=delegated --mount type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated ot3-image:latest
+          here=$(pwd)
+          oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
+          monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
+          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af
@@ -90,6 +142,7 @@ jobs:
           done
       - name: Gather results
         run: |
+          cd oe-core
           mkdir -p build/deploy/opentrons
           find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/ot3-fullimage.tar \;
           find ./build/deploy/images -name "ot3-system.zip" -exec cp {} build/deploy/opentrons \;
@@ -99,7 +152,7 @@ jobs:
         shell: bash
         id: 'upload-results'
         run: |
-          cd build/deploy/
+          cd oe-core/build/deploy/
           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT

@@ -1,19 +1,11 @@
-# Recipe created by recipetool
-# This is the basis of a recipe and may need further editing in order to be fully functional.
-# (Feel free to remove these comments when editing.)
 
-# WARNING: the following LICENSE and LIC_FILES_CHKSUM values are best guesses - it is
-# your responsibility to verify that the values are complete and correct.
+inherit externalsrc
+EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "opentrons"))}"
+
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-SRC_URI = "git://github.com/Opentrons/opentrons.git;protocol=https;branch=edge;"
-
 # Modify these as desired
-PV = "1.0+git${SRCPV}"
-SRCREV = "${AUTOREV}"
-S = "${WORKDIR}/git"
-B = "${WORKDIR}/build"
 PACKAGEJSON_FILE = "${S}/robot-server/robot_server/package.json"
 DEST_SYSTEMD_DROPFILE ?= "${B}/robot-server-version.conf"
 inherit insane systemd get_ot_package_version

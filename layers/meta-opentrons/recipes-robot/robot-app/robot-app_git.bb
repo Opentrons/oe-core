@@ -1,14 +1,11 @@
+inherit externalsrc
+
+EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "opentrons"))}"
+
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
-SRC_URI = "git://github.com/Opentrons/opentrons.git;protocol=https;branch=edge; "
-
-# Modify these as desired
-PV = "1.0+git${SRCPV}"
 
 inherit features_check
-
-SRCREV = "${AUTOREV}"
-S = "${WORKDIR}/git"
 
 inherit insane
 
@@ -25,8 +22,9 @@ do_configure(){
 
 do_compile(){
     export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
-    make -C app dist
-    make -C app-shell lib
+    cd ${S}
+    make -C ${S}/app dist
+    make -C ${S}/app-shell lib
     cd ${S}/app-shell
     NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
