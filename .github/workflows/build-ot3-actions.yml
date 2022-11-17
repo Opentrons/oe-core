@@ -1,5 +1,5 @@
 name: 'Build OT3 image on github workflows'
-run-name: 'Building OT3 image'
+run-name: 'Building OT3 image for opentrons ${{ inputs.monorepo-ref }} and oe-core ${{ inputs.oe-core-ref }}'
 on:
   workflow_dispatch:
     inputs:
