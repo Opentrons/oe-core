@@ -31,10 +31,6 @@ IMAGE_INSTALL += " \
     timestamp-service \
     networkmanager crda \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
-    weston-xwayland weston weston-init imx-gpu-viv \
-    robot-app-wayland-launch robot-app \
-    opentrons-robot-server opentrons-update-server \
-    python3 python3-misc python3-modules \
  "
 
 ROBOT_TYPE = "OT-3 Standard"
@@ -86,8 +82,8 @@ python do_create_opentrons_manifest() {
 }
 ROOTFS_PREPROCESS_COMMAND += "do_create_opentrons_manifest; "
 
-# add the rootfs version to the welcome banner
-do_add_rootfs_version() {
+# changes we might want to make to the rootfs
+do_make_rootfs_changes() {
     printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) \\\n \\\l\n" > ${IMAGE_ROOTFS}/etc/issue
     printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) %%h\n" > ${IMAGE_ROOTFS}/etc/issue.net
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue
@@ -101,10 +97,17 @@ do_add_rootfs_version() {
     printf "PRETTY_HOSTNAME=opentrons\n" > ${IMAGE_ROOTFS}/etc/machine-info
     printf "DEPLOYMENT=development\n" >> ${IMAGE_ROOTFS}/etc/machine-info
 
+    # copy the boot files to the /boot dir
+    rsync -aL --chown=root:root  ${DEPLOY_DIR_IMAGE}/Image.gz ${IMAGE_ROOTFS}/boot/
+    rsync -aL --chown=root:root  ${DEPLOY_DIR_IMAGE}/boot.scr* ${IMAGE_ROOTFS}/boot/boot.scr
+    rsync -aL --chown=root:root  ${DEPLOY_DIR_IMAGE}/overlays* ${IMAGE_ROOTFS}/boot/
+    rsync -aL --chown=root:root  ${DEPLOY_DIR_IMAGE}/imx8mm-verdin*dev.dtb ${IMAGE_ROOTFS}/boot/
+    rsync -aL --chown=root:root  ${DEPLOY_DIR_IMAGE}/imx8mm-verdin*dahlia.dtb ${IMAGE_ROOTFS}/boot/
+
     # cleanup
     rm -rf ${IMAGE_ROOTFS}/opentrons_versions
 }
-ROOTFS_POSTPROCESS_COMMAND += "do_add_rootfs_version; "
+ROOTFS_POSTPROCESS_COMMAND += "do_make_rootfs_changes; "
 
 fakeroot do_create_filesystem() {
     # create the userfs tree
