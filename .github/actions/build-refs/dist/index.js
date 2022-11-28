@@ -9759,7 +9759,7 @@ function latestTagPrefixFor(repo) {
         return 'refs/tags/v';
     if (repo === 'oe-core')
         return 'refs/tags/v';
-    throw `Unknown repo ${repo}`;
+    throw new Error(`Unknown repo ${repo}`);
 }
 function latestTag(tagRefs) {
     var _a, _b;
@@ -9796,7 +9796,7 @@ function visitRefsByType(ref, ifBranch, ifTag) {
         return ifBranch(ref);
     if (ref.startsWith('refs/tags'))
         return ifTag(ref);
-    throw `Ref ${ref} can't be matched to branch or tag, is it a shortref?`;
+    throw new Error(`Ref ${ref} can't be matched to branch or tag, is it a shortref?`);
 }
 function branchesToAttempt(requesterBranch, requesterIsMain, requestedMain) {
     // if this is a main-branch build, use our main branch
@@ -9826,7 +9826,7 @@ function resolveRefs(toAttempt) {
                     .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: restAPICompliantRef(latestTagPrefixFor(repoName)) }))
                     .then(response => {
                     if (response.status != 200) {
-                        throw `Bad response from github api for ${repoName} get tags: ${response.status}`;
+                        throw new Error(`Bad response from github api for ${repoName} get tags: ${response.status}`);
                     }
                     return latestTag(response.data);
                 });
@@ -9844,7 +9844,7 @@ function resolveRefs(toAttempt) {
                     .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: restAPICompliantRef(correctRef) }))
                     .then(value => {
                     if (value.status != 200 || !value.data) {
-                        throw `Bad response from github api for ${repoName} get matching refs: ${value.status}`;
+                        throw new Error(`Bad response from github api for ${repoName} get matching refs: ${value.status}`);
                     }
                     const availableRefs = value.data.map(refObj => refObj.ref);
                     _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`refs on ${repoName} matching ${ref}: ${availableRefs}`);
@@ -9885,7 +9885,7 @@ function _run() {
             yield run();
         }
         catch (error) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_1__.setFailed(error.message);
+            _actions_core__WEBPACK_IMPORTED_MODULE_1__.setFailed(error.toString());
         }
     });
 }
