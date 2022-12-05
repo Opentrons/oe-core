@@ -1,0 +1,44 @@
+name: "Test the build-refs js action"
+
+on:
+  push:
+    branches:
+      - '*'
+    paths:
+      - ".github/workflows/test-build-refs.yml"
+      - ".github/actions/build-refs/**/*"
+
+jobs:
+  check-action:
+    name: "check build refs action"
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Fetch sources
+        uses: 'actions/checkout@v3'
+        with:
+          submodules: false
+      - name: Set up js
+        run: |
+          cd .github/actions/build-refs
+          npm install
+      - name: Format
+        run: |
+          cd .github/actions/build-refs
+          npm run format-check
+      - name: Lint
+        run: |
+          cd .github/actions/build-refs
+          npm run lint
+      - name: Test
+        run: |
+          cd .github/actions/build-refs
+          npm run test
+      - name: Update built action
+        run: |
+          cd .github/actions/build-refs
+          npm run build
+          git update-index --refresh
+          git config user.name 'Opentrons CI'
+          git config user.email 'engineering@opentrons.com'
+          git add dist/index.js || echo "No changes from build"
+          git commit -m 'update action' && git push || echo "Not pushing build"

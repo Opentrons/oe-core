@@ -1,10 +1,11 @@
 DESCRIPTION = "nodeJS Evented I/O for V8 JavaScript"
 HOMEPAGE = "http://nodejs.org"
-LICENSE = "MIT & BSD & Artistic-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=a1016f9b7979cfe6fc3466a9bba60b1e"
+LICENSE = "MIT & ISC & BSD-2-Clause & BSD-3-Clause & Artistic-2.0"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=6ba5b21ac7a505195ca69344d3d7a94a"
 
 DEPENDS = "openssl"
 DEPENDS_append_class-target = " qemu-native"
+DEPENDS_append_class-native = " c-ares-native"
 
 inherit pkgconfig python3native qemu
 
@@ -14,14 +15,18 @@ COMPATIBLE_MACHINE_mips64 = "(!.*mips64).*"
 
 COMPATIBLE_HOST_riscv64 = "null"
 COMPATIBLE_HOST_riscv32 = "null"
+COMPATIBLE_HOST_powerpc = "null"
 
 SRC_URI = "http://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
            file://0001-Disable-running-gyp-files-for-bundled-deps.patch \
-           file://0003-Install-both-binaries-and-use-libdir.patch \
+           file://0002-Install-both-binaries-and-use-libdir.patch \
            file://0004-v8-don-t-override-ARM-CFLAGS.patch \
+           file://0005-add-openssl-legacy-provider-option.patch \
            file://big-endian.patch \
-           file://mips-warnings.patch \
            file://mips-less-memory.patch \
+           file://system-c-ares.patch \
+           file://0001-liftoff-Correct-function-signatures.patch \
+           file://0001-mips-Use-32bit-cast-for-operand-on-mips32.patch \
            "
 SRC_URI_append_class-target = " \
            file://0002-Using-native-binaries.patch \
@@ -32,7 +37,7 @@ SRC_URI_append_toolchain-clang_x86 = " \
 SRC_URI_append_toolchain-clang_powerpc64le = " \
            file://0001-ppc64-Do-not-use-mminimal-toc-with-clang.patch \
            "
-SRC_URI[sha256sum] = "ddf1d2d56ddf35ecd98c5ea5ddcd690b245899f289559b4330c921255f5a247f"
+SRC_URI[sha256sum] = "e922e215cc68eb5f94d33e8a0b61e2c863b7731cc8600ab955d3822da90ff8d1"
 
 S = "${WORKDIR}/node-v${PV}"
 
@@ -54,7 +59,8 @@ ARCHFLAGS_arm = "${@bb.utils.contains('TUNE_FEATURES', 'callconvention-hard', '-
                     bb.utils.contains('TUNE_FEATURES', 'vfpv3d16', '--with-arm-fpu=vfpv3-d16', \
                     bb.utils.contains('TUNE_FEATURES', 'vfpv3', '--with-arm-fpu=vfpv3', \
                     '--with-arm-fpu=vfp', d), d), d)}"
-GYP_DEFINES_append_mipsel = " mips_arch_variant='r1' "
+ARCHFLAGS_append_mips = " --v8-lite-mode"
+ARCHFLAGS_append_mipsel = " --v8-lite-mode"
 ARCHFLAGS ?= ""
 
 PACKAGECONFIG ??= "ares brotli icu zlib"
@@ -85,7 +91,6 @@ python do_unpack() {
     import shutil
 
     bb.build.exec_func('base_do_unpack', d)
-
     shutil.rmtree(d.getVar('S') + '/deps/openssl', True)
     if 'ares' in d.getVar('PACKAGECONFIG'):
         shutil.rmtree(d.getVar('S') + '/deps/cares', True)
@@ -135,7 +140,8 @@ do_configure () {
     export LD="${CXX}"
     GYP_DEFINES="${GYP_DEFINES}" export GYP_DEFINES
     # $TARGET_ARCH settings don't match --dest-cpu settings
-    python3 configure.py --prefix=${prefix} --cross-compiling --shared-openssl \
+    python3 configure.py --prefix=${prefix} --cross-compiling \
+               --shared-openssl \
                --without-dtrace \
                --without-etw \
                --dest-cpu="${@map_nodejs_arch(d.getVar('TARGET_ARCH'), d)}" \
@@ -147,17 +153,21 @@ do_configure () {
 
 do_compile () {
     export LD="${CXX}"
-    install -Dm 0755 ${B}/v8-qemu-wrapper.sh ${B}/out/Release/v8-qemu-wrapper.sh
+    install -D ${B}/v8-qemu-wrapper.sh ${B}/out/Release/v8-qemu-wrapper.sh
     oe_runmake BUILDTYPE=Release
 }
 
 do_install () {
     oe_runmake install DESTDIR=${D}
-
-    # wasn't updated since 2009 and is the only thing requiring python2 in runtime
-    # ERROR: nodejs-12.14.1-r0 do_package_qa: QA Issue: /usr/lib/node_modules/npm/node_modules/node-gyp/gyp/samples/samples contained in package nodejs-npm requires /usr/bin/python, but no providers found in RDEPENDS:nodejs-npm? [file-rdeps]
-    rm -f ${D}${exec_prefix}/lib/node_modules/npm/node_modules/node-gyp/gyp/samples/samples
 }
+
+BINARIES = " \
+    bytecode_builtins_list_generator \
+    ${@bb.utils.contains('PACKAGECONFIG', 'icu', 'gen-regexp-special-case', '', d)} \
+    mkcodecache \
+    node_mksnapshot \
+    torque \
+"
 
 do_install_append_class-native() {
     # use node from PATH instead of absolute path to sysroot
@@ -189,7 +199,7 @@ do_install_append_class-target() {
 }
 
 PACKAGES =+ "${PN}-npm"
-FILES_${PN}-npm = "${exec_prefix}/lib/node_modules ${bindir}/npm ${bindir}/npx"
+FILES_${PN}-npm = "${nonarch_libdir}/node_modules ${bindir}/npm ${bindir}/npx"
 RDEPENDS_${PN}-npm = "bash python3-core python3-shell python3-datetime \
     python3-misc python3-multiprocessing"
 

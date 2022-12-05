@@ -1,19 +1,13 @@
-# Recipe created by recipetool
-# This is the basis of a recipe and may need further editing in order to be fully functional.
-# (Feel free to remove these comments when editing.)
+inherit externalsrc
 
-# WARNING: the following LICENSE and LIC_FILES_CHKSUM values are best guesses - it is
-# your responsibility to verify that the values are complete and correct.
+EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "opentrons"))}"
+
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-SRC_URI = "git://github.com/Opentrons/opentrons.git;protocol=https;branch=edge;"
 
 RDEPENDS_${PN} += " bmap-tools libubootenv nginx python3-dbus python3-aiohttp python3-systemd"
 
-# Modify these as desired
-PV = "1.0+git${SRCPV}"
-SRCREV = "${AUTOREV}"
 
 inherit insane systemd
 
@@ -30,12 +24,11 @@ PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = ""
 PIPENV_APP_BUNDLE_USE_GLOBAL = "python3-aiohttp systemd-python"
 
-do_compile_append() {
-  # create json file to be used in VERSION.jso
-  python3 ${S}/scripts/python_build_utils.py update-server dump_br_version > ${DEPLOY_DIR_IMAGE}/opentrons-update-server-version.json
-}
-
 do_install_append() {
+  # create json file to be used in VERSION.json
+  install -d ${D}/opentrons_versions
+  python3 ${S}/scripts/python_build_utils.py update-server dump_br_version > ${D}/opentrons_versions/opentrons-update-server-version.json
+
   install -d ${D}/${systemd_unitdir}/system
   install -m 0644 ${WORKDIR}/opentrons-update-server.service ${D}/${systemd_unitdir}/system
 }

@@ -46,7 +46,7 @@ RUN groupadd -g $host_gid $USER_NAME || true \
 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
-RUN mkdir -p /volumes/oe-core
+RUN mkdir -p /volumes/oe-core && mkdir -p /volumes/cache
 
 
 # Perform the Yocto build as user ot3 (not as root).

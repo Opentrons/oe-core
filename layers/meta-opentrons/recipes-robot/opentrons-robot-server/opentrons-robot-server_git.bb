@@ -1,19 +1,11 @@
-# Recipe created by recipetool
-# This is the basis of a recipe and may need further editing in order to be fully functional.
-# (Feel free to remove these comments when editing.)
 
-# WARNING: the following LICENSE and LIC_FILES_CHKSUM values are best guesses - it is
-# your responsibility to verify that the values are complete and correct.
+inherit externalsrc
+EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "opentrons"))}"
+
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-SRC_URI = "git://github.com/Opentrons/opentrons.git;protocol=https;branch=edge;"
-
 # Modify these as desired
-PV = "1.0+git${SRCPV}"
-SRCREV = "${AUTOREV}"
-S = "${WORKDIR}/git"
-B = "${WORKDIR}/build"
 PACKAGEJSON_FILE = "${S}/robot-server/robot_server/package.json"
 DEST_SYSTEMD_DROPFILE ?= "${B}/robot-server-version.conf"
 inherit insane systemd get_ot_package_version
@@ -29,9 +21,7 @@ PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq "
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = "./../hardware"
 
-do_compile_append () {
-    # create json file to be used in VERSION.json
-    python3 ${S}/scripts/python_build_utils.py robot-server dump_br_version > ${DEPLOY_DIR_IMAGE}/opentrons-robot-server-version.json
+do_compile_append() {
     # dont include scripts
     rm -rf ${PIPENV_APP_BUNDLE_SOURCE_VENV}/opentrons/resources/scripts
 }
@@ -39,6 +29,10 @@ do_compile_append () {
 addtask do_write_systemd_dropfile after do_compile before do_install
 
 do_install_append () {
+    # create json file to be used in VERSION.json
+    install -d ${D}/opentrons_versions
+    python3 ${S}/scripts/python_build_utils.py robot-server dump_br_version > ${D}/opentrons_versions/opentrons-robot-server-version.json
+
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-robot-server.service ${D}${systemd_system_unitdir}/opentrons-robot-server.service
     install -d ${D}${systemd_system_unitdir}/opentrons-robot-server.service.d
