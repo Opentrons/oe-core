@@ -5,13 +5,6 @@
 # - Boot the loaded kernel from the rootfs
 # - If boot fails, switch the root_part env var (2-3) and retry boot
 #
-# Common flags:
-# - Boot from rootfs: boot_from_rootfs := {1, 0}
-#   1 - loads the kernel + dtb + overlays from the active rootfs as determined by root_part env. [DEFAULT]
-#   0 - loads the kernel + dtb + overlays from the boot partition.
-# - Boot files: rootfs_boot_dir := {"/boot"}
-#   "/boot" - directory in the rootfs to look for the kernel + dtb + overlays
-
 # SPDX-License-Identifier: GPL-2.0+ OR MIT
 #
 # Copyright 2020 Toradex
@@ -58,21 +51,12 @@ test -n ${boot_devnum} || env set boot_devnum ${devnum}
 test -n ${root_devnum} || env set root_devnum ${devnum}
 test -n ${kernel_image} || env set kernel_image @@KERNEL_IMAGETYPE@@
 test -n ${boot_devtype} || env set boot_devtype ${devtype}
-test -n ${boot_from_rootfs} || env set boot_from_rootfs 1
 test -n ${rootfs_boot_dir} || env set rootfs_boot_dir "/boot"
-test ${boot_from_rootfs} = 0 && env set rootfs_boot_dir ""
 test -n ${overlays_file} || env set overlays_file "${rootfs_boot_dir}/overlays.txt"
 test -n ${overlays_prefix} || env set overlays_prefix "${rootfs_boot_dir}/overlays/"
 
-# load kernel from rootfs or boot partition
-if test "${boot_devtype}" = "mmc"; then
-    if test "${boot_from_rootfs}" = 1; then
-        env set load_cmd 'ext4load ${boot_devtype} ${root_devnum}:${root_part}'
-    else
-        env set load_cmd 'load ${boot_devtype} ${boot_devnum}:${boot_part}'
-    fi
-fi
-
+# load kernel + dtb(s) + overlays from rootfs
+test ${boot_devtype} = "mmc" && env set load_cmd 'ext4load ${boot_devtype} ${root_devnum}:${root_part}'
 test ${boot_devtype} = "usb" && env set load_cmd 'load ${boot_devtype} ${boot_devnum}:${boot_part}'
 test ${boot_devtype} = "tftp" && env set load_cmd 'tftp'
 test ${boot_devtype} = "dhcp" && env set load_cmd 'dhcp'
