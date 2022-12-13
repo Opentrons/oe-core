@@ -6,8 +6,8 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 # Modify these as desired
-PACKAGEJSON_FILE = "${S}/robot-server/robot_server/package.json"
 DEST_SYSTEMD_DROPFILE ?= "${B}/robot-server-version.conf"
+OT_PACKAGE = "robot-server"
 inherit insane systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
@@ -31,7 +31,7 @@ addtask do_write_systemd_dropfile after do_compile before do_install
 do_install_append () {
     # create json file to be used in VERSION.json
     install -d ${D}/opentrons_versions
-    python3 ${S}/scripts/python_build_utils.py robot-server dump_br_version > ${D}/opentrons_versions/opentrons-robot-server-version.json
+    python3 ${S}/scripts/python_build_utils.py robot-server ot3 dump_br_version > ${D}/opentrons_versions/opentrons-robot-server-version.json
 
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-robot-server.service ${D}${systemd_system_unitdir}/opentrons-robot-server.service
