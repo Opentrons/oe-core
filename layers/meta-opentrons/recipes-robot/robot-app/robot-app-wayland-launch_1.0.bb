@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/Apache-2.0;md5=89aea4e17d99a7ca
 
 inherit allarch systemd
 
-RDEPENDS_${PN}_append = "weston-init robot-app"
+RDEPENDS:${PN}:append = "weston-init robot-app"
 
 S = "${WORKDIR}"
 
@@ -16,7 +16,7 @@ SRC_URI = " \
     file://configure-screen-power.service \
 "
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 APPLICATION_ENVIRONMENT := '\"DISPLAY=\:0\:0\" \"XDG_SESSION_TYPE=wayland\" \"XDG_SESSION_DESKTOP=kiosk\" \"PYTHONPATH=/opt/opentrons-robot-server\"'
 
@@ -37,4 +37,4 @@ do_install () {
 }
 
 SYSTEMD_PACKAGES = "${PN}"
-SYSTEMD_SERVICE_${PN} = "opentrons-robot-app.service configure-screen-power.service"
+SYSTEMD_SERVICE:${PN} = "opentrons-robot-app.service configure-screen-power.service"
