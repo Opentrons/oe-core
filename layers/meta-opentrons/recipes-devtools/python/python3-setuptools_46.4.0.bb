@@ -6,10 +6,10 @@
 require recipes-devtools/python/python-setuptools.inc
 SRC_URI[md5sum] = "e2c6c3d64b38efe2e81bcd502cf54dcc"
 SRC_URI[sha256sum] = "4334fc63121aafb1cc98fd5ae5dd47ea8ad4a38ad638b47af03a686deb14ef5b"
-SRC_URI_remove_class-native = " file://0001-conditionally-do-not-fetch-code-by-easy_install.patch"
+SRC_URI:remove:class-native = " file://0001-conditionally-do-not-fetch-code-by-easy_install.patch"
 inherit setuptools3
 
 
-do_install_append() {
+do_install:append() {
     mv ${D}${bindir}/easy_install ${D}${bindir}/easy3_install
 }

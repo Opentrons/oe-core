@@ -11,9 +11,9 @@ OT_PACKAGE = "robot-server"
 inherit insane systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
-SYSTEMD_SERVICE_${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service"
-FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
-SRC_URI_append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-modules.rules"
+SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service"
+FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
+SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-modules.rules"
 
 PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
@@ -21,14 +21,14 @@ PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq "
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = "./../hardware"
 
-do_compile_append() {
+do_compile:append() {
     # dont include scripts
     rm -rf ${PIPENV_APP_BUNDLE_SOURCE_VENV}/opentrons/resources/scripts
 }
 
 addtask do_write_systemd_dropfile after do_compile before do_install
 
-do_install_append () {
+do_install:append () {
     # add release notes
     install -d ${D}${sysconfdir}
     install ${S}/api/release-notes.md ${D}${sysconfdir}/
@@ -46,12 +46,12 @@ do_install_append () {
     install -m 0644 ${WORKDIR}/95-opentrons-modules.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-modules.rules
 }
 
-FILES_${PN}_append = " ${systemd_system_unitdir/opentrons-robot-server.service.d \
+FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d \
                        ${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf \
                        ${sysconfdir}/udev/rules.d/95-opentrons-modules.rules \
                        ${sysconfdir}/release-notes.md \
                        "
 
-RDEPENDS_${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify"
+RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify"
 
 inherit pipenv_app_bundle

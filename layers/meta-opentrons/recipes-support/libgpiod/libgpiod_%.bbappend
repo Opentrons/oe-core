@@ -1,1 +1,1 @@
-PACKAGECONFIG_append = " python3"
+PACKAGECONFIG:append = " python3"

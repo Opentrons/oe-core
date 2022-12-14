@@ -1,9 +1,9 @@
-SRC_URI_append = " \
+SRC_URI:append = " \
                file://wrapup-ot3.sh \
 "
 
-FILESEXTRAPATHS_append := ":${THISDIR}/files"
-do_deploy_append () {
+FILESEXTRAPATHS:append := ":${THISDIR}/files"
+do_deploy:append () {
     install -m 644 -T ${WORKDIR}/wrapup-ot3.sh ${DEPLOYDIR}/wrapup.sh
 }
 
