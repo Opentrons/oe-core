@@ -26,9 +26,6 @@
 [submodule "layers/meta-toradex-nxp"]
 	path = layers/meta-toradex-nxp
 	url = https://git.toradex.com/meta-toradex-nxp.git
-[submodule "layers/meta-toradex-tegra"]
-	path = layers/meta-toradex-tegra
-	url = https://git.toradex.com/meta-toradex-tegra.git
 [submodule "layers/meta-yocto"]
 	path = layers/meta-yocto
 	url = https://git.yoctoproject.org/git/meta-yocto
