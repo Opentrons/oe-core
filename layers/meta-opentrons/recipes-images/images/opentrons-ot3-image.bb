@@ -5,12 +5,31 @@ LICENSE = "apache-2"
 
 inherit core-image image_type_tezi
 
+# TODO: These were the entrypoint and address directives from the old
+# machine.conf. The upstream versions in meta-toradex-nxp/conf/machine/verdin-imx8mm.conf
+# are now different.
+# Consider this
+# UBOOT_ENTRYPOINT = "0x40280000"
+# UBOOT_DTB_LOADADDRESS = "0x43000000"
+# UBOOT_DTBO_LOADADDRESS = "0x46000000"
+# UBOOT_RD_LOADADDRESS = "0x60000000"
+
+
+TEZI_EXTERNAL_KERNEL_DEVICETREE_BOOT = "\
+  verdin-imx8mm_sn65dsi84-atm0700l61_overlay.dtbo \
+  verdin-imx8mm_sn65dsi84_overlay.dtbo \
+  verdin-imx8mm_gt911_overlay.dtbo \
+  verdin-imx8mm_MCP2518_overlay.dtbo \
+  verdin-imx8mm_force-lcd-on.dtbo \
+"
+
 DEPENDS += "rsync-native zip-native \
     opentrons-robot-server \
     opentrons-update-server \
     opentrons-usb-bridge \
     opentrons-system-server \
     "
+
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
 IMAGE_LINGUAS = "en-us"
