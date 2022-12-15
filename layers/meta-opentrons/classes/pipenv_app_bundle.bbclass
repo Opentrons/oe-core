@@ -59,7 +59,8 @@ python do_rewrite_requirements() {
     # we're going to rewrite it to make the references to the monorepo files non-editable
     # and relative to a file directory locally
     reqsfile = d.getVar("B") + '/requirements-unfiltered.txt'
-    orig = open(reqsfile).read().split('\n')
+    with open(reqsfile) as origfile:
+        orig = origfile.read().split('\n')
     condensed = []
     working = ''
     for line in orig:
@@ -77,7 +78,8 @@ python do_rewrite_requirements() {
         else:
             condensed.append(extras)
     internal = d.getVar("B") + '/requirements-condensed.txt'
-    open(internal, 'w').write('\n'.join(condensed))
+    with open(internal, 'w') as internalfile:
+        internalfile.write('\n'.join(condensed))
     stripped = [l for l in condensed if not l.strip().startswith('#')]
     pypi_outfile = d.getVar("B") + '/pypi.txt'
     local_outfile = d.getVar("B") + '/local.txt'
@@ -117,8 +119,10 @@ python do_rewrite_requirements() {
         else:
             bb.debug(1, 'Keeping ' + line)
             pypi.append(line)
-    open(pypi_outfile, 'w').write('\n'.join(pypi) + '\n')
-    open(local_outfile, 'w').write('\n'.join(local) + '\n')
+    with open(pypi_outfile, 'w') as outf:
+        outf.write('\n'.join(pypi) + '\n')
+    with open(local_outfile, 'w') as outf:
+        outf.write('\n'.join(local) + '\n')
 }
 
 do_rewrite_requirements[vardeps] += " PIPENV_APP_BUNDLE_USE_GLOBAL PIPENV_APP_BUNDLE_EXTRAS "
