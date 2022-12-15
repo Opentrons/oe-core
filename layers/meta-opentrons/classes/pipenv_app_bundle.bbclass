@@ -1,7 +1,7 @@
 # pipenv_app_bundle.bbclass: Install python applications described by
 # pipenv projects as directories in /opt (or anywhere, really)
 
-inherit distutils3-base
+inherit setuptools3-base
 
 DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native "
 RDEPENDS:${PN} += " python3 python3-modules"

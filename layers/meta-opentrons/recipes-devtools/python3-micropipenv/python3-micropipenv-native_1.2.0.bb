@@ -9,4 +9,4 @@ S = "${WORKDIR}/micropipenv-${PV}"
 
 DEPENDS = "python3-native python3-toml-native "
 
-inherit native setuptools3 pypi
+inherit setuptools3 pypi native
