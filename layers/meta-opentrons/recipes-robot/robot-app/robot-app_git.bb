@@ -23,10 +23,16 @@ do_configure(){
 do_compile(){
     export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
     cd ${S}
+    export OPENSSL_MODULES="${STAGING_LIBDIR_NATIVE}/ossl-modules"
+    export NODE_OPTIONS="--openssl-legacy-provider"
+    export NODE_ENV=production
+    export NO_PYTHON=true
+    export NO_USB_DETECTION=true
     make -C ${S}/app dist
     make -C ${S}/app-shell lib
     cd ${S}/app-shell
-    NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
+
+    yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
 
 fakeroot do_install(){
