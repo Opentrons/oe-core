@@ -14,4 +14,4 @@ inherit setuptools3
 
 RDEPENDS:${PN} += "python3-aenum python3-wrapt"
 
-RDEPENDS:${PN} += "python3-asyncio python3-core python3-ctypes python3-curses python3-datetime python3-io python3-logging python3-math python3-multiprocessing python3-netclient python3-pickle python3-pkg-resources python3-pyserial python3-six python3-sqlite3 python3-stringold python3-threading python3-typing "
+RDEPENDS:${PN} += "python3-asyncio python3-core python3-ctypes python3-curses python3-datetime python3-io python3-logging python3-math python3-multiprocessing python3-netclient python3-pickle python3-pkg-resources python3-pyserial python3-six python3-sqlite3 "
