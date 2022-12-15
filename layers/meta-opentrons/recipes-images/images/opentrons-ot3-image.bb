@@ -14,15 +14,6 @@ inherit core-image image_type_tezi
 # UBOOT_DTBO_LOADADDRESS = "0x46000000"
 # UBOOT_RD_LOADADDRESS = "0x60000000"
 
-
-TEZI_EXTERNAL_KERNEL_DEVICETREE_BOOT = "\
-  verdin-imx8mm_sn65dsi84-atm0700l61_overlay.dtbo \
-  verdin-imx8mm_sn65dsi84_overlay.dtbo \
-  verdin-imx8mm_gt911_overlay.dtbo \
-  verdin-imx8mm_MCP2518_overlay.dtbo \
-  verdin-imx8mm_force-lcd-on.dtbo \
-"
-
 DEPENDS += "rsync-native zip-native \
     opentrons-robot-server \
     opentrons-update-server \
