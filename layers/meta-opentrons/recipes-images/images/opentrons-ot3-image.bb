@@ -156,13 +156,21 @@ fakeroot do_create_filesystem() {
     # add 3% to the actual size so mkfs has extra space
     USERFS_SIZE=`expr $USERFS_SIZE + $USERFS_SIZE \* 3 / 100`
 
+    if [ $USERFS_SIZE -lt  2048 ]
+    then
+       export USERFS_SIZE=2048
+    fi
+
     # create the userfs
     dd if=/dev/zero of=${USERFS_OUTPUT} seek=${USERFS_SIZE} count=60 bs=1024
+    bbnote "creating userfs filesystem in backing store"
     mkfs.ext4 -F ${USERFS_OUTPUT} -d ${USERFS_DIR}
 
+    bbnote "creating archive of userfs"
     # create the userfs tarball
     tar --xattrs --xattrs-include=* --sort=name --format=posix --numeric-owner -cf ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar -C ${USERFS_DIR} ./
 
+    bbnote "compressing archive of userfs"
     # compress the tarball
     xz -f -k -c -9 ${XZ_DEFAULTS} --check=crc32 ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar > ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar.xz
 }
