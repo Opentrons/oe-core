@@ -31,12 +31,10 @@ PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = ""
 PIPENV_APP_BUNDLE_USE_GLOBAL = "pyudev pyserial"
 
-do_compile_append() {
-  # create json file to be used in VERSION.json
-  python3 ${S}/scripts/python_build_utils.py usb-bridge dump_br_version > ${DEPLOY_DIR_IMAGE}/opentrons-usb-bridge-version.json
-}
-
 do_install_append() {
+  # create json file to be used in VERSION.json
+  python3 ${S}/scripts/python_build_utils.py usb-bridge ot3 dump_br_version > ${DEPLOY_DIR_IMAGE}/opentrons-usb-bridge-version.json
+
   install -d ${D}/${systemd_system_unitdir}
   install -m 0644 ${WORKDIR}/opentrons-usb-bridge.service ${D}/${systemd_system_unitdir}/opentrons-usb-bridge.service
 }
