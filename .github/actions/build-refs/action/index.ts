@@ -33,7 +33,7 @@ export interface GitHubApiTag {
 function latestTagPrefixFor(repo: Repo): string {
   if (repo === 'monorepo') return 'refs/tags/v'
   if (repo === 'oe-core') return 'refs/tags/v'
-  throw `Unknown repo ${repo}`
+  throw new Error(`Unknown repo ${repo}`)
 }
 
 export function latestTag(tagRefs: GitHubApiTag[]): Tag | null {
@@ -78,7 +78,9 @@ function visitRefsByType<T>(
 ): T {
   if (ref.startsWith('refs/heads')) return ifBranch(ref as Branch)
   if (ref.startsWith('refs/tags')) return ifTag(ref as Tag)
-  throw `Ref ${ref} can't be matched to branch or tag, is it a shortref?`
+  throw new Error(
+    `Ref ${ref} can't be matched to branch or tag, is it a shortref?`
+  )
 }
 
 function branchesToAttempt(
@@ -131,7 +133,9 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
         })
         .then(response => {
           if (response.status != 200) {
-            throw `Bad response from github api for ${repoName} get tags: ${response.status}`
+            throw new Error(
+              `Bad response from github api for ${repoName} get tags: ${response.status}`
+            )
           }
           return latestTag(response.data)
         })
@@ -157,7 +161,9 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
         })
         .then(value => {
           if (value.status != 200 || !value.data) {
-            throw `Bad response from github api for ${repoName} get matching refs: ${value.status}`
+            throw new Error(
+              `Bad response from github api for ${repoName} get matching refs: ${value.status}`
+            )
           }
           const availableRefs = value.data.map(refObj => refObj.ref)
           core.info(`refs on ${repoName} matching ${ref}: ${availableRefs}`)
@@ -208,7 +214,7 @@ async function _run() {
   try {
     await run()
   } catch (error: any) {
-    core.setFailed(error.message)
+    core.setFailed(error.toString())
   }
 }
 
