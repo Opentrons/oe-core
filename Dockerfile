@@ -57,7 +57,8 @@ RUN mkdir -p /volumes/oe-core && mkdir -p /volumes/cache
 USER $USER_NAME
 
 RUN git config --global user.name "Opentrons" && \
-    git config --global user.email engineering@opentrons.com
+    git config --global user.email engineering@opentrons.com && \
+    git config --global --add safe.directory /volumes/opentrons
 
 # Create the directory structure for the Yocto build in the container. The lowest two directory
 # levels must be the same as on the host.
