@@ -5,7 +5,11 @@ LICENSE = "apache-2"
 
 inherit core-image image_type_tezi
 
-DEPENDS += "rsync-native zip-native opentrons-robot-server opentrons-update-server"
+DEPENDS += "rsync-native zip-native \
+    opentrons-robot-server \
+    opentrons-update-server \
+    opentrons-usb-bridge \
+    "
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
 IMAGE_LINGUAS = "en-us"
