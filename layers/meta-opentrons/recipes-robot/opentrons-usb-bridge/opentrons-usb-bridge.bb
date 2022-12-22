@@ -6,14 +6,14 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 
-RDEPENDS_${PN} += " nginx python3-pyudev python3-pyserial"
+RDEPENDS:${PN} += " nginx python3-pyudev python3-pyserial"
 
 inherit insane systemd
 
 SYSTEMD_AUTO_ENABLE = "enable"
-SYSTEMD_SERVICE_${PN} = "opentrons-usb-bridge.service"
-FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
-SRC_URI_append = " file://opentrons-usb-bridge.service"
+SYSTEMD_SERVICE:${PN} = "opentrons-usb-bridge.service"
+FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
+SRC_URI:append = " file://opentrons-usb-bridge.service"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
