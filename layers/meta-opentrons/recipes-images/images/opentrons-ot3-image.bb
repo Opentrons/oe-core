@@ -5,7 +5,11 @@ LICENSE = "apache-2"
 
 inherit core-image image_type_tezi
 
-DEPENDS += "rsync-native zip-native opentrons-robot-server opentrons-update-server"
+DEPENDS += "rsync-native zip-native \
+    opentrons-robot-server \
+    opentrons-update-server \
+    opentrons-usb-bridge \
+    "
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
 IMAGE_LINGUAS = "en-us"
@@ -35,9 +39,15 @@ IMAGE_INSTALL += " \
     robot-app-wayland-launch robot-app \
     opentrons-robot-server opentrons-update-server \
     python3 python3-misc python3-modules \
+    opentrons-usb-bridge \
  "
 
+# We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
+# port. Luckily, they are only recommended so it is easy to filter them out.
+PACKAGE_EXCLUDE = "libusbgx libusbgx-examples"
+
 ROBOT_TYPE = "OT-3 Standard"
+
 # Prefix to the resulting deployable tarball name
 export IMAGE_BASENAME = "opentrons-ot3-image"
 MACHINE_NAME ?= "${MACHINE}"
@@ -53,6 +63,7 @@ python do_create_opentrons_manifest() {
     import json
     import os
 
+
     opentrons_manifest = {
         'robot_type': d.getVar('ROBOT_TYPE'),
         'build_type': os.getenv('OT_BUILD_TYPE', 'unknown/dev'),
@@ -63,7 +74,8 @@ python do_create_opentrons_manifest() {
 
     # check that we have the expected version files and write them to the VERSION.json
     expected_opentrons_versions = ["opentrons-robot-server-version.json", \
-                                   "opentrons-update-server-version.json"]
+                                   "opentrons-update-server-version.json", \
+                                   "opentrons-usb-bridge-version.json"]
 
     opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')
     for version_file in os.listdir(opentrons_versions_dir):
