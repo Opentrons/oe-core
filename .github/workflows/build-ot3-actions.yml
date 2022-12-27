@@ -90,21 +90,6 @@ jobs:
           echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
           cd ..
-      - name: Pull S3 cache
-        shell: bash
-        run: |
-          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
-          cachedir=${LOCAL_CACHE:-./cache}
-          for cachetype in downloads sstate git ; do
-              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
-              thiscache=${cachedir}/${cachetype}
-              echo "Fetching cache for ${cachetype} to ${localzip}"
-              mkdir -p ${thiscache}
-              TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
-              echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
-              TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
-              echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
-          done
       - name: Download sources
         run: |
           here=$(pwd)
