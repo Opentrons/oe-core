@@ -51,7 +51,7 @@ jobs:
           token: ${{ github.token }}
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
-      - name: Test tag build
+      - name: Test tag build ${{ inputs.monorepo-tag }}
         shell: bash
         run: |
            echo "get tag info"
