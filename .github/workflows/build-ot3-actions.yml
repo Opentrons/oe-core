@@ -52,6 +52,7 @@ jobs:
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
       - name: Test tag build
-        description: Lets test the tag build ${{ inputs.monorepo-tag }}
-        id: test-tag-build
+        shell: bash
+        run: |
+           echo "get tag info"
 
