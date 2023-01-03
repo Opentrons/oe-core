@@ -17,7 +17,7 @@ SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-ca
 
 PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
-PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq "
+PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq aenum aionotify aiosqlite aionotify anyio asgiref attrs click fastapi greenlet h11 h12 idna jsonschema pydantic pyrsistent pyserial python-dotenv python-multipart six sniffio sqlalchemy starlette typing-extensions uvicorn wsproto zipp setuptools"
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = "./../hardware"
 
@@ -47,6 +47,7 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d
                        ${sysconfdir}/udev/rules.d/95-opentrons-modules.rules \
                        "
 
-RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify"
+DEPENDS += " python3-setuptools"
+RDEPENDS:${PN} += " python3 udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify python3-aenum python3-typing-extensions"
 
 inherit pipenv_app_bundle
