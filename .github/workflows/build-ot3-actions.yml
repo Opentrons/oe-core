@@ -93,7 +93,7 @@ jobs:
           cd ..
       - name: Apply CI config overrides
         run: |
-          build_type="${{ inputs.build_type }}"
+          build_type="${{ inputs.build-type }}"
           echo "OT_BUILD_TYPE=${build_type}" >> .env
           cat .env
 
