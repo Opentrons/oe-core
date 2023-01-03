@@ -3,7 +3,7 @@
  * Copyright 2020-2021 Opentrons
  */
 
-// Verdin DSI to LVDS Adapter with connected ATM0700L61-CT display (7 inch) with a
+// Touch controller goodix gt911 on connected ATM0700L61-CT display (7 inch) with a
 // resolution of 1024x600 pixel. Semicustom from AZ Displays.
 
 /dts-v1/;
