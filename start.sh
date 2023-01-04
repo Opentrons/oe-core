@@ -34,5 +34,6 @@ ls -la /volumes
 export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
+echo "build_type: ${OT_BUILD_TYPE}"
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
