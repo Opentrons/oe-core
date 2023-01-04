@@ -130,7 +130,10 @@ jobs:
           docker run --env-file="${HOME}/.env" --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount   ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
         run: |
+          cat $HOME/.env
           here=$(pwd)
+          echo $here
+          ls -la $here
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
