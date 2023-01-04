@@ -23,15 +23,6 @@ on:
           - 'stage-staging'
           - 'stage-dev'
         default: 'stage-prod'
-      build-type:
-        description: |
-          The type of build we want to create.
-        required: true
-        type: choice
-        options:
-          - 'release'
-          - 'develop'
-        default: 'develop'
 
 jobs:
   run-build:
@@ -55,6 +46,18 @@ jobs:
           token: ${{ github.token }}
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
+      - name: Check if release build
+        id: check-release
+        if:
+          always()
+        run: |
+          echo "checking ${{steps.build-refs.outputs.monorepo}}"
+          build_type="develop"
+          if $(grep "ot3@" -q <<< ${{steps.build-refs.outputs.monorepo}}); then
+            build_type="release"
+          echo "Build Type is - ${build_type}"
+        output:
+          build-type: ${build_type}
       - name: Fetch oe-core source
         uses: 'actions/checkout@v3'
         with:
@@ -93,10 +96,8 @@ jobs:
           cd ..
       - name: Apply CI config overrides
         run: |
-          build_type="${{ inputs.build-type }}"
-          echo "OT_BUILD_TYPE=${build_type}" >> .env
+          echo "OT_BUILD_TYPE=${{ steps.check-release.outputs.build_type }}" >> .env
           cat .env
-
           cd oe-core
           echo "" >> ./build/conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf

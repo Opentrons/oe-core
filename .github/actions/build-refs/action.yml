@@ -16,7 +16,7 @@ outputs:
   monorepo:
     description: "the ref of the monorepo to use"
   oe-core:
-    description: "the ref of the monorepo to use"
+    description: "the ref of the oe-core to use"
 runs:
   using: 'node16'
   main: 'dist/index.js'
