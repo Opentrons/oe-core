@@ -55,6 +55,7 @@ jobs:
           build_type="develop"
           if $(grep "ot3@" -q <<< ${{steps.build-refs.outputs.monorepo}}); then
             build_type="release"
+          fi
           echo "Build Type is - ${build_type}"
           echo "build_type=${build_type}" >> $GITHUB_OUTPUT
       - name: Fetch oe-core source
