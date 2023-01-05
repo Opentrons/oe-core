@@ -21,7 +21,7 @@
 
 &gpu {
     status = "okay";
-}
+};
 
 /* Verdin I2C_1 */
 &i2c4 {
@@ -53,8 +53,7 @@
     backlight = <&backlight>;
     height-mm = <86>;
     width-mm = <154>;
-    status = "okay"
-    // verify
+    status = "okay";
     data-mapping = "vesa-24";
 
     panel-timing {
