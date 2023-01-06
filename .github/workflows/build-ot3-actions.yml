@@ -96,11 +96,12 @@ jobs:
           cd ..
       - name: Apply CI config overrides
         run: |
+          cd oe-core
           echo "" >> ./build/conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
           echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
-          echo 'OT_BUILD_TYPE = "${{ steps.check-release.outputs.build_type }}"' >> ./build/conf/local.conf
+          echo 'OT_BUILD_TYPE = "${{steps.check-release.outputs.build_type}}"' >> ./build/conf/local.conf
           cd ..
       - name: Pull S3 cache
         shell: bash
@@ -123,18 +124,15 @@ jobs:
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          echo "docker run --env-file=$HOME/.env --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
-          docker run --env-file="${HOME}/.env" --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount   ot3-image:latest opentrons-ot3-image --runall=fetch
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount   ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
         run: |
-          cat $HOME/.env
           here=$(pwd)
-          echo $here
-          ls -la $here
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          docker run --env-file="${HOME}/.env" --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af
