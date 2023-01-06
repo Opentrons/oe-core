@@ -13,8 +13,6 @@
     compatible = "toradex,verdin-imx8mm";
 };
 
-#include "verdin-imx8_mipi-dsi-to-sn65dsi84.dtsi"
-
 &backlight {
     status = "okay";
 };
