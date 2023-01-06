@@ -104,9 +104,10 @@ jobs:
           echo 'OT_BUILD_TYPE = "${{steps.check-release.outputs.build_type}}"' >> ./build/conf/local.conf
           cd ..
       - name: Handle Release
-         if: ${{ steps.check-release.outputs.build_type == 'release' }}
-         shell: bash
-         id: 'handle-release'
-         run: |
-           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json}} .
+        if: ${{ steps.check-release.outputs.build_type == 'release' }}
+        shell: bash
+        id: 'handle-release'
+        run: |
+          echo $(jq -V)
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json}} .
            cat releases.json
