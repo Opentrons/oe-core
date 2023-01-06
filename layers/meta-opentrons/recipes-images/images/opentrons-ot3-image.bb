@@ -19,6 +19,10 @@ COPY_LIC_DIRS ?= "1"
 
 SYSTEMD_DEFAULT_TARGET = "graphical.target"
 
+EXTRA_IMAGE_FEATURES += " \
+    ${@bb.utils.contains('OT_BUILD_TYPE', 'debug', 'debug-tweaks', '', d)} \
+"
+
 IMAGE_INSTALL += " \
     packagegroup-boot \
     packagegroup-basic \
@@ -63,10 +67,9 @@ python do_create_opentrons_manifest() {
     import json
     import os
 
-
     opentrons_manifest = {
         'robot_type': d.getVar('ROBOT_TYPE'),
-        'build_type': os.getenv('OT_BUILD_TYPE', 'unknown/dev'),
+        'build_type': d.getVar('OT_BUILD_TYPE', 'develop'),
         'openembedded_version': d.getVar('version', 'unknown'),
         'openembedded_sha': d.getVar('version', 'unknown'),
         'openembedded_branch': d.getVar('version', 'unknown')
