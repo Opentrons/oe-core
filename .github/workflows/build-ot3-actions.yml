@@ -46,18 +46,6 @@ jobs:
           token: ${{ github.token }}
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
-      - name: Check if release build
-        id: check-release
-        if:
-          always()
-        run: |
-          echo "checking ${{steps.build-refs.outputs.monorepo}}"
-          build_type="develop"
-          if $(grep "ot3@" -q <<< ${{steps.build-refs.outputs.monorepo}}); then
-            build_type="release"
-          fi
-          echo "Build Type is - ${build_type}"
-          echo "build_type=${build_type}" >> $GITHUB_OUTPUT
       - name: Fetch oe-core source
         uses: 'actions/checkout@v3'
         with:
@@ -101,8 +89,65 @@ jobs:
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
           echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
-          echo 'OT_BUILD_TYPE = "${{steps.check-release.outputs.build_type}}"' >> ./build/conf/local.conf
           cd ..
+      - name: Pull S3 cache
+        shell: bash
+        run: |
+          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
+          cachedir=${LOCAL_CACHE:-./cache}
+          for cachetype in downloads sstate git ; do
+              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+              thiscache=${cachedir}/${cachetype}
+              echo "Fetching cache for ${cachetype} to ${localzip}"
+              mkdir -p ${thiscache}
+              TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
+              echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
+              TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
+              echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
+          done
+      - name: Download sources
+        run: |
+          here=$(pwd)
+          oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
+          monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
+          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount   ot3-image:latest opentrons-ot3-image --runall=fetch
+      - name: Build image
+        run: |
+          here=$(pwd)
+          oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
+          monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
+          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image
+      - name: Prune images
+        if: always()
+        run: docker image prune -af
+      - name: Push S3 cache
+        shell: bash
+        continue-on-error: true
+        run: |
+          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
+          cachedir=${LOCAL_CACHE:-./cache}
+          for cachetype in downloads sstate git ; do
+              df -h
+              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+              thiscache=${cachedir}/${cachetype}
+              cd ${thiscache}
+              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
+              TIME="%E" time zip -q -r --filesync --symlinks  ${localzip} ./* 2>elapsed
+              echo "Refreshed cache in $(cat elapsed)" || 0
+              TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
+              echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
+          done
+      - name: Gather results
+        run: |
+          cd oe-core
+          mkdir -p build/deploy/opentrons
+          find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/ot3-fullimage.tar \;
+          find ./build/deploy/images -name "ot3-system.zip" -exec cp {} build/deploy/opentrons \;
+          find ./build/deploy/images -name "VERSION.json" -exec cp {} build/deploy/opentrons \;
+          tar czf ./build/deploy/opentrons/buildstats.tar.gz ./build/tmp/buildstats
       - name: Handle Release
         if: ${{ steps.check-release.outputs.build_type == 'release' }}
         shell: bash
@@ -114,4 +159,11 @@ jobs:
           version_file=../build/deploy/opentrons/VERSION.json
           python3 update-release.py --releases-file releases.json --version-file version_file --base-url $base_url
           cat releases.json
-
+      - name: Remove build data
+        if: always()
+        run: |
+          rm -rf ./*
+      - name: Remove poisoned cache
+        if: ${{ !success() }}
+        run: |
+          rm -rf ${LOCAL_CACHE:-./cache}/*
