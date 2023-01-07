@@ -168,7 +168,7 @@ jobs:
         run: |
           pwd
           ls -la
-          cd ./scripts
+          cd oe-core/
           pwd
           ls -la
           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json}} releases.json
