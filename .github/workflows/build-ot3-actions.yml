@@ -160,6 +160,7 @@ jobs:
           find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/ot3-fullimage.tar \;
           find ./build/deploy/images -name "ot3-system.zip" -exec cp {} build/deploy/opentrons \;
           find ./build/deploy/images -name "VERSION.json" -exec cp {} build/deploy/opentrons \;
+          find ./build/deploy/images -name "release-notes.md" -exec cp {} build/deploy/opentrons \;
           tar czf ./build/deploy/opentrons/buildstats.tar.gz ./build/tmp/buildstats
       - name: Handle Release
         if: ${{ steps.check-release.outputs.build_type == 'release' }}
@@ -175,7 +176,7 @@ jobs:
           base_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           version_file=../build/deploy/opentrons/VERSION.json
           python3 update_releases_file.py --releases-file test_releases.json --version-file $version_file --base-url $base_url
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read test_releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read test_releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/
       - name: Remove build data
         if: always()
         run: |

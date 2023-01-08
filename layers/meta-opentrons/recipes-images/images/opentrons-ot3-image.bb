@@ -110,6 +110,8 @@ do_make_rootfs_changes() {
 
     # add the VERSION.json file
     cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}/etc/VERSION.json
+    # copy the release notes to the output dir
+    cat ${IMAGE_ROOTFS}/etc/release-notes.md > ${DEPLOY_DIR_IMAGE}/release-notes.md
 
     # add hostname to rootfs
     printf "opentrons" > ${IMAGE_ROOTFS}/etc/hostname

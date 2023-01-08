@@ -29,6 +29,10 @@ do_compile_append() {
 addtask do_write_systemd_dropfile after do_compile before do_install
 
 do_install_append () {
+    # add release notes
+    install -d ${D}${sysconfdir}
+    install ${S}/api/release-notes.md ${D}${sysconfdir}/
+
     # create json file to be used in VERSION.json
     install -d ${D}/opentrons_versions
     python3 ${S}/scripts/python_build_utils.py robot-server ot3 dump_br_version > ${D}/opentrons_versions/opentrons-robot-server-version.json
@@ -45,6 +49,7 @@ do_install_append () {
 FILES_${PN}_append = " ${systemd_system_unitdir/opentrons-robot-server.service.d \
                        ${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf \
                        ${sysconfdir}/udev/rules.d/95-opentrons-modules.rules \
+                       ${sysconfdir}/release-notes.md \
                        "
 
 RDEPENDS_${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify"
