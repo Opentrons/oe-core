@@ -174,7 +174,7 @@ jobs:
           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json test_releases.json
           base_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           version_file=../build/deploy/opentrons/VERSION.json
-          python3 update-release.py --releases-file test_releases.json --version-file $version_file --base-url $base_url
+          python3 update_releases_file.py --releases-file test_releases.json --version-file $version_file --base-url $base_url
           cat releases.json
           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read test_releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe
       - name: Remove build data
