@@ -64,15 +64,26 @@ MAX_SYSTEMFS_SIZE = "1536"
 # create the opentrons ot3 manifest (VERSION.json) file
 python do_create_opentrons_manifest() {
     bb.note("Create the manifest json for for ot3-system.zip")
+    import subprocess
     import json
     import os
 
+    # Get the oe-core version, sha, branch
+    try:
+        oe_version = subprocess.check_output(['git', 'describe', '--tags', '--always']).decode().strip()
+        oe_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+        oe_branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+    except subprocess.CalledProcessError as cpe:
+        bb.error("Could not get oe-core version - %s" % cpe)
+        exit()
+
+    # Create the manifest dictionary
     opentrons_manifest = {
         'robot_type': d.getVar('ROBOT_TYPE'),
         'build_type': d.getVar('OT_BUILD_TYPE', 'develop'),
-        'openembedded_version': d.getVar('version', 'unknown'),
-        'openembedded_sha': d.getVar('version', 'unknown'),
-        'openembedded_branch': d.getVar('version', 'unknown')
+        'openembedded_version': oe_version,
+        'openembedded_sha': oe_sha,
+        'openembedded_branch': oe_branch
     }
 
     # check that we have the expected version files and write them to the VERSION.json
