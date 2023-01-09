@@ -14,7 +14,7 @@ TEZI_EXTERNAL_KERNEL_DEVICETREE = "\
   verdin-imx8mm_gt911_overlay.dtbo \
   verdin-imx8mm_MCP2518_overlay.dtbo \
   verdin-imx8mm_force-lcd-on.dtbo \
-  verdin-imx8mm_usbotg1-force-peripheral.dts \
+  verdin-imx8mm_usbotg1-force-peripheral.dtbo \
 "
 # this list of overlays will get written to overlays.txt and
 # applied at boot.
@@ -24,7 +24,7 @@ TEZI_EXTERNAL_KERNEL_DEVICETREE_BOOT = "\
   verdin-imx8mm_gt911_overlay.dtbo \
   verdin-imx8mm_MCP2518_overlay.dtbo \
   verdin-imx8mm_force-lcd-on.dtbo \
-  verdin-imx8mm_usbotg1-force-peripheral.dts \
+  verdin-imx8mm_usbotg1-force-peripheral.dtbo \
 "
 
 
