@@ -5,11 +5,11 @@ AUTHOR = "Nikolay Kim <fafhrd91@gmail.com>"
 LICENSE = "Apache-2"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=c76b717025e9f23e50092cd39a213d56"
 
-SRC_URI = "https://files.pythonhosted.org/packages/70/27/6098b4b60a3302a97f8ec97eb85d42f55a2fa904da4a369235a8e3b84352/aiohttp-3.4.4.tar.gz"
-SRC_URI[md5sum] = "80a6e0c6c452d511d1d37755d6f0995a"
-SRC_URI[sha256sum] = "51afec6ffa50a9da4cdef188971a802beb1ca8e8edb40fa429e5e529db3475fa"
+SRC_URI = "https://files.pythonhosted.org/packages/ff/4f/62d9859b7d4e6dc32feda67815c5f5ab4421e6909e48cbc970b6a40d60b7/aiohttp-3.8.3.tar.gz"
+SRC_URI[md5sum] = "642653db642be1508e50fcdeafe0f928"
+SRC_URI[sha256sum] = "3828fb41b7203176b82fe5d699e0d845435f2374750a44b480ea6b930f6be269"
 
-S = "${WORKDIR}/aiohttp-3.4.4"
+S = "${WORKDIR}/aiohttp-3.8.3"
 
 RDEPENDS:${PN} = "python3-attrs python3-chardet python3-multidict python3-async-timeout python3-yarl"
 
