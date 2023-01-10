@@ -214,7 +214,7 @@ async function run() {
     core.setOutput(repo, ref)
 
     // Determine the build-type based on the monorepo ref
-    if(repo === 'monorepo') {
+    if (repo === 'monorepo') {
       const buildType = resolveBuildType(ref)
       core.info(`Resolved oe-core build-type to ${buildType}`)
       core.setOutput('build-type', buildType)

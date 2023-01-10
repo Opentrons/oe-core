@@ -126,9 +126,7 @@ REFS_TO_ATTEMPT_FAILURE_TEST_SPECS.forEach(
   }
 )
 
-const BUILD_TYPE_TEST_SPECS: Array<
-  [string, [Ref], BuildType]
-> = [
+const BUILD_TYPE_TEST_SPECS: Array<[string, [Ref], BuildType]> = [
   [
     'when monorepo ref is edge but is not a tag is develop',
     ['refs/heads/edge'],
@@ -147,13 +145,11 @@ const BUILD_TYPE_TEST_SPECS: Array<
 ]
 
 BUILD_TYPE_TEST_SPECS.forEach(
-  ([
-    testNameFragment,
-    [testMonorepoRef],
-    testExpectedResult,
-  ]) => {
+  ([testNameFragment, [testMonorepoRef], testExpectedResult]) => {
     test(`buildType ${testNameFragment}`, () => {
-      expect(action.resolveBuildType(testMonorepoRef)).toStrictEqual(testExpectedResult)
+      expect(action.resolveBuildType(testMonorepoRef)).toStrictEqual(
+        testExpectedResult
+      )
     })
   }
 )
