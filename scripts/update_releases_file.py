@@ -1,5 +1,6 @@
 """A script to help update the releases.json file."""
 import os
+import sys
 import json
 import argparse
 
@@ -14,7 +15,8 @@ def main(args):
         with open(version_file, "r") as fh:
             version = json.load(fh).get("update_server_version", "0.0.0-dev")
     else:
-        print(f"ERROR: version file {version_file} not found!")
+
+        print(f"ERROR: version file {version_file} not found!", file=sys.stderr)
         exit(1)
 
     # Get the releases from the releases file

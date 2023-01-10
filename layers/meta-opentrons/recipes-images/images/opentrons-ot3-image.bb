@@ -114,20 +114,20 @@ ROOTFS_PREPROCESS_COMMAND += "do_create_opentrons_manifest; "
 
 # changes we might want to make to the rootfs
 do_make_rootfs_changes() {
-    printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) \\\n \\\l\n" > ${IMAGE_ROOTFS}/etc/issue
-    printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) %%h\n" > ${IMAGE_ROOTFS}/etc/issue.net
-    printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue
-    printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue.net
+    printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) \\\n \\\l\n" > ${IMAGE_ROOTFS}${sysconfdir}/issue
+    printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) %%h\n" > ${IMAGE_ROOTFS}${sysconfdir}/issue.net
+    printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}${sysconfdir}/issue
+    printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}${sysconfdir}/issue.net
 
     # add the VERSION.json file
-    cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}/etc/VERSION.json
+    cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}${sysconfdir}/VERSION.json
     # copy the release notes to the output dir
-    cat ${IMAGE_ROOTFS}/etc/release-notes.md > ${DEPLOY_DIR_IMAGE}/release-notes.md
+    cat ${IMAGE_ROOTFS}${sysconfdir}/release-notes.md > ${DEPLOY_DIR_IMAGE}/release-notes.md
 
     # add hostname to rootfs
-    printf "opentrons" > ${IMAGE_ROOTFS}/etc/hostname
-    printf "PRETTY_HOSTNAME=opentrons\n" > ${IMAGE_ROOTFS}/etc/machine-info
-    printf "DEPLOYMENT=development\n" >> ${IMAGE_ROOTFS}/etc/machine-info
+    printf "opentrons" > ${IMAGE_ROOTFS}${sysconfdir}/hostname
+    printf "PRETTY_HOSTNAME=opentrons\n" > ${IMAGE_ROOTFS}${sysconfdir}/machine-info
+    printf "DEPLOYMENT=development\n" >> ${IMAGE_ROOTFS}${sysconfdir}/machine-info
 
     # copy the boot files to the /boot dir
     rsync -aL --chown=root:root  ${DEPLOY_DIR_IMAGE}/Image.gz ${IMAGE_ROOTFS}/boot/
@@ -146,11 +146,11 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/home ${USERFS_DIR}/
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
-    mkdir -p ${USERFS_DIR}/etc
+    mkdir -p ${USERFS_DIR}${sysconfdir}
 
     # add hostname and machine-info to userfs
-    cat ${IMAGE_ROOTFS}/etc/hostname > ${USERFS_DIR}/etc/hostname
-    cat ${IMAGE_ROOTFS}/etc/machine-info > ${USERFS_DIR}/etc/machine-info
+    cat ${IMAGE_ROOTFS}${sysconfdir}/hostname > ${USERFS_DIR}${sysconfdir}/hostname
+    cat ${IMAGE_ROOTFS}${sysconfdir}/machine-info > ${USERFS_DIR}${sysconfdir}/machine-info
 
     # cleanup dirs from rootfs
     rm -rf ${IMAGE_ROOTFS}/home/*
