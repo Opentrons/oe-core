@@ -9730,7 +9730,8 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony export */   "restAPICompliantRef": () => (/* binding */ restAPICompliantRef),
 /* harmony export */   "latestTag": () => (/* binding */ latestTag),
 /* harmony export */   "authoritativeRef": () => (/* binding */ authoritativeRef),
-/* harmony export */   "refsToAttempt": () => (/* binding */ refsToAttempt)
+/* harmony export */   "refsToAttempt": () => (/* binding */ refsToAttempt),
+/* harmony export */   "resolveBuildType": () => (/* binding */ resolveBuildType)
 /* harmony export */ });
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(5438);
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_github__WEBPACK_IMPORTED_MODULE_0__);
@@ -9856,6 +9857,9 @@ function resolveRefs(toAttempt) {
         return resolved;
     });
 }
+function resolveBuildType(ref) {
+    return ref.includes('refs/tags/ot3') ? 'release' : 'develop';
+}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const inputs = getInputs();
@@ -9876,6 +9880,12 @@ function run() {
         resolved.forEach((ref, repo) => {
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved ${repo} to ${ref}`);
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput(repo, ref);
+            // Determine the build-type based on the monorepo ref
+            if (repo === 'monorepo') {
+                const buildType = resolveBuildType(ref);
+                _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved oe-core build-type to ${buildType}`);
+                _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('build-type', buildType);
+            }
         });
     });
 }

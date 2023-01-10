@@ -46,18 +46,6 @@ jobs:
           token: ${{ github.token }}
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
-      - name: Check release build
-        id: check-release
-        if:
-          always()
-        run: |
-          echo "checking ${{steps.build-refs.outputs.monorepo}}"
-          build_type="develop"
-          if $(grep "ot3@" -q <<< ${{steps.build-refs.outputs.monorepo}}); then
-            build_type="release"
-          fi
-          echo "Build Type is - ${build_type}"
-          echo "build_type=${build_type}" >> $GITHUB_OUTPUT
       - name: Fetch oe-core source
         uses: 'actions/checkout@v3'
         with:
@@ -101,7 +89,7 @@ jobs:
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
           echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
-          echo 'OT_BUILD_TYPE = "${{steps.check-release.outputs.build_type}}"' >> ./build/conf/local.conf
+          echo 'OT_BUILD_TYPE = "${{steps.build-refs.outputs.build-type}}"' >> ./build/conf/local.conf
           cd ..
       - name: Pull S3 cache
         shell: bash
@@ -163,7 +151,7 @@ jobs:
           find ./build/deploy/images -name "release-notes.md" -exec cp {} build/deploy/opentrons \;
           tar czf ./build/deploy/opentrons/buildstats.tar.gz ./build/tmp/buildstats
       - name: Handle Release
-        if: ${{ steps.check-release.outputs.build_type == 'release' }}
+        if: ${{ steps.build-refs.outputs.build-type == 'release' }}
         shell: bash
         id: 'handle-release'
         run: |

@@ -1,5 +1,5 @@
 import * as action from '../index'
-import type { InputRefs, Ref, Branch } from '../index'
+import type { InputRefs, Ref, Branch, BuildType } from '../index'
 
 const AUTHORITATIVE_REF_TEST_SPECS: Array<
   [string, InputRefs, [string, boolean]]
@@ -122,6 +122,38 @@ REFS_TO_ATTEMPT_FAILURE_TEST_SPECS.forEach(
           testRequestedMain
         )
       }).toThrow()
+    })
+  }
+)
+
+const BUILD_TYPE_TEST_SPECS: Array<
+  [string, [Ref], BuildType]
+> = [
+  [
+    'when monorepo ref is edge but is not a tag is develop',
+    ['refs/heads/edge'],
+    'develop',
+  ],
+  [
+    'when monorepo ref is some branch but is not a tag is develop',
+    ['refs/heads/something'],
+    'develop',
+  ],
+  [
+    'when monorepo ref is a release tag is release',
+    ['refs/tags/ot3@0.0.0-dev'],
+    'release',
+  ],
+]
+
+BUILD_TYPE_TEST_SPECS.forEach(
+  ([
+    testNameFragment,
+    [testMonorepoRef],
+    testExpectedResult,
+  ]) => {
+    test(`buildType ${testNameFragment}`, () => {
+      expect(action.resolveBuildType(testMonorepoRef)).toStrictEqual(testExpectedResult)
     })
   }
 )
