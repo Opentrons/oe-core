@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/Apache-2.0;md5=89aea4e17d99a7ca
 
 inherit allarch systemd
 
-RDEPENDS_${PN}_append = "weston-init robot-app"
+RDEPENDS_${PN}_append = "weston-init opentrons-robot-app"
 
 S = "${WORKDIR}"
 
