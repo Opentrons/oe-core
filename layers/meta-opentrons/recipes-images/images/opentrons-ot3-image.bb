@@ -32,8 +32,7 @@ IMAGE_INSTALL += " \
     udev-extraconf \
     v4l-utils \
     bash coreutils makedevs mime-support util-linux \
-    timestamp-service \
-    networkmanager crda \
+    timestamp-service networkmanager crda ch341ser \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
     robot-app-wayland-launch opentrons-robot-app \
