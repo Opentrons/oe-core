@@ -19,9 +19,14 @@ COPY_LIC_DIRS ?= "1"
 
 SYSTEMD_DEFAULT_TARGET = "graphical.target"
 
-EXTRA_IMAGE_FEATURES += " \
-    ${@bb.utils.contains('OT_BUILD_TYPE', 'debug', 'debug-tweaks', '', d)} \
-"
+# TODO(BA, 1-11-23): We are ignoring the build-type for now and always building with debug-tweaks
+# enabled. This is because ommiting debug-tweaks disables some development friendly features
+# (no root pw, ssh to root, etc) which for now we want to keep. Once we add non-root users
+# and fixed known root passwords we can enable this.
+#EXTRA_IMAGE_FEATURES += " \
+#    ${@bb.utils.contains('OT_BUILD_TYPE', 'develop', 'debug-tweaks', '', d)} \
+#"
+EXTRA_IMAGE_FEATURES += " debug-tweaks"
 
 IMAGE_INSTALL += " \
     packagegroup-boot \
