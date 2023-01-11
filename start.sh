@@ -25,13 +25,13 @@ shift
 
 trap cleanup EXIT
 
-sudo chown -hR $USER_NAME:$USER_NAME ${THISDIR} && chmod -R ug+rw ${THISDIR}
-pushd ${THISDIR}
+sudo chown -hR $USER_NAME:$USER_NAME /volumes && chmod -R ug+rw /volumes
 
+pushd ${THISDIR}
 patch -f ./layers/meta-toradex-nxp/recipes-kernel/linux/linux-toradex_5.4-2.3.x.bb ./linux-toradex_5.4-2.3.x.patch
 
 export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
-BB_NUMBER_THREADS=$((`nproc`-1)) bitbake ${TARGET} "$@"
+BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?

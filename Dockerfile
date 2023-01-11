@@ -46,7 +46,7 @@ RUN groupadd -g $host_gid $USER_NAME || true \
 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
-RUN mkdir -p /volumes/oe-core
+RUN mkdir -p /volumes/oe-core && mkdir -p /volumes/cache
 
 
 # Perform the Yocto build as user ot3 (not as root).
@@ -57,7 +57,9 @@ RUN mkdir -p /volumes/oe-core
 USER $USER_NAME
 
 RUN git config --global user.name "Opentrons" && \
-    git config --global user.email engineering@opentrons.com
+    git config --global user.email engineering@opentrons.com && \
+    git config --global --add safe.directory /volumes/opentrons &&  \
+    git config --global --add safe.directory /volumes/oe-core
 
 # Create the directory structure for the Yocto build in the container. The lowest two directory
 # levels must be the same as on the host.

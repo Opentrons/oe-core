@@ -1,0 +1,17 @@
+[Unit]
+Description=Opentrons USB Bridge
+Requires=nginx.service
+After=nginx.service
+
+[Service]
+Type=simple
+ExecStart=python3 -m ot3usb
+StateDirectory=opentrons-usb-bridge
+Environment=PYTHONPATH=/opt/ot3usb:/usr/lib/python3.8/site-packages
+Restart=on-failure
+TimeoutStartSec=3min
+After=nginx.service
+Wants=nginx.service
+
+[Install]
+WantedBy=multi-user.target
