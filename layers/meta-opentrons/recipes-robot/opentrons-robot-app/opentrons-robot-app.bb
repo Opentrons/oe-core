@@ -14,7 +14,7 @@ do_configure(){
     npm install -g yarn
     cd ${S}
     yarn
-    cd ${S}/app-shell
+    cd ${S}/app-shell-odd
     yarn electron-rebuild --arch=arm64
     cd ${S}
     make -C shared-data setup-js
@@ -24,13 +24,13 @@ do_compile(){
     export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
     cd ${S}
     make -C ${S}/app dist
-    make -C ${S}/app-shell lib
-    cd ${S}/app-shell
+    make -C ${S}/app-shell-odd lib
+    cd ${S}/app-shell-odd
     NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
 
 fakeroot do_install(){
-    DISTDIR=${S}/app-shell/dist/linux-arm64-unpacked
+    DISTDIR=${S}/app-shell-odd/dist/linux-arm64-unpacked
     DESTDIR=${D}/opt/opentrons-app
     install -d ${D}/opt/opentrons-app
     cd ${DISTDIR}

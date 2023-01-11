@@ -36,7 +36,7 @@ IMAGE_INSTALL += " \
     networkmanager crda \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
-    robot-app-wayland-launch robot-app \
+    robot-app-wayland-launch opentrons-robot-app \
     opentrons-robot-server opentrons-update-server \
     python3 python3-misc python3-modules \
     opentrons-usb-bridge \
