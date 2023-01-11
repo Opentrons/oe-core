@@ -19,6 +19,15 @@ COPY_LIC_DIRS ?= "1"
 
 SYSTEMD_DEFAULT_TARGET = "graphical.target"
 
+# TODO(BA, 1-11-23): We are ignoring the build-type for now and always building with debug-tweaks
+# enabled. This is because ommiting debug-tweaks disables some development friendly features
+# (no root pw, ssh to root, etc) which for now we want to keep. Once we add non-root users
+# and fixed known root passwords we can enable this.
+#EXTRA_IMAGE_FEATURES += " \
+#    ${@bb.utils.contains('OT_BUILD_TYPE', 'develop', 'debug-tweaks', '', d)} \
+#"
+EXTRA_IMAGE_FEATURES += " debug-tweaks"
+
 IMAGE_INSTALL += " \
     packagegroup-boot \
     packagegroup-basic \
@@ -59,16 +68,26 @@ MAX_SYSTEMFS_SIZE = "1536"
 # create the opentrons ot3 manifest (VERSION.json) file
 python do_create_opentrons_manifest() {
     bb.note("Create the manifest json for for ot3-system.zip")
+    import subprocess
     import json
     import os
 
+    # Get the oe-core version, sha, branch
+    try:
+        oe_version = subprocess.check_output(['git', 'describe', '--tags', '--always']).decode().strip()
+        oe_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+        oe_branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+    except subprocess.CalledProcessError as cpe:
+        bb.error("Could not get oe-core version - %s" % cpe)
+        exit()
 
+    # Create the manifest dictionary
     opentrons_manifest = {
         'robot_type': d.getVar('ROBOT_TYPE'),
-        'build_type': os.getenv('OT_BUILD_TYPE', 'unknown/dev'),
-        'openembedded_version': d.getVar('version', 'unknown'),
-        'openembedded_sha': d.getVar('version', 'unknown'),
-        'openembedded_branch': d.getVar('version', 'unknown')
+        'build_type': d.getVar('OT_BUILD_TYPE', 'develop'),
+        'openembedded_version': oe_version,
+        'openembedded_sha': oe_sha,
+        'openembedded_branch': oe_branch
     }
 
     # check that we have the expected version files and write them to the VERSION.json
@@ -99,18 +118,20 @@ ROOTFS_PREPROCESS_COMMAND += "do_create_opentrons_manifest; "
 
 # changes we might want to make to the rootfs
 do_make_rootfs_changes() {
-    printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) \\\n \\\l\n" > ${IMAGE_ROOTFS}/etc/issue
-    printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) %%h\n" > ${IMAGE_ROOTFS}/etc/issue.net
-    printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue
-    printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}/etc/issue.net
+    printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) \\\n \\\l\n" > ${IMAGE_ROOTFS}${sysconfdir}/issue
+    printf "${DISTRO_NAME} ${DISTRO_VERSION} (${DISTRO_CODENAME}) %%h\n" > ${IMAGE_ROOTFS}${sysconfdir}/issue.net
+    printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}${sysconfdir}/issue
+    printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}${sysconfdir}/issue.net
 
     # add the VERSION.json file
-    cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}/etc/VERSION.json
+    cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}${sysconfdir}/VERSION.json
+    # copy the release notes to the output dir
+    cat ${IMAGE_ROOTFS}${sysconfdir}/release-notes.md > ${DEPLOY_DIR_IMAGE}/release-notes.md
 
     # add hostname to rootfs
-    printf "opentrons" > ${IMAGE_ROOTFS}/etc/hostname
-    printf "PRETTY_HOSTNAME=opentrons\n" > ${IMAGE_ROOTFS}/etc/machine-info
-    printf "DEPLOYMENT=development\n" >> ${IMAGE_ROOTFS}/etc/machine-info
+    printf "opentrons" > ${IMAGE_ROOTFS}${sysconfdir}/hostname
+    printf "PRETTY_HOSTNAME=opentrons\n" > ${IMAGE_ROOTFS}${sysconfdir}/machine-info
+    printf "DEPLOYMENT=development\n" >> ${IMAGE_ROOTFS}${sysconfdir}/machine-info
 
     # copy the boot files to the /boot dir
     rsync -aL --chown=root:root  ${DEPLOY_DIR_IMAGE}/Image.gz ${IMAGE_ROOTFS}/boot/
@@ -129,11 +150,11 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/home ${USERFS_DIR}/
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
-    mkdir -p ${USERFS_DIR}/etc
+    mkdir -p ${USERFS_DIR}${sysconfdir}
 
     # add hostname and machine-info to userfs
-    cat ${IMAGE_ROOTFS}/etc/hostname > ${USERFS_DIR}/etc/hostname
-    cat ${IMAGE_ROOTFS}/etc/machine-info > ${USERFS_DIR}/etc/machine-info
+    cat ${IMAGE_ROOTFS}${sysconfdir}/hostname > ${USERFS_DIR}${sysconfdir}/hostname
+    cat ${IMAGE_ROOTFS}${sysconfdir}/machine-info > ${USERFS_DIR}${sysconfdir}/machine-info
 
     # cleanup dirs from rootfs
     rm -rf ${IMAGE_ROOTFS}/home/*

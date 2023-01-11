@@ -2,6 +2,7 @@ import { getOctokit } from '@actions/github'
 import * as core from '@actions/core'
 
 export type Repo = 'oe-core' | 'monorepo'
+export type BuildType = 'develop' | 'release'
 
 const orderedRepos: Repo[] = ['monorepo', 'oe-core']
 
@@ -181,6 +182,10 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
   return resolved
 }
 
+export function resolveBuildType(ref: Ref): BuildType {
+  return ref.includes('refs/tags/ot3') ? 'release' : 'develop'
+}
+
 async function run() {
   const inputs = getInputs()
   inputs.forEach((ref, repo) => {
@@ -207,6 +212,13 @@ async function run() {
   resolved.forEach((ref, repo) => {
     core.info(`Resolved ${repo} to ${ref}`)
     core.setOutput(repo, ref)
+
+    // Determine the build-type based on the monorepo ref
+    if (repo === 'monorepo') {
+      const buildType = resolveBuildType(ref)
+      core.info(`Resolved oe-core build-type to ${buildType}`)
+      core.setOutput('build-type', buildType)
+    }
   })
 }
 

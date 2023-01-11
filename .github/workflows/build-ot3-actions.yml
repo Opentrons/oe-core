@@ -89,6 +89,7 @@ jobs:
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
           echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
+          echo 'OT_BUILD_TYPE = "${{steps.build-refs.outputs.build-type}}"' >> ./build/conf/local.conf
           cd ..
       - name: Pull S3 cache
         shell: bash
@@ -147,7 +148,20 @@ jobs:
           find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/ot3-fullimage.tar \;
           find ./build/deploy/images -name "ot3-system.zip" -exec cp {} build/deploy/opentrons \;
           find ./build/deploy/images -name "VERSION.json" -exec cp {} build/deploy/opentrons \;
+          find ./build/deploy/images -name "release-notes.md" -exec cp {} build/deploy/opentrons \;
           tar czf ./build/deploy/opentrons/buildstats.tar.gz ./build/tmp/buildstats
+      - name: Handle Release
+        if: ${{ steps.build-refs.outputs.build-type == 'release' }}
+        shell: bash
+        id: 'handle-release'
+        run: |
+          cd oe-core/scripts
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json releases.json
+          base_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          version_file=../build/deploy/opentrons/VERSION.json
+          python3 update_releases_file.py --releases-file releases.json --version-file $version_file --base-url $base_url
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/
+          cd ..
       - name: Upload results to S3
         shell: bash
         id: 'upload-results'
@@ -157,13 +171,14 @@ jobs:
           root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "version_file_url=$root_url/VERSION.json" >> $GITHUB_OUTPUT
+          echo "release_notes_file_url=$root_url/release-notes.md" >> $GITHUB_OUTPUT
           echo "system_url=$root_url/ot3-system.zip" >> $GITHUB_OUTPUT
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
       - name: Post results
         if: ${{ matrix.build_env == 'stage-prod' }}
         uses: slackapi/slack-github-action@v1.14.0
         with:
-          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ steps.build-refs.outputs.oe-core }}\", \"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\"}"
+          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ steps.build-refs.outputs.oe-core }}\", \"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - name: Remove build data
