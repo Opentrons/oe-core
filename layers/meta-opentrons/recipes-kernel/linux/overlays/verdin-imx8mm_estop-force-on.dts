@@ -31,9 +31,11 @@
     };
 };
 
-&genericPeripheral {
-    pinctrl-names = "default";
-    pinctrl-0 = <&pinctrl_gpio3>;
-    enable-gpios = <&gpio5 26 GPIO_ACTIVE_LOW>;
-    status = "okay";
+&gpio5 {
+    estop_enable: estop_enable {
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_gpio3>;
+        enable-gpios = <&gpio5 26 GPIO_ACTIVE_LOW>;
+        status = "okay";
+    };
 };
