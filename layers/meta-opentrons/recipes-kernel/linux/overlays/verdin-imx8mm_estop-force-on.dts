@@ -3,7 +3,7 @@
  * Copyright 2020-2021 Opentrons
  */
 
-// Force the estop pin to high on startup
+// Force eSTOP (SODIMM_210) high on startup so the gripper + 96 channel dont plunge.
 
 /dts-v1/;
 /plugin/;
@@ -15,20 +15,11 @@
     compatible = "toradex,verdin-imx8mm";
 };
 
-&iomuxc {
-    pinctrl-names = "default";
-    pinctrl-0 = <&pinctrl_gpio1>, <&pinctrl_gpio2>,
-            <&pinctrl_gpio3>, <&pinctrl_gpio4>,
-            <&pinctrl_gpio7>, <&pinctrl_gpio8>,
-            <&pinctrl_gpio_hog1>, <&pinctrl_gpio_hog2>, <&pinctrl_gpio_hog3>,
-            <&pinctrl_pmic_tpm_ena>;
-
-    /* Verdin GPIO_3(pulled-up as active-low) */
-    pinctrl_gpio3: gpio3grp  {
-        fsl,pins = <
-            MX8MM_IOMUXC_UART3_RXD_GPIO5_IO26 0x146   /* SODIMM 210 */
-        >;
-    };
+/* Verdin GPIO_3(pulled-up as active-low) */
+&pinctrl_gpio3 {
+    fsl,pins = <
+        MX8MM_IOMUXC_UART3_RXD_GPIO5_IO26 0x146   /* SODIMM 210 */
+    >;
 };
 
 &gpio5 {
