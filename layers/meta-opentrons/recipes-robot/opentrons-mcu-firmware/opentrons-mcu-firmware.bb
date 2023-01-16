@@ -4,8 +4,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 inherit externalsrc pkgconfig cmake
 
-inherit cmake
-
+FIRMWARE_DIR="${libdir}/firmware"
 S = "${WORKDIR}"
 B = "${S}/build"
 
@@ -13,37 +12,80 @@ EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir
 DEPENDS += " cmake-native"
 
 do_configure(){
-  cd ${S}/
-  cmake --preset=cross .
-  cmake --preset=cross-pipettes .
+    cd ${S}/
+    cmake --preset=cross .
 }
 
 do_compile(){
-  cd ${S}/
-  cmake --build --preset=head
-  cmake --build --preset=gantry
-  cmake --build --preset=gripper
-  cmake --build --preset=pipettes
+    cd ${S}/
+    cmake --build --preset=all
 }
 
 do_install(){
-  cd ${S}/
+    # install the compiled binaries to /usr/lib/firmware
+    install -d ${D}${FIRMWARE_DIR}
+    find ${S} -type f -name "*.hex" -exec install -m 0644 {} ${D}${FIRMWARE_DIR} \;
 
-  # install the compiled binaries to /usr/lib/firmware
-  install -d ${D}${libdir}/firmware
-  find -type f -name head -exec install -m 0644 {} ${D}${libdir}/firmware/ \;
-  find -type f -name gantry-*-rev1 -exec install -m 0644 {} ${D}${libdir}/firmware/ \;
-  find -type f -name gripper -exec install -m 0644 {} ${D}${libdir}/firmware/ \;
-
-  # remove debug dir
-  rm -rf ${D}${libdir}/firmware/.debug 
+    # install the manifest file
+    install -m 644 ${S}/opentrons-firmware.json ${D}/${FIRMWARE_DIR}/opentrons-firmware.json
 }
 
+python do_create_manifest(){
+    # This will create a manifest.json file which will describe our firmware updates
+    import json
+    import subprocess
+
+    # Get the version, sha, and branch
+    try:
+        version = subprocess.check_output(['git', 'describe', '--tags', '--always']).decode().strip()
+        commit_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+        branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+    except subprocess.CalledProcessError as cpe:
+        bb.error("Could not get oe-core version - %s" % cpe)
+        exit()
+
+    manifest = {
+        "version": version,
+        "commit_sha": commit_sha,
+        "branch": branch,
+        "subsystems": {
+            "head": {},
+            "gantry-x": {},
+            "gantry-y": {},
+            "gripper": {},
+            "pipettes-single": {},
+            "pipettes-multi": {},
+            "pipettes-96": {},
+            "pipettes-384": {}
+        }
+    }
+
+    # add the subsystem version and filepath
+    for subsystem in manifest['subsystems']:
+        filepath = "%s/%s.hex" % (d.getVar("FIRMWARE_DIR"), subsystem)
+        manifest['subsystems'][subsystem].update({
+            "version": version,
+            "filepath": filepath
+        })
+
+    # save manifest file to disk
+    manifest_file = "%s/opentrons-firmware.json" % (d.getVar("S"))
+    with open(manifest_file, "w") as fh:
+        json.dump(manifest, fh)
+}
+
+# since we are compiling binaries for the subsystem which has a different arch to linux we need
+# to ignore the architecture.
 INSANE_SKIP_${PN} += "arch"
 
 FILES_${PN} += "${libdir}/firmware \
-                ${libdir}/firmware/head \
-                ${libdir}/firmware/gantry-x-rev1 \
-                ${libdir}/firmware/gantry-y-rev1 \
-                ${libdir}/firmware/gripper \
-                "
+                ${libdir}/firmware/head-rev1.hex \
+                ${libdir}/firmware/gantry-x-rev1.hex \
+                ${libdir}/firmware/gantry-y-rev1.hex \
+                ${libdir}/firmware/gripper-rev1.hex \
+                ${libdir}/firmware/pipettes-single-rev1.hex \
+                ${libdir}/firmware/pipettes-multi-rev1.hex \
+                ${libdir}/firmware/pipettes-96-rev1.hex \
+                ${libdir}/firmware/opentrons-firmware.json"
+
+addtask do_create_manifest after do_compile before do_install
