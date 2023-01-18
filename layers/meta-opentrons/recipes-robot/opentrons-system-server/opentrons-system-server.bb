@@ -13,7 +13,7 @@ inherit insane systemd get_ot_package_version
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE_${PN} = "opentrons-system-server.service"
 FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
-SRC_URI_append = " file://opentrons-system-server.service file://opentrons-ot3-canbus.service file://95-opentrons-modules.rules"
+SRC_URI_append = " file://opentrons-system-server.service"
 
 PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/system-server"
 PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-system-server"
