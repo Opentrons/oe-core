@@ -37,8 +37,6 @@ do_install_append () {
 
 FILES_${PN}_append = " ${systemd_system_unitdir/opentrons-system-server.service.d \
                        ${systemd_system_unitdir}/opentrons-system-server.service.d/system-server-version.conf \
-                       ${sysconfdir}/udev/rules.d/95-opentrons-modules.rules \
-                       ${sysconfdir}/release-notes.md \
                        "
 
 RDEPENDS_${PN} += " python3-pyjwt nginx python-aionotify"
