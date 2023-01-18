@@ -45,9 +45,7 @@ python do_create_manifest(){
         exit()
 
     manifest = {
-        "version": version,
-        "commit_sha": commit_sha,
-        "branch": branch,
+        "manifest_version": 1,
         "subsystems": {
             "head": {},
             "gantry-x": {},
@@ -64,6 +62,8 @@ python do_create_manifest(){
     for subsystem in manifest['subsystems']:
         filepath = "%s/%s.hex" % (d.getVar("FIRMWARE_DIR"), subsystem)
         manifest['subsystems'][subsystem].update({
+            "commit_sha": commit_sha,
+            "branch": branch,
             "version": version,
             "filepath": filepath
         })
