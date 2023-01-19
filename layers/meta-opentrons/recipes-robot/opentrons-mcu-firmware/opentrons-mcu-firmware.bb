@@ -19,6 +19,8 @@ do_configure(){
 do_compile(){
     cd ${S}/
     cmake --build --preset=all
+    # get the submodule versions to be used when creating the opentrons-firmware.json file
+    python3 ${S}/scripts/subsystem_versions.py --filepath ${S}/subsystem_versions.json
 }
 
 do_install(){
@@ -35,36 +37,25 @@ python do_create_manifest(){
     import json
     import subprocess
 
-    # Get the version, sha, and branch
+    # pull in the subsystem_version.json file that was created during compilation and create the opentrons-firmware.json file
+    subsystems = {}
+    filepath = "%s/subsystem_versions.json" % d.getVar('S')
     try:
-        version = subprocess.check_output(['git', 'describe', '--tags', '--always']).decode().strip()
-        commit_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
-        branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
+        with open(filepath, 'r') as fh:
+            subsystems = json.load(fh)
     except subprocess.CalledProcessError as cpe:
-        bb.error("Could not get oe-core version - %s" % cpe)
+        bb.error(f"Could not load submodule_versions.json file {filepath} {cpe}.")
         exit()
 
     manifest = {
         "manifest_version": 1,
-        "subsystems": {
-            "head": {},
-            "gantry-x": {},
-            "gantry-y": {},
-            "gripper": {},
-            "pipettes-single": {},
-            "pipettes-multi": {},
-            "pipettes-96": {},
-            "pipettes-384": {}
-        }
+        "subsystems": subsystems
     }
 
-    # add the subsystem version and filepath
+    # add the filepath
     for subsystem in manifest['subsystems']:
         filepath = "%s/%s.hex" % (d.getVar("FIRMWARE_DIR"), subsystem)
         manifest['subsystems'][subsystem].update({
-            "commit_sha": commit_sha,
-            "branch": branch,
-            "version": version,
             "filepath": filepath
         })
 
