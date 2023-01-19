@@ -39,6 +39,6 @@ FILES_${PN}_append = " ${systemd_system_unitdir/opentrons-system-server.service.
                        ${systemd_system_unitdir}/opentrons-system-server.service.d/system-server-version.conf \
                        "
 
-RDEPENDS_${PN} += " python3-pyjwt nginx python-systemd"
+RDEPENDS_${PN} += " python3-pyjwt nginx python3-systemd"
 
 inherit pipenv_app_bundle
