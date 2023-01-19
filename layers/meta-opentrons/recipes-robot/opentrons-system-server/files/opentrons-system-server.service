@@ -5,9 +5,8 @@ After=nginx.service
 
 [Service]
 Type=simple
-ExecStart=python3 -m system-server
+ExecStart=python3 -m system_server
 StateDirectory=opentrons-system-server
-Environment=OT_API_FF_enableOT3HardwareController=true\
 Environment=PYTHONPATH=/opt/opentrons-system-server:/usr/lib/python3.8/site-packages\
 Restart=on-failure
 TimeoutStartSec=3min
