@@ -9,6 +9,7 @@ DEPENDS += "rsync-native zip-native \
     opentrons-robot-server \
     opentrons-update-server \
     opentrons-usb-bridge \
+    opentrons-system-server \
     "
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
@@ -47,7 +48,8 @@ IMAGE_INSTALL += " \
     robot-app-wayland-launch opentrons-robot-app \
     opentrons-robot-server opentrons-update-server \
     python3 python3-misc python3-modules \
-    opentrons-usb-bridge opentrons-mcu-firmware \
+    opentrons-usb-bridge opentrons-system-server \
+    opentrons-mcu-firmware
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
@@ -93,6 +95,7 @@ python do_create_opentrons_manifest() {
     # check that we have the expected version files and write them to the VERSION.json
     expected_opentrons_versions = ["opentrons-robot-server-version.json", \
                                    "opentrons-update-server-version.json", \
+                                   "opentrons-system-server-version.json", \
                                    "opentrons-usb-bridge-version.json"]
 
     opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')
