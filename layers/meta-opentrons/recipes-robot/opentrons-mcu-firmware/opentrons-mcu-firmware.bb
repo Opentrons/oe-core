@@ -18,9 +18,9 @@ do_configure(){
 
 do_compile(){
     cd ${S}/
-    cmake --build --preset=all
+    cmake --build --preset=all-application-firmware
     # get the submodule versions to be used when creating the opentrons-firmware.json file
-    python3 ${S}/scripts/subsystem_versions.py --filepath ${S}/subsystem_versions.json
+    python3 ${S}/scripts/subsystem_versions.py --output ${S}/subsystem_versions.json
 }
 
 do_install(){
