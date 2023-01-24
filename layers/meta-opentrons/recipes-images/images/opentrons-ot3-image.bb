@@ -49,6 +49,7 @@ IMAGE_INSTALL += " \
     opentrons-robot-server opentrons-update-server \
     python3 python3-misc python3-modules \
     opentrons-usb-bridge opentrons-system-server \
+    opentrons-mcu-firmware \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB

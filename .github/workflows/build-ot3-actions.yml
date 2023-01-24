@@ -13,6 +13,11 @@ on:
           Ref of https://github.com/opentrons/oe-core to build. This is different from the ref specified in the github api/webUI when starting this workflow - that ref is what contains this workflow, this ref specifies what gets built. It MUST be a full ref, e.g. refs/heads/main, or '-' to indicate not-specified. If not specified, will be decided based on the monorepo ref; if that isn't specified, will be main.
         required: true
         default: '-'
+      ot3-firmware-ref:
+        description: |
+          Ref of https://github.com/opentrons/ot3-firmware to build. It MUST be a full ref, e.g. refs/heads/main, or '-' to indicate not-specified. If not specified, will be decided based on the monorepo ref; if that isn't specified, will be main.
+        required: false
+        default: '-'
       infra-stage:
         description: |
           What infra stage to run on. This should almost always be prod; staging and dev are useful when you explicitly want to test those infra stages.
@@ -46,6 +51,7 @@ jobs:
           token: ${{ github.token }}
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
+          ot3-firmware: ${{ inputs.ot3-firmware-ref }}
       - name: Fetch oe-core source
         uses: 'actions/checkout@v3'
         with:
@@ -60,10 +66,18 @@ jobs:
           ref: ${{ steps.build-refs.outputs.monorepo }}
           repository: Opentrons/opentrons
           path: ./opentrons
+      - name: Fetch ot3-firmware source
+        uses: 'actions/checkout@v3'
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.build-refs.outputs.ot3-firmware }}
+          repository: Opentrons/ot3-firmware
+          path: ./ot3-firmware
       - name: Sync oe-core submodules
         run: |
           chown -R `whoami` oe-core
           chown -R `whoami` opentrons
+          chown -R `whoami` ot3-firmware
           cd oe-core
           ./update.sh
           cd ..
@@ -111,16 +125,18 @@ jobs:
           here=$(pwd)
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
+          ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount   ot3-image:latest opentrons-ot3-image --runall=fetch
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount   ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
         run: |
           here=$(pwd)
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
+          ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af

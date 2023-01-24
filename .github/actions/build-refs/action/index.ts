@@ -1,10 +1,10 @@
 import { getOctokit } from '@actions/github'
 import * as core from '@actions/core'
 
-export type Repo = 'oe-core' | 'monorepo'
+export type Repo = 'oe-core' | 'monorepo' | 'ot3-firmware'
 export type BuildType = 'develop' | 'release'
 
-const orderedRepos: Repo[] = ['monorepo', 'oe-core']
+const orderedRepos: Repo[] = ['monorepo', 'oe-core', 'ot3-firmware']
 
 export type Branch = string
 export type Tag = string
@@ -20,7 +20,7 @@ export type AttemptableRefs = Map<Repo, AttemptableRef[]>
 export type OutputRefs = Map<Repo, Ref>
 
 function mainRefFor(input: Repo): Branch {
-  return { monorepo: 'refs/heads/edge', 'oe-core': 'refs/heads/main' }[input]
+  return { monorepo: 'refs/heads/edge', 'oe-core': 'refs/heads/main', 'ot3-firmware': 'refs/heads/main' }[input]
 }
 
 export function restAPICompliantRef(input: Ref): string {
@@ -34,6 +34,7 @@ export interface GitHubApiTag {
 function latestTagPrefixFor(repo: Repo): string {
   if (repo === 'monorepo') return 'refs/tags/v'
   if (repo === 'oe-core') return 'refs/tags/v'
+  if (repo === 'ot3-firmware') return 'refs/tags/v'
   throw new Error(`Unknown repo ${repo}`)
 }
 
@@ -45,6 +46,7 @@ function restDetailsFor(input: Repo): { owner: string; repo: string } {
   return {
     monorepo: { owner: 'Opentrons', repo: 'opentrons' },
     'oe-core': { owner: 'Opentrons', repo: 'oe-core' },
+    'ot3-firmware': { owner: 'Opentrons', repo: 'ot3-firmware' },
   }[input]
 }
 

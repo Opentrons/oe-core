@@ -9748,9 +9748,9 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 };
 
 
-const orderedRepos = ['monorepo', 'oe-core'];
+const orderedRepos = ['monorepo', 'oe-core', 'ot3-firmware'];
 function mainRefFor(input) {
-    return { monorepo: 'refs/heads/edge', 'oe-core': 'refs/heads/main' }[input];
+    return { monorepo: 'refs/heads/edge', 'oe-core': 'refs/heads/main', 'ot3-firmware': 'refs/heads/main' }[input];
 }
 function restAPICompliantRef(input) {
     return input.replace('refs/', '');
@@ -9759,6 +9759,8 @@ function latestTagPrefixFor(repo) {
     if (repo === 'monorepo')
         return 'refs/tags/v';
     if (repo === 'oe-core')
+        return 'refs/tags/v';
+    if (repo === 'ot3-firmware')
         return 'refs/tags/v';
     throw new Error(`Unknown repo ${repo}`);
 }
@@ -9770,6 +9772,7 @@ function restDetailsFor(input) {
     return {
         monorepo: { owner: 'Opentrons', repo: 'opentrons' },
         'oe-core': { owner: 'Opentrons', repo: 'oe-core' },
+        'ot3-firmware': { owner: 'Opentrons', repo: 'ot3-firmware' },
     }[input];
 }
 function refIsMain(input, repo) {

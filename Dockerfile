@@ -1,6 +1,6 @@
 # Use Ubuntu LTS as the basis for the Docker image.
 
-FROM python:3.6-buster
+FROM python:3.6-bullseye
 
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
@@ -14,7 +14,8 @@ RUN apt-get update \
     gawk wget git-core diffstat unzip texinfo gcc-multilib \
     build-essential chrpath socat cpio python python3-pexpect \
     xz-utils debianutils iputils-ping python3-git python3-jinja2 \
-    libegl1-mesa libsdl1.2-dev  pylint3 xterm tar locales curl git sudo
+    libegl1-mesa libsdl1.2-dev  pylint3 xterm tar locales curl git sudo \
+    clang cmake
 
 # By default, Ubuntu uses dash as an alias for sh. Dash does not support the source command
 # needed for setting up the build environment in CMD. Use bash as an alias for sh.
@@ -58,8 +59,9 @@ USER $USER_NAME
 
 RUN git config --global user.name "Opentrons" && \
     git config --global user.email engineering@opentrons.com && \
-    git config --global --add safe.directory /volumes/opentrons &&  \
-    git config --global --add safe.directory /volumes/oe-core
+    git config --global --add safe.directory /volumes/oe-core && \
+    git config --global --add safe.directory /volumes/opentrons && \
+    git config --global --add safe.directory /volumes/ot3-firmware
 
 # Create the directory structure for the Yocto build in the container. The lowest two directory
 # levels must be the same as on the host.
