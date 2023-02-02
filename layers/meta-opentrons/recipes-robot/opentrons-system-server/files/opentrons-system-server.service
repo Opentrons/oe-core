@@ -8,6 +8,7 @@ Type=notify
 ExecStart=python3 -m system_server
 StateDirectory=opentrons-system-server
 Environment=PYTHONPATH=/opt/opentrons-system-server:/usr/lib/python3.8/site-packages
+Environment=OT_SYSTEM_SERVER_persistence_directory=/var/lib/opentrons-system-server
 Restart=on-failure
 TimeoutStartSec=3min
 After=nginx.service
