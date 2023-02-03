@@ -53,11 +53,12 @@ python do_create_manifest(){
     }
 
     # add the filepath
+    firmware_path = d.getVar("FIRMWARE_DIR")
     for subsystem, update_info in manifest['subsystems'].items():
         for rev, filename in update_info.get('files_by_revision').items():
             manifest['subsystems'][subsystem]['files_by_revision'].update({
-                rev: f"d.getVar("FIRMWARE_DIR")/{filename}"
-        })
+                rev: f"{firmware_path}/{filename}"
+            })
 
     # save manifest file to disk
     manifest_file = "%s/opentrons-firmware.json" % (d.getVar("S"))
