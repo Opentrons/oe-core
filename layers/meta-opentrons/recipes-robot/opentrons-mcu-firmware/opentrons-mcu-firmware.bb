@@ -54,7 +54,9 @@ python do_create_manifest(){
 
     # add the filepath
     for subsystem in manifest['subsystems']:
-        filepath = "%s/%s.hex" % (d.getVar("FIRMWARE_DIR"), subsystem)
+	# TODO (BA, 02/1/2023): We will need a more flexible solution for filepath, for now just use rev1.
+	filename = subsystem.get('filename')
+        filepath = "%s/%s" % (d.getVar("FIRMWARE_DIR"), filepath)
         manifest['subsystems'][subsystem].update({
             "filepath": filepath
         })
