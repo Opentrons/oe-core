@@ -53,9 +53,9 @@ python do_create_manifest(){
     }
 
     # add the filepath
-    for subsystem in manifest['subsystems']:
+    for subsystem, update_info in manifest['subsystems'].items():
 	# remove filename key and add filepath key instead
-        filepath = "%s/%s" % (d.getVar("FIRMWARE_DIR"), subsystem.pop('filename'))
+        filepath = "%s/%s" % (d.getVar("FIRMWARE_DIR"), update_info.pop('filename'))
         manifest['subsystems'][subsystem].update({
             "filepath": filepath
         })
