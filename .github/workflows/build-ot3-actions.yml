@@ -108,6 +108,11 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
+          sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --human-readable --summarize | awk END'{print}'`
+          echo "Size of the bucket in bytes: ${sizeInBytes}"
+          spaceLeftOnDisk=`df`
+          echo $spaceLeftOnDisk
+          exit 1
           aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
