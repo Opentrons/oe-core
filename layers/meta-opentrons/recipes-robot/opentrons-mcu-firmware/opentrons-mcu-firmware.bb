@@ -71,13 +71,13 @@ python do_create_manifest(){
 INSANE_SKIP_${PN} += "arch"
 
 FILES_${PN} += "${libdir}/firmware \
-                ${libdir}/firmware/head_rev1.hex \
-                ${libdir}/firmware/gantry_x-rev1.hex \
-                ${libdir}/firmware/gantry_y-rev1.hex \
+                ${libdir}/firmware/head-rev1.hex \
+                ${libdir}/firmware/gantry-x-rev1.hex \
+                ${libdir}/firmware/gantry-y-rev1.hex \
                 ${libdir}/firmware/gripper-rev1.hex \
-                ${libdir}/firmware/pipettes_single-rev1.hex \
-                ${libdir}/firmware/pipettes_multi-rev1.hex \
-                ${libdir}/firmware/pipettes_96-rev1.hex \
+                ${libdir}/firmware/pipettes-single-rev1.hex \
+                ${libdir}/firmware/pipettes-multi-rev1.hex \
+                ${libdir}/firmware/pipettes-96-rev1.hex \
                 ${libdir}/firmware/opentrons-firmware.json"
 
 addtask do_create_manifest after do_compile before do_install
