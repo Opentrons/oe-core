@@ -111,7 +111,8 @@ jobs:
           #
           sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --human-readable --summarize | awk END'{print}'`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
-          if [sizeInGigabytes -lt 30]; then
+          echo "sizeInBytes: ${sizeInBytes} sizeInGigabytes: ${sizeInGigabytes}"
+          if [[ sizeInGigabytes -lt 30 ]]; then
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
               for cachetype in downloads sstate git ; do
