@@ -108,10 +108,12 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
+          # fetch cache if the size is less than 20GB, so we have enough space to build image.
           sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
-          echo "sizeInBytes: ${sizeInBytes} sizeInGigabytes: ${sizeInGigabytes}"
-          if [[ sizeInGigabytes -lt 30 ]]; then
+          if [[ sizeInGigabytes -gt 20 ]]; then
+              echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
+          else
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
               for cachetype in downloads sstate git ; do
@@ -124,8 +126,6 @@ jobs:
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
                   echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
               done
-          else
-              echo "Doing fresh build, size of cache: ${sizeInGigabytes}GB"
           fi
       - name: Download sources
         run: |
