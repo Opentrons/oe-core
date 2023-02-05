@@ -108,8 +108,7 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          #
-          sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --human-readable --summarize | awk END'{print}'`
+          sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
           echo "sizeInBytes: ${sizeInBytes} sizeInGigabytes: ${sizeInGigabytes}"
           if [[ sizeInGigabytes -lt 30 ]]; then
