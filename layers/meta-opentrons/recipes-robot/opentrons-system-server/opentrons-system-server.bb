@@ -16,7 +16,9 @@ FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
 SRC_URI_append = " file://opentrons-system-server.service"
 
 PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/system-server"
-PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-system-server"
+# The system-server actually gets stored in the robot-server directory
+# in order to let them share the same packages.
+PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
 PIPENV_APP_BUNDLE_USE_GLOBAL = "systemd-python "
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = "./../hardware"
