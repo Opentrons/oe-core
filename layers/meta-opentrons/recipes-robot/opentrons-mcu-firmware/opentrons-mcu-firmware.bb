@@ -24,7 +24,7 @@ do_compile(){
     cmake --build ${B}/build-cross --target firmware-applications
     cmake --install ${B}/build-cross --component Applications
     # get the submodule versions to be used when creating the opentrons-firmware.json file
-    python3 ${S}/scripts/subsystem_versions.py --hexfile=${B}/dist/applications --output ${B}/dist/applications/opentrons-firmware.json
+    python3 ${S}/scripts/subsystem_versions.py --hex-dir=${B}/dist/applications ${B}/dist/applications/subsystem_versions.json
 }
 
 do_install(){
