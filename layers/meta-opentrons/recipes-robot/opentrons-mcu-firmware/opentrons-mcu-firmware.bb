@@ -13,12 +13,15 @@ DEPENDS += " cmake-native"
 
 do_configure(){
     cd ${S}/
+    bbnote "cmake --preset=cross-no-directory-reqs -B ${B}/build-cross --install-prefix=${B}/dist ."
     cmake --preset=cross-no-directory-reqs -B ${B}/build-cross --install-prefix=${B}/dist .
+
 }
 
 do_compile(){
     cd ${S}/
-    cmake --build --preset=all-application-firmware
+
+    cmake --build ${B}/build-cross --target firmware-applications
     cmake --install ${B}/build-cross --component Applications
     # get the submodule versions to be used when creating the opentrons-firmware.json file
     python3 ${S}/scripts/subsystem_versions.py --hexfile=${B}/dist/applications --output ${B}/dist/applications/opentrons-firmware.json
