@@ -5,8 +5,6 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 inherit externalsrc pkgconfig cmake
 
 FIRMWARE_DIR="${libdir}/firmware"
-#S = "${WORKDIR}"
-#B = "${S}/build"
 
 EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "ot3-firmware"))}"
 DEPENDS += " cmake-native"
