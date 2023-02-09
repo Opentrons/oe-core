@@ -113,6 +113,7 @@ jobs:
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
           if [[ sizeInGigabytes -gt 20 ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
+              rm -rf ${LOCAL_CACHE:-./cache}/*
           else
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
