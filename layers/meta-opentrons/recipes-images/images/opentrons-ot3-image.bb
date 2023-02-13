@@ -33,9 +33,6 @@ IMAGE_INSTALL += " \
     packagegroup-boot \
     packagegroup-basic \
     packagegroup-base-tdx-cli \
-    packagegroup-tdx-cli \
-    packagegroup-machine-tdx-cli \
-    packagegroup-wifi-tdx-cli \
     packagegroup-wifi-fw-tdx-cli \
     packagegroup-tdx-graphical \
     packagegroup-fsl-isp \
