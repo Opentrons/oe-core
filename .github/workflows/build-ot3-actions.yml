@@ -108,10 +108,10 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          # fetch cache if the size is less than 20GB, so we have enough space to build image.
+          # fetch cache if the size is less than 30GB, so we have enough space to build image.
           sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
-          if [[ sizeInGigabytes -gt 20 ]]; then
+          if [[ sizeInGigabytes -gt 30 ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
               rm -rf ${LOCAL_CACHE:-./cache}/*
           else
@@ -126,6 +126,7 @@ jobs:
                   echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
                   echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
+                  rm -rf ${localzip}
               done
           fi
       - name: Download sources
@@ -139,6 +140,7 @@ jobs:
           docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount   ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
         run: |
+          df -h
           here=$(pwd)
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
