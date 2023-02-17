@@ -21,65 +21,21 @@ do_compile(){
 
     cmake --build ${B}/build-cross --target firmware-applications
     cmake --install ${B}/build-cross --component Applications
-    # get the submodule versions to be used when creating the opentrons-firmware.json file
-    python3 ${S}/scripts/subsystem_versions.py --hex-dir=${B}/dist/applications ${B}/dist/applications/subsystem_versions.json
 }
 
 do_install(){
     # install the compiled binaries to /usr/lib/firmware
     install -d ${D}${FIRMWARE_DIR}
-    find ${B}/dist/applications -type f -name "*.hex" -exec install -m 0644 {} ${D}${FIRMWARE_DIR} \;
-
-    # install the manifest file
-    install -m 644 ${B}/opentrons-firmware.json ${D}/${FIRMWARE_DIR}/opentrons-firmware.json
-}
-
-python do_create_manifest(){
-    # This will create a manifest.json file which will describe our firmware updates
-    import json
-    import subprocess
-
-    # pull in the subsystem_version.json file that was created during compilation and create the opentrons-firmware.json file
-    subsystems = {}
-    filepath = "%s/dist/applications/subsystem_versions.json" % d.getVar('B')
-    try:
-        with open(filepath, 'r') as fh:
-            subsystems = json.load(fh)
-    except subprocess.CalledProcessError as cpe:
-        bb.error(f"Could not load submodule_versions.json file {filepath} {cpe}.")
-        exit()
-
-    manifest = {
-        "manifest_version": 1,
-        "subsystems": subsystems
-    }
-
-    # add the filepath
-    firmware_path = d.getVar("FIRMWARE_DIR")
-    for subsystem, update_info in manifest['subsystems'].items():
-        for rev, filename in update_info.get('files_by_revision').items():
-            manifest['subsystems'][subsystem]['files_by_revision'].update({
-                rev: f"{firmware_path}/{filename}"
-            })
-
-    # save manifest file to disk
-    manifest_file = "%s/opentrons-firmware.json" % (d.getVar("B"))
-    with open(manifest_file, "w") as fh:
-        json.dump(manifest, fh)
+    find ${B}/dist/applications -type f -exec install -m 0644 {} ${D}${FIRMWARE_DIR} \;
 }
 
 # since we are compiling binaries for the subsystem which has a different arch to linux we need
 # to ignore the architecture.
 INSANE_SKIP_${PN} += "arch"
 
-FILES_${PN} += "${libdir}/firmware \
-                ${libdir}/firmware/head-rev1.hex \
-                ${libdir}/firmware/gantry-x-rev1.hex \
-                ${libdir}/firmware/gantry-y-rev1.hex \
-                ${libdir}/firmware/gripper-rev1.hex \
-                ${libdir}/firmware/pipettes-single-rev1.hex \
-                ${libdir}/firmware/pipettes-multi-rev1.hex \
-                ${libdir}/firmware/pipettes-96-rev1.hex \
+FILES_${PN} += "${libdir}/firmware/head-*.hex \
+                ${libdir}/firmware/gantry-*.hex \
+                ${libdir}/firmware/gripper-*.hex \
+                ${libdir}/firmware/pipettes-*.hex \
+                ${libdir}/firmware/rear-panel-*.hex \
                 ${libdir}/firmware/opentrons-firmware.json"
-
-addtask do_create_manifest after do_compile before do_install
