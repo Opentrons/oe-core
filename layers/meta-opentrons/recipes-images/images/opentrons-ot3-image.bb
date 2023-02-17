@@ -40,7 +40,7 @@ IMAGE_INSTALL += " \
     packagegroup-tdx-graphical \
     packagegroup-fsl-isp \
     udev-extraconf \
-    v4l-utils \
+    v4l-utils dfu-util \
     bash coreutils makedevs mime-support util-linux \
     timestamp-service networkmanager crda ch341ser \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
