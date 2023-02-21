@@ -65,7 +65,7 @@ IMAGE_NAME = "${MACHINE_NAME}_${IMAGE_BASENAME}"
 USERFS_DIR = "${WORKDIR}/userfs"
 USERFS_OUTPUT = "${DEPLOY_DIR_IMAGE}/userfs.ext4"
 # max rootfs partition size in mb
-MAX_SYSTEMFS_SIZE = "1536"
+MAX_SYSTEMFS_SIZE = "2048"
 
 # create the opentrons ot3 manifest (VERSION.json) file
 python do_create_opentrons_manifest() {
@@ -149,6 +149,16 @@ do_make_rootfs_changes() {
 ROOTFS_POSTPROCESS_COMMAND += "do_make_rootfs_changes; "
 
 fakeroot do_create_filesystem() {
+    # check that the size of the rootfs is not greater than the max systemfs partition
+    systemfs=${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.ext4.xz
+    systemfs_size_raw=$(xz -l ${systemfs} | awk 'FNR == 2 {print $5}' | tr -d ',')
+    systemfs_size_mb=${systemfs_size_raw%.*}
+    rootfs_overflow=`expr ${systemfs_size_mb} \> ${MAX_SYSTEMFS_SIZE}` || echo 0
+    if [ ${rootfs_overflow} = 1 ]; then
+        bberror "CRITICAL: Rootfs size ${systemfs_size_mb} is greater than max allowed ${MAX_SYSTEMFS_SIZE}!."
+        exit 1
+    fi
+
     # create the userfs tree
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/home ${USERFS_DIR}/
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
@@ -262,7 +272,7 @@ fakeroot do_create_tezi_ot3() {
 # create the opentrons ot3 image
 do_create_opentrons_ot3() {
     cd ${DEPLOY_DIR_IMAGE}/
-    cp opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
+    ln opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
 
     # compute the sha256sum
     sha256sum systemfs.xz | cut -d " " -f 1 > systemfs.xz.sha256
