@@ -56,6 +56,9 @@ IMAGE_INSTALL += " \
 # port. Luckily, they are only recommended so it is easy to filter them out.
 PACKAGE_EXCLUDE = "libusbgx libusbgx-examples"
 
+# exclude Toradex hostapd-example as this causes mDNS discovery issues when interface uap0 connects/disconnects.
+PACKAGE_EXCLUDE += " hostapd-example"
+
 ROBOT_TYPE = "OT-3 Standard"
 
 # Prefix to the resulting deployable tarball name
