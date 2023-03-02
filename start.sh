@@ -33,5 +33,7 @@ patch -f ./layers/meta-toradex-nxp/recipes-kernel/linux/linux-toradex_5.4-2.3.x.
 export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
+df -h /tmp
+
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
