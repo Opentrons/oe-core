@@ -111,7 +111,7 @@ jobs:
           # fetch cache if the size is less than 20GB, so we have enough space to build image.
           sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
-          if [[ sizeInGigabytes -gt 20 ]]; then
+          if [[ sizeInGigabytes -gt 50 ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
           else
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
