@@ -38,3 +38,6 @@
 [submodule "tools/bitbake"]
 	path = tools/bitbake
 	url = https://github.com/openembedded/bitbake.git
+[submodule "layers/meta-jupyter"]
+	path = layers/meta-jupyter
+	url = https://github.com/Xilinx/meta-jupyter.git

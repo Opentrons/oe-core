@@ -47,7 +47,7 @@ IMAGE_INSTALL += " \
     weston-xwayland weston weston-init imx-gpu-viv \
     robot-app-wayland-launch opentrons-robot-app \
     opentrons-robot-server opentrons-update-server \
-    python3 python3-misc python3-modules \
+    python3 python3-misc python3-modules python3-jupyter \
     opentrons-usb-bridge opentrons-system-server \
     opentrons-mcu-firmware \
  "
@@ -272,7 +272,7 @@ fakeroot do_create_tezi_ot3() {
 # create the opentrons ot3 image
 do_create_opentrons_ot3() {
     cd ${DEPLOY_DIR_IMAGE}/
-    ln opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
+    ln -f opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
 
     # compute the sha256sum
     sha256sum systemfs.xz | cut -d " " -f 1 > systemfs.xz.sha256
