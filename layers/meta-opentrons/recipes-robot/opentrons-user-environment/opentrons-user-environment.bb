@@ -8,7 +8,7 @@ SRC_URI = "file://ot-environ.sh"
 
 do_install() {
       install -d ${D}/${sysconfdir}/profile.d/
-      install -m 0755 ${WORKDIR}/ot-environ.sh ${sysconfdir}/profile.d/ot-environ.sh
+      install -m 0755 ${WORKDIR}/ot-environ.sh ${D}/${sysconfdir}/profile.d/ot-environ.sh
 }
 
 FILES_${PN} += "${sysconfdir}/profile.d/ot-environ.sh \
