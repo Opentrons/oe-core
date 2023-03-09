@@ -76,10 +76,10 @@ if test "${root_devtype}" = ""; then
     fi
 fi
 
-if test -n ${setup}; then
-    run setup
+if test -n ${flexsetup}; then
+    run flexsetup
 else
-    env set setupargs 'console=${console},${baudrate} console=tty1 consoleblank=0'
+    env set flexsetupargs "console=${console},${baudrate} vt.global_cursor_default=0 consoleblank=0 splash"
 fi
 
 if test ${kernel_image} = "Image.gz"
@@ -125,7 +125,7 @@ else
     fi
 fi
 
-env set bootcmd_args 'run rootfsargs_set && env set bootargs ${defargs} ${rootfsargs} ${setupargs} ${vidargs} ${tdxargs}'
+env set bootcmd_args 'run rootfsargs_set && env set bootargs ${defargs} ${rootfsargs} ${flexsetupargs} ${vidargs} ${tdxargs}'
 if test ${skip_fdt_overlays} != 1; then
     env set bootcmd_overlays 'run load_overlays_file && run fdt_resize && run apply_overlays'
 else
