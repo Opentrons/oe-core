@@ -54,6 +54,7 @@ test -n ${boot_devtype} || env set boot_devtype ${devtype}
 test -n ${rootfs_boot_dir} || env set rootfs_boot_dir "/boot"
 test -n ${overlays_file} || env set overlays_file "${rootfs_boot_dir}/overlays.txt"
 test -n ${overlays_prefix} || env set overlays_prefix "${rootfs_boot_dir}/overlays/"
+test -n ${vidargs} || env set vidargs "video=DSI-1:1024x600e"
 
 # load kernel + dtb(s) + overlays from rootfs
 test ${boot_devtype} = "mmc" && env set load_cmd 'ext4load ${boot_devtype} ${root_devnum}:${root_part}'
