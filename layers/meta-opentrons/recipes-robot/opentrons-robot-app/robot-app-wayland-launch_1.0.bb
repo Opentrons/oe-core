@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/Apache-2.0;md5=89aea4e17d99a7ca
 
 inherit allarch systemd
 
-RDEPENDS_${PN}_append = "weston-init opentrons-robot-app systemd-extra-utils"
+RDEPENDS_${PN}_append = "weston-init opentrons-robot-app systemd-extra-utils gstd"
 
 S = "${WORKDIR}"
 
@@ -16,6 +16,9 @@ SRC_URI = " \
     file://configure-screen-power.service \
     file://opentrons-robot-app-devtools.service \
     file://opentrons-robot-app-devtools.socket \
+    file://opentrons-loading.service \
+    file://opentrons-loading.sh \
+    file://loading.mp4 \
 "
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
@@ -39,7 +42,16 @@ do_install () {
 
     install -m 0644 ${WORKDIR}/opentrons-robot-app-devtools.socket ${D}${systemd_unitdir}/system/
     install -m 0644 ${WORKDIR}/opentrons-robot-app-devtools.service ${D}${systemd_unitdir}/system/
+
+    install -m 0755 ${S}/opentrons-loading.sh ${D}/${bindir}
+    install -m 0644 ${WORKDIR}/opentrons-loading.service ${D}${systemd_unitdir}/system
+    install -d ${D}/${datadir}
+    install -d ${D}/${datadir}/opentrons
+    install -m 0644 ${S}/loading.mp4 ${D}/${datadir}/opentrons/loading.mp4
 }
 
+FILES_${PN}_append := " ${datadir}/opentrons/loading.mp4 "
+
+
 SYSTEMD_PACKAGES = "${PN}"
-SYSTEMD_SERVICE_${PN} = "opentrons-robot-app.service configure-screen-power.service opentrons-robot-app-devtools.service opentrons-robot-app-devtools.socket"
+SYSTEMD_SERVICE_${PN} = "opentrons-robot-app.service configure-screen-power.service opentrons-loading.service opentrons-robot-app-devtools.service opentrons-robot-app-devtools.socket"

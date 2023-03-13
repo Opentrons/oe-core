@@ -4,11 +4,11 @@ After=weston@root.service
 Requires=weston@root.service
 
 [Service]
-Restart=on-failure
 Type=notify
 Environment=@@application-environment@@
 ExecStart=/usr/bin/opentrons-robot-app.sh
-RestartSec=1
+ExecStartPost=/bin/systemctl stop opentrons-loading.service
+ExecStopPost=/bin/systemctl start opentrons-loading.service
 TimeoutStartSec=30
 ExitType=cgroup
 NotifyAccess=all
