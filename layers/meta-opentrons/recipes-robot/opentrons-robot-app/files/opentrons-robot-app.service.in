@@ -5,10 +5,13 @@ Requires=weston@root.service
 
 [Service]
 Restart=on-failure
-Type=forking
+Type=notify
 Environment=@@application-environment@@
 ExecStart=/usr/bin/opentrons-robot-app.sh
 RestartSec=1
+TimeoutStartSec=30
+ExitType=cgroup
+NotifyAccess=all
 
 [Install]
 WantedBy=multi-user.target
