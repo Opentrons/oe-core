@@ -1,0 +1,10 @@
+[Unit]
+Requires=opentrons-robot-app.service
+After=opentrons-robot-app.service
+Requires=opentrons-robot-app-devtools.socket
+After=opentrons-robot-app-devtools.socket
+JoinsNamespaceOf=opentrons-robot-app.service
+
+[Service]
+ExecStart=/lib/systemd/systemd-socket-proxyd 127.0.0.1:9222
+PrivateTmp=yes
