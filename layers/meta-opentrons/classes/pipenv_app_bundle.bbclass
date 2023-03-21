@@ -43,11 +43,14 @@ PIPENV_APP_BUNDLE_DIR ??= "/opt/${PN}"
 PIPENV_APP_BUNDLE_STRIP_HASHES ??= "no"
 PIPENV_APP_BUNDLE_SOURCE_VENV := "${B}/build-venv"
 
+# Extra environment args to pass to pip when building packages
+PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS ??= ""
 
 PIP_ENVARGS := " \
    STAGING_INCDIR=${STAGING_INCDIR} \
    STAGING_LIBDIR=${STAGING_LIBDIR} \
    _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__linux_x86_64-linux-gnu \
+   ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS} \
 "
 
 python do_rewrite_requirements() {
@@ -59,7 +62,8 @@ python do_rewrite_requirements() {
     # we're going to rewrite it to make the references to the monorepo files non-editable
     # and relative to a file directory locally
     reqsfile = d.getVar("B") + '/requirements-unfiltered.txt'
-    orig = open(reqsfile).read().split('\n')
+    with open(reqsfile) as reqsfile_obj:
+        orig = reqsfile_obj.read().split('\n')
     condensed = []
     working = ''
     for line in orig:
@@ -77,7 +81,8 @@ python do_rewrite_requirements() {
         else:
             condensed.append(extras)
     internal = d.getVar("B") + '/requirements-condensed.txt'
-    open(internal, 'w').write('\n'.join(condensed))
+    with open(internal, 'w') as internalobj:
+        internalobj.write('\n'.join(condensed))
     stripped = [l for l in condensed if not l.strip().startswith('#')]
     pypi_outfile = d.getVar("B") + '/pypi.txt'
     local_outfile = d.getVar("B") + '/local.txt'
@@ -117,8 +122,10 @@ python do_rewrite_requirements() {
         else:
             bb.debug(1, 'Keeping ' + line)
             pypi.append(line)
-    open(pypi_outfile, 'w').write('\n'.join(pypi) + '\n')
-    open(local_outfile, 'w').write('\n'.join(local) + '\n')
+    with open(pypi_outfile, 'w') as pypi_outfile_obj:
+         pypi_outfile_obj.write('\n'.join(pypi) + '\n')
+    with open(local_outfile, 'w') as local_outfile_obj:
+         local_outfile_obj.write('\n'.join(local) + '\n')
 }
 
 do_rewrite_requirements[vardeps] += " PIPENV_APP_BUNDLE_USE_GLOBAL PIPENV_APP_BUNDLE_EXTRAS "
@@ -162,6 +169,7 @@ do_compile () {
       ${PIP_ARGS}
 }
 
+do_compile[vardeps] += "PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS"
 do_compile[dirs] += " ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
 
 do_install () {
@@ -173,4 +181,5 @@ do_install () {
         -exec install "{}" "${D}${PIPENV_APP_BUNDLE_DIR}/{}" \;
 }
 
-FILES_${PN} = "${PIPENV_APP_BUNDLE_DIR} /opentrons_versions"
+
+FILES_${PN} = "${PIPENV_APP_BUNDLE_DIR}/opentrons_versions"

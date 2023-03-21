@@ -19,7 +19,7 @@ PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
 PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq "
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
-PIPENV_APP_BUNDLE_EXTRAS = "./../hardware"
+PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=ot3"
 
 do_compile_append() {
     # dont include scripts
