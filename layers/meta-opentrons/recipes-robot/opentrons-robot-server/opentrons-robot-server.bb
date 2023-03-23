@@ -31,7 +31,8 @@ addtask do_write_systemd_dropfile after do_compile before do_install
 do_install_append () {
     # add release notes
     install -d ${D}${sysconfdir}
-    install ${S}/api/release-notes.md ${D}${sysconfdir}/
+    # TODO: Make this not the internal release notes at some point
+    install ${S}/api/release-notes-internal.md ${D}${sysconfdir}/release-notes.md
 
     # create json file to be used in VERSION.json
     install -d ${D}/opentrons_versions
