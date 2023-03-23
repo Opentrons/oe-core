@@ -200,6 +200,18 @@ jobs:
           echo "release_notes_file_url=$root_url/release-notes.md" >> $GITHUB_OUTPUT
           echo "system_url=$root_url/ot3-system.zip" >> $GITHUB_OUTPUT
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
+      - name: Upload results to monorepo release
+        if: steps.build-refs.outputs.build-type == 'release'
+        uses: 'ncipollo/release-action@v1.12.0'
+        with:
+          replacesArtifacts: true
+          allowUpdates: true
+          omitBody: true
+          omitName: true
+          repo: opentrons
+          tag: ${{ steps.build-refs.outputs.monorepo }}
+          artifacts: ./oe-core/build/deploy/ot3-system.zip
+          artifactContentType: application/zip
       - name: Post results
         if: ${{ matrix.build_env == 'stage-prod' }}
         uses: slackapi/slack-github-action@v1.14.0
