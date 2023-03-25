@@ -50,11 +50,15 @@ IMAGE_INSTALL += " \
     python3 python3-misc python3-modules python3-jupyter \
     opentrons-usb-bridge opentrons-system-server \
     opentrons-mcu-firmware \
+    opentrons-user-environment \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
 # port. Luckily, they are only recommended so it is easy to filter them out.
 PACKAGE_EXCLUDE = "libusbgx libusbgx-examples"
+
+# exclude Toradex hostapd-example as this causes mDNS discovery issues when interface uap0 connects/disconnects.
+PACKAGE_EXCLUDE += " hostapd-example"
 
 ROBOT_TYPE = "OT-3 Standard"
 

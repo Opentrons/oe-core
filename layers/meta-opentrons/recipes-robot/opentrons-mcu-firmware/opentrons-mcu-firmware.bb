@@ -37,5 +37,5 @@ FILES_${PN} += "${libdir}/firmware/head-*.hex \
                 ${libdir}/firmware/gantry-*.hex \
                 ${libdir}/firmware/gripper-*.hex \
                 ${libdir}/firmware/pipettes-*.hex \
-                ${libdir}/firmware/rear-panel-*.hex \
+                ${libdir}/firmware/rear-panel-*.bin \
                 ${libdir}/firmware/opentrons-firmware.json"

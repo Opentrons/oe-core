@@ -20,7 +20,11 @@ export type AttemptableRefs = Map<Repo, AttemptableRef[]>
 export type OutputRefs = Map<Repo, Ref>
 
 function mainRefFor(input: Repo): Branch {
-  return { monorepo: 'refs/heads/edge', 'oe-core': 'refs/heads/main', 'ot3-firmware': 'refs/heads/main' }[input]
+  return {
+    monorepo: 'refs/heads/edge',
+    'oe-core': 'refs/heads/main',
+    'ot3-firmware': 'refs/heads/main',
+  }[input]
 }
 
 export function restAPICompliantRef(input: Ref): string {
@@ -170,7 +174,7 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
           }
           const availableRefs = value.data.map(refObj => refObj.ref)
           core.info(`refs on ${repoName} matching ${ref}: ${availableRefs}`)
-          return availableRefs.includes(ref) ? ref : null
+          return availableRefs.includes(correctRef) ? correctRef : null
         })
     }
 

@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+export RUNNING_ON_VERDIN=1
+export OT_API_FF_enableOT3HardwareController="true"
+export PYTHONPATH=$PYTHONPATH:/opt/opentrons-robot-server

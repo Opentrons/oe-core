@@ -1,5 +1,5 @@
 name: 'Build OT3 image on github workflows'
-run-name: 'Building OT3 image for opentrons ${{ inputs.monorepo-ref }} and oe-core ${{ inputs.oe-core-ref }}'
+run-name: 'image: mono ${{ inputs.monorepo-ref }}, core ${{ inputs.oe-core-ref }}, fw ${{ inputs.ot3-firmware-ref }}'
 on:
   workflow_dispatch:
     inputs:
@@ -111,7 +111,7 @@ jobs:
           # fetch cache if the size is less than 20GB, so we have enough space to build image.
           sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
-          if [[ sizeInGigabytes -gt 20 ]]; then
+          if [[ sizeInGigabytes -gt 50 ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
           else
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
@@ -134,8 +134,9 @@ jobs:
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
           ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount   ot3-image:latest opentrons-ot3-image --runall=fetch
+          tmp_mount="type=tmpfs,dst=/tmp"
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
         run: |
           here=$(pwd)
@@ -143,7 +144,9 @@ jobs:
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
           ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount ot3-image:latest opentrons-ot3-image
+          tmp_mount="type=tmpfs,dst=/tmp"
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af
@@ -201,7 +204,7 @@ jobs:
         if: ${{ matrix.build_env == 'stage-prod' }}
         uses: slackapi/slack-github-action@v1.14.0
         with:
-          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ steps.build-refs.outputs.oe-core }}\", \"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
+          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ steps.build-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.build-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.build-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       - name: Remove build data
