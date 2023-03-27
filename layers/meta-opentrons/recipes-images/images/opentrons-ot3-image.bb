@@ -120,6 +120,12 @@ python do_create_opentrons_manifest() {
     opentrons_json_output = "%s/VERSION.json" % d.getVar('DEPLOY_DIR_IMAGE')
     with open(opentrons_json_output, 'w') as fh:
         json.dump(opentrons_manifest, fh, indent=4)
+
+    # write the system version file
+    ot_system_version = "%s/OT_SYSTEM_VERSION" % d.getVar('DEPLOY_DIR_IMAGE')
+    with open(ot_system_version, 'w'):
+        fh.write(oe_version)
+
 }
 ROOTFS_PREPROCESS_COMMAND += "do_create_opentrons_manifest; "
 
@@ -130,8 +136,9 @@ do_make_rootfs_changes() {
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}${sysconfdir}/issue
     printf "${IMAGE_NAME}\n\n" >> ${IMAGE_ROOTFS}${sysconfdir}/issue.net
 
-    # add the VERSION.json file
+    # add the VERSION.json file and OT_SYSTEM_VERSION
     cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}${sysconfdir}/VERSION.json
+    cat ${DEPLOY_DIR_IMAGE}/OT_SYSTEM_VERSION ${IMAGE_ROOTFS}${sysconfdir}/OT_SYSTEM_VERSION
     # copy the release notes to the output dir
     cat ${IMAGE_ROOTFS}${sysconfdir}/release-notes.md > ${DEPLOY_DIR_IMAGE}/release-notes.md
 
