@@ -48,8 +48,8 @@ IMAGE_INSTALL += " \
     robot-app-wayland-launch opentrons-robot-app \
     opentrons-robot-server opentrons-update-server \
     python3 python3-misc python3-modules python3-jupyter \
-    opentrons-usb-bridge opentrons-system-server \
-    opentrons-mcu-firmware \
+    opentrons-jupyter-notebook opentrons-usb-bridge \
+    opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment \
  "
 

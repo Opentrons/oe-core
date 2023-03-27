@@ -19,4 +19,4 @@ Environment=JUPYTER_NOTEBOOK_DIR=%S/jupyter/notebooks
 Environment=IPYTHONDIR=%S/ipython
 
 [Install]
-WantedBy=opentrons.target
+WantedBy=multi-user.target
