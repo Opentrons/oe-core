@@ -1,0 +1,11 @@
+diff --git a/conf/layer.conf b/conf/layer.conf
+index b49b0e1..acdbd01 100644
+--- a/conf/layer.conf
++++ b/conf/layer.conf
+@@ -15,5 +15,5 @@ BBFILE_PRIORITY_jupyter-layer = "7"
+ 
+ LAYERDEPENDS_jupyter-layer = "core meta-python"
+ 
+-LAYERSERIES_COMPAT_jupyter-layer = "gatesgarth"
++LAYERSERIES_COMPAT_jupyter-layer = "dunfell"
+ 

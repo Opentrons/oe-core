@@ -1,0 +1,22 @@
+[Unit]
+Description=Jupyter notebook server
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/bin/sh -c "jupyter notebook --allow-root --config=%E/jupyter/jupyter_notebook_config.py --notebook-dir=%S/jupyter/notebooks 2>&1"
+PIDFile=%t/jupyter/jupyter.pid
+SupplementaryGroups=dialout
+StateDirectory=jupyter jupyter/notebooks jupyter/data jupyter/config ipython
+RuntimeDirectory=jupyter
+Environment=RUNNING_ON_VERDIN=true
+Environment=PYTHONPATH=/opt/opentrons-robot-server:/usr/lib/python3.8/site-packages
+Environment=JUPYTER_RUNTIME_DIR=%t/jupyter
+Environment=JUPYTER_CONFIG_DIR=%S/jupyter/config
+Environment=JUPYTER_DATA_DIR=%S/jupyter/data
+Environment=JUPYTER_NOTEBOOK_DIR=%S/jupyter/notebooks
+Environment=IPYTHONDIR=%S/ipython
+
+[Install]
+WantedBy=multi-user.target
