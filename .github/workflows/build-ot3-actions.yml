@@ -211,6 +211,7 @@ jobs:
           tag: ${{ steps.build-refs.outputs.monorepo }}
           artifacts: ./oe-core/build/deploy/ot3-system.zip
           artifactContentType: application/zip
+          token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       - name: Post results
         if: ${{ matrix.build_env == 'stage-prod' }}
         uses: slackapi/slack-github-action@v1.14.0
