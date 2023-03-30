@@ -19,7 +19,7 @@ PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
 PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq "
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
-PIPENV_APP_BUNDLE_EXTRAS = "./../hardware"
+PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=ot3"
 
 do_compile_append() {
     # dont include scripts
@@ -31,11 +31,13 @@ addtask do_write_systemd_dropfile after do_compile before do_install
 do_install_append () {
     # add release notes
     install -d ${D}${sysconfdir}
-    install ${S}/api/release-notes.md ${D}${sysconfdir}/
+    # TODO: Make this not the internal release notes at some point
+    install ${S}/api/release-notes-internal.md ${D}${sysconfdir}/release-notes.md
 
     # create json file to be used in VERSION.json
     install -d ${D}/opentrons_versions
     python3 ${S}/scripts/python_build_utils.py robot-server ot3 dump_br_version > ${D}/opentrons_versions/opentrons-robot-server-version.json
+    python3 ${S}/scripts/python_build_utils.py api ot3 dump_br_version > ${D}/opentrons_versions/opentrons-api-version.json
 
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-robot-server.service ${D}${systemd_system_unitdir}/opentrons-robot-server.service

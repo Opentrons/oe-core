@@ -1,0 +1,14 @@
+[Unit]
+Description=Display loading screen while app not present
+Before=opentrons-robot-app.service
+Before=multi-user.target
+Requires=gstd.service
+After=gstd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/opentrons-loading.sh /usr/share/opentrons/loading.mp4
+
+[Install]
+WantedBy=opentrons-robot-app.service
+WantedBy=multi-user.target

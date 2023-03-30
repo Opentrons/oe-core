@@ -9750,7 +9750,11 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 const orderedRepos = ['monorepo', 'oe-core', 'ot3-firmware'];
 function mainRefFor(input) {
-    return { monorepo: 'refs/heads/edge', 'oe-core': 'refs/heads/main', 'ot3-firmware': 'refs/heads/main' }[input];
+    return {
+        monorepo: 'refs/heads/edge',
+        'oe-core': 'refs/heads/main',
+        'ot3-firmware': 'refs/heads/main',
+    }[input];
 }
 function restAPICompliantRef(input) {
     return input.replace('refs/', '');
@@ -9852,7 +9856,7 @@ function resolveRefs(toAttempt) {
                     }
                     const availableRefs = value.data.map(refObj => refObj.ref);
                     _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`refs on ${repoName} matching ${ref}: ${availableRefs}`);
-                    return availableRefs.includes(ref) ? ref : null;
+                    return availableRefs.includes(correctRef) ? correctRef : null;
                 });
             });
             resolved.set(repo, yield Promise.all(refList.map(ref => refResolves(repo, ref))).then(presentRefs => presentRefs.find(maybeRef => maybeRef !== null)));

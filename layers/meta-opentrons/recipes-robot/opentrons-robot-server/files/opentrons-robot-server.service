@@ -11,6 +11,7 @@ Environment=OT_API_FF_enableOT3HardwareController=true
 Environment=RUNNING_ON_PI=true
 Environment=PYTHONPATH=/opt/opentrons-robot-server:/usr/lib/python3.8/site-packages
 Environment=OT_ROBOT_SERVER_persistence_directory=%S/opentrons-robot-server
+Environment=OT_ROBOT_SERVER_maximum_unused_protocols=20
 Restart=on-failure
 TimeoutStartSec=3min
 After=opentrons-ot3-canbus
