@@ -202,9 +202,9 @@ jobs:
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
           _fulltag="${{steps.build-refs.outputs.monorepo}}"
           echo "monorepo_shorttag=${_fulltag:10}" >> $GITHUB_OUTPUT
-          _system_zipname=ot3-system-${_fulltag:14}.zip
-          _system_zip=oe-core/build/deploy/${_system_zipname}"
-          cp ot3-system.zip ${_system_zipname}.zip
+          _system_zipname="ot3-system-${_fulltag:14}.zip"
+          _system_zip="oe-core/build/deploy/${_system_zipname}"
+          cp ot3-system.zip "${_system_zipname}.zip"
           echo "gh_release_artifact=${_system_zip}" >> $GITHUB_OUTPUT
       - name: Upload results to monorepo release
         if: steps.build-refs.outputs.build-type == 'release'
