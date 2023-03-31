@@ -200,6 +200,12 @@ jobs:
           echo "release_notes_file_url=$root_url/release-notes.md" >> $GITHUB_OUTPUT
           echo "system_url=$root_url/ot3-system.zip" >> $GITHUB_OUTPUT
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
+          _fulltag="${{steps.build-refs.outputs.monorepo}}"
+          echo "monorepo_shorttag=${_fulltag:10}" >> $GITHUB_OUTPUT
+          _system_zipname=ot3-system-${{_fulltag:14}}.zip
+          _system_zip=oe-core/build/deploy/${_system_zipname}"
+          cp ot3-system.zip ${_system_zipname}.zip
+          echo "gh_release_artifact=${_system_zip}" >> $GITHUB_OUTPUT
       - name: Upload results to monorepo release
         if: steps.build-refs.outputs.build-type == 'release'
         uses: 'ncipollo/release-action@v1.12.0'
@@ -208,8 +214,8 @@ jobs:
           omitBody: true
           omitName: true
           repo: opentrons
-          tag: ${{ steps.build-refs.outputs.monorepo }}
-          artifacts: ./oe-core/build/deploy/ot3-system.zip
+          tag: ${{ steps.upload-results.outputs.monorepo_shorttag }}
+          artifacts: ${{ steps.upload-results.outputs.gh_release_artifact }}
           artifactContentType: application/zip
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       - name: Post results
