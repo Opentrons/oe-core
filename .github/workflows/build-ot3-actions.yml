@@ -178,13 +178,14 @@ jobs:
           _artifact_versioned=${_artifact_root}/opentrons-versioned
           _oe_images=${_oe_build}/deploy/images
           _oe_tmp=${_oe_build}/tmp
-          mkdir -p ${_artifact_dir}
+          mkdir -p ${_artifact_s3}
           find ${_oe_images} -name "*opentrons-ot3-image-Tezi*" -exec cp {} ${_artifact_s3}/ot3-fullimage.tar \;
           find ${_oe_images} -name "ot3-system.zip" -exec cp {} ${_artifact_s3} \;
           find ${_oe_images} -name "VERSION.json" -exec cp {} ${_artifact_s3} \;
           find ${_oe_images} -name "release-notes.md" -exec cp {} ${_artifact_s3} \;
           tar czf ${_artifact_s3}/buildstats.tar.gz ${_oe_tmp}/buildstats
 
+          mkdir -p ${_artifact_versioned}
           _fulltag="${{steps.build-refs.outputs.monorepo}}"
           echo "monorepo_shorttag=${_fulltag:10}" >> $GITHUB_OUTPUT
           _vers_suffix="${_fulltag:14}"
