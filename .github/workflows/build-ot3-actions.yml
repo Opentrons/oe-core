@@ -194,7 +194,7 @@ jobs:
           _fullimage_tarname="ot3-fullimage-${_vers_suffix}.tar"
           cp ${_artifact_s3}/ot3-system.zip "${_artifact_versioned}/${_system_zipname}"
           cp ${_artifact_s3}/VERSION.json "${_artifact_versioned}/${_version_jsonname}"
-          cp ${_artifact_s3}/ot3-fullimage.tar "${_artifact_versioned}${_fullimage_tarname}"
+          cp ${_artifact_s3}/ot3-fullimage.tar "${_artifact_versioned}/${_fullimage_tarname}"
           echo "versioned_system_zip=${_artifact_versioned}/${_system_zipname}" >> $GITHUB_OUTPUT
           echo "versioned_version_json=${_artifact_versioned}/${_version_jsonname}" >> $GITHUB_OUTPUT
           echo "versioned_fullimage_tar=${_artifact_versioned}/${_fullimage_tarname}" >> $GITHUB_OUTPUT
@@ -234,6 +234,8 @@ jobs:
           allowUpdates: true
           omitBody: true
           omitName: true
+          omitPrereleaseDuringUpdate: true
+          omitDraftDuringUpdate: true
           repo: opentrons
           tag: ${{ steps.artifacts.outputs.monorepo_shorttag }}
           artifacts: ${{ steps.artifacts.outputs.versioned_system_zip }}
@@ -246,6 +248,8 @@ jobs:
           allowUpdates: true
           omitBody: true
           omitName: true
+          omitPrereleaseDuringUpdate: true
+          omitDraftDuringUpdate: true
           repo: opentrons
           tag: ${{ steps.artifacts.outputs.monorepo_shorttag }}
           artifacts: ${{ steps.artifacts.outputs.versioned_fullimage_tar }}
@@ -258,6 +262,8 @@ jobs:
           allowUpdates: true
           omitBody: true
           omitName: true
+          omitPrereleaseDuringUpdate: true
+          omitDraftDuringUpdate: true
           repo: opentrons
           tag: ${{ steps.artifacts.outputs.monorepo_shorttag }}
           artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
