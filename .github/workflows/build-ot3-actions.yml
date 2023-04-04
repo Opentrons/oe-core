@@ -168,45 +168,65 @@ jobs:
               echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
           done
       - name: Gather results
+        id: artifacts
         run: |
-          cd oe-core
-          mkdir -p build/deploy/opentrons
-          find ./build/deploy/images -name "*opentrons-ot3-image-Tezi*" -exec cp {} build/deploy/opentrons/ot3-fullimage.tar \;
-          find ./build/deploy/images -name "ot3-system.zip" -exec cp {} build/deploy/opentrons \;
-          find ./build/deploy/images -name "VERSION.json" -exec cp {} build/deploy/opentrons \;
-          find ./build/deploy/images -name "release-notes.md" -exec cp {} build/deploy/opentrons \;
-          tar czf ./build/deploy/opentrons/buildstats.tar.gz ./build/tmp/buildstats
+          _oe_build=$(pwd)/oe-core/build
+          echo "found build dir at ${_oe_build}"
+          _artifact_root=${_oe_build}/deploy
+          _artifact_unversioned_subdir=opentrons
+          _artifact_s3=${_artifact_root}/${_artifact_unversioned_subdir}
+          _artifact_versioned=${_artifact_root}/opentrons-versioned
+          _oe_images=${_oe_build}/deploy/images
+          _oe_tmp=${_oe_build}/tmp
+          mkdir -p ${_artifact_dir}
+          find ${_oe_images} -name "*opentrons-ot3-image-Tezi*" -exec cp {} ${_artifact_s3}/ot3-fullimage.tar \;
+          find ${_oe_images} -name "ot3-system.zip" -exec cp {} ${_artifact_s3} \;
+          find ${_oe_images} -name "VERSION.json" -exec cp {} ${_artifact_s3} \;
+          find ${_oe_images} -name "release-notes.md" -exec cp {} ${_artifact_s3} \;
+          tar czf ${_artifact_s3}/buildstats.tar.gz ${_oe_tmp}/buildstats
+
+          _fulltag="${{steps.build-refs.outputs.monorepo}}"
+          echo "monorepo_shorttag=${_fulltag:10}" >> $GITHUB_OUTPUT
+          _vers_suffix="${_fulltag:14}"
+          _system_zipname="ot3-system-${_vers_suffix}.zip"
+          _version_jsonname="VERSION-${_vers_suffix}.zip"
+          _fullimage_tarname="ot3-fullimage-${_vers_suffix}.tar"
+          cp ${_artifact_s3}/ot3-system.zip "${_artifact_versioned}/${_system_zipname}"
+          cp ${_artifact_s3}/VERSION.json "${_artifact_versioned}/${_version_jsonname}"
+          cp ${_artifact_s3}/ot3-fullimage.tar "${_artifact_versioned}${_fullimage_tarname}"
+          echo "versioned_system_zip=${_artifact_versioned}/${_system_zipname}" >> $GITHUB_OUTPUT
+          echo "versioned_version_json=${_artifact_versioned}/${_version_jsonname}" >> $GITHUB_OUTPUT
+          echo "versioned_fullimage_tar=${_artifact_versioned}/${_fullimage_tarname}" >> $GITHUB_OUTPUT
+
+          echo "artifact_root=${_artifact_root}" >> $GITHUB_OUTPUT
+          echo "artifact_unversioned_subdir=${_artifact_unversioned_subdir}" >> $GITHUB_OUTPUT
+          echo "artifact_versioned=${_artifact_versioned}" >> $GITHUB_OUTPUT
       - name: Handle Release
         if: ${{ steps.build-refs.outputs.build-type == 'release' }}
         shell: bash
         id: 'handle-release'
         run: |
-          cd oe-core/scripts
+          pushd oe-core/scripts
           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json releases.json
           base_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
-          version_file=../build/deploy/opentrons/VERSION.json
-          python3 update_releases_file.py --releases-file releases.json --version-file $version_file --base-url $base_url
+          version_file=${{ steps.artifacts.outputs.artifact_root }}/${{ steps.artifacts.outputs.artifact_unversioned_subdir }}/VERSION.json
+          python3 update_releases_file.py --releases-file releases.json --version-file ${version_file} --base-url $base_url
           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/
-          cd ..
+          popd
       - name: Upload results to S3
         shell: bash
         id: 'upload-results'
         run: |
-          cd oe-core/build/deploy/
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive opentrons s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          pushd ${{ steps.artifacts.outputs.artifact_root }}
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive ${{ artifact_unversioned_subdir }} s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "version_file_url=$root_url/VERSION.json" >> $GITHUB_OUTPUT
           echo "release_notes_file_url=$root_url/release-notes.md" >> $GITHUB_OUTPUT
           echo "system_url=$root_url/ot3-system.zip" >> $GITHUB_OUTPUT
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
-          _fulltag="${{steps.build-refs.outputs.monorepo}}"
-          echo "monorepo_shorttag=${_fulltag:10}" >> $GITHUB_OUTPUT
-          _system_zipname="ot3-system-${_fulltag:14}.zip"
-          _system_zip="oe-core/build/deploy/${_system_zipname}"
-          cp ot3-system.zip "${_system_zipname}.zip"
-          echo "gh_release_artifact=${_system_zip}" >> $GITHUB_OUTPUT
-      - name: Upload results to monorepo release
+          popd
+      - name: Upload system zip to monorepo release
         if: steps.build-refs.outputs.build-type == 'release'
         uses: 'ncipollo/release-action@v1.12.0'
         with:
@@ -214,9 +234,33 @@ jobs:
           omitBody: true
           omitName: true
           repo: opentrons
-          tag: ${{ steps.upload-results.outputs.monorepo_shorttag }}
-          artifacts: ${{ steps.upload-results.outputs.gh_release_artifact }}
+          tag: ${{ steps.artifacts.outputs.monorepo_shorttag }}
+          artifacts: ${{ steps.artifacts.outputs.versioned_system_zip }}
           artifactContentType: application/zip
+          token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
+      - name: Upload fullimage tar to monorepo release
+        if: steps.build-refs.outputs.build-type == 'release'
+        uses: 'ncipollo/release-action@v1.12.0'
+        with:
+          allowUpdates: true
+          omitBody: true
+          omitName: true
+          repo: opentrons
+          tag: ${{ steps.artifacts.outputs.monorepo_shorttag }}
+          artifacts: ${{ steps.artifacts.outputs.versioned_fullimage_tar }}
+          artifactContentType: application/x-tar
+          token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
+      - name: Upload version json to monorepo release
+        if: steps.build-refs.outputs.build-type == 'release'
+        uses: 'ncipollo/release-action@v1.12.0'
+        with:
+          allowUpdates: true
+          omitBody: true
+          omitName: true
+          repo: opentrons
+          tag: ${{ steps.artifacts.outputs.monorepo_shorttag }}
+          artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
+          artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       - name: Post results
         if: ${{ matrix.build_env == 'stage-prod' }}
