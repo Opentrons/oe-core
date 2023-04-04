@@ -190,7 +190,7 @@ jobs:
           echo "monorepo_shorttag=${_fulltag:10}" >> $GITHUB_OUTPUT
           _vers_suffix="${_fulltag:14}"
           _system_zipname="ot3-system-${_vers_suffix}.zip"
-          _version_jsonname="VERSION-${_vers_suffix}.zip"
+          _version_jsonname="VERSION-${_vers_suffix}.json"
           _fullimage_tarname="ot3-fullimage-${_vers_suffix}.tar"
           cp ${_artifact_s3}/ot3-system.zip "${_artifact_versioned}/${_system_zipname}"
           cp ${_artifact_s3}/VERSION.json "${_artifact_versioned}/${_version_jsonname}"
