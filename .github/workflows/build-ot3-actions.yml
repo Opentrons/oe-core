@@ -218,7 +218,7 @@ jobs:
         id: 'upload-results'
         run: |
           pushd ${{ steps.artifacts.outputs.artifact_root }}
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive ${{ artifact_unversioned_subdir }} s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive ${{ steps.artifacts.outputs.artifact_unversioned_subdir }} s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "version_file_url=$root_url/VERSION.json" >> $GITHUB_OUTPUT
