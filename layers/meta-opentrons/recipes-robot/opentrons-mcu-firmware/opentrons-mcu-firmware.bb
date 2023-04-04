@@ -57,7 +57,7 @@ do_install(){
     install -d ${D}${FIRMWARE_DIR}
     find ${B}/dist/applications -type f -exec install -m 0644 {} ${D}${FIRMWARE_DIR} \;
     install -d ${D}/opentrons_versions
-    install ${B}/firmware-versions.json ${D}/opentrons_versions/firmware-versions.json
+    install ${B}/firmware-versions.json ${D}/opentrons_versions/opentrons-firmware-version.json
 }
 
 # since we are compiling binaries for the subsystem which has a different arch to linux we need
@@ -70,5 +70,5 @@ FILES_${PN} += "${libdir}/firmware/head-*.hex \
                 ${libdir}/firmware/pipettes-*.hex \
                 ${libdir}/firmware/rear-panel-*.bin \
                 ${libdir}/firmware/opentrons-firmware.json \
-                /opentrons_versions/firmware-versions.json \
+                /opentrons_versions/opentrons-firmware-version.json \
                 "
