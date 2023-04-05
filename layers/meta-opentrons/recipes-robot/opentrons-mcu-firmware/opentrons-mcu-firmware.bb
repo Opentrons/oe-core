@@ -56,8 +56,8 @@ do_install(){
     # install the compiled binaries to /usr/lib/firmware
     install -d ${D}${FIRMWARE_DIR}
     find ${B}/dist/applications -type f -exec install -m 0644 {} ${D}${FIRMWARE_DIR} \;
-    install -d ${STAGING_DIR_HOST}/opentrons_versions
-    install ${B}/firmware-versions.json ${STAGING_DIR_HOST}/opentrons_versions/opentrons-firmware-version.json
+    install -d ${D}/opentrons_versions
+    install ${B}/firmware-versions.json ${D}/opentrons_versions/opentrons-firmware-version.json
 }
 
 # since we are compiling binaries for the subsystem which has a different arch to linux we need

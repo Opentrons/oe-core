@@ -10,6 +10,7 @@ DEPENDS += "rsync-native zip-native \
     opentrons-update-server \
     opentrons-usb-bridge \
     opentrons-system-server \
+    opentrons-mcu-firmware \
     "
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
@@ -106,7 +107,6 @@ python do_create_opentrons_manifest() {
 
     opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')
     for version_file in os.listdir(opentrons_versions_dir):
-        bb.warn('checking version file %s' % version_file)
         if version_file not in expected_opentrons_versions:
             bb.error("version file does not exist - %s" % version_file)
             exit()
