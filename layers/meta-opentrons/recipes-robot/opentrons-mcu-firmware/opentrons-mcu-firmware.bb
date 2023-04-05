@@ -11,7 +11,6 @@ DEPENDS += " cmake-native"
 
 do_configure(){
     cd ${S}/
-    bbnote "cmake --preset=cross-no-directory-reqs -B ${B}/build-cross --install-prefix=${B}/dist ."
     cmake --preset=cross-no-directory-reqs -B ${B}/build-cross --install-prefix=${B}/dist .
 
 }
@@ -57,12 +56,16 @@ do_install(){
     install -d ${D}${FIRMWARE_DIR}
     find ${B}/dist/applications -type f -exec install -m 0644 {} ${D}${FIRMWARE_DIR} \;
     install -d ${D}/opentrons_versions
-    install ${B}/firmware-versions.json ${D}/opentrons_versions/opentrons-firmware-version.json
+    cat ${B}/firmware-versions.json > ${D}/opentrons_versions/opentrons-firmware-version.json
 }
 
 # since we are compiling binaries for the subsystem which has a different arch to linux we need
 # to ignore the architecture.
 INSANE_SKIP_${PN} += "arch"
+
+SYSROOT_DIRS += "\
+                /opentrons_versions\
+                "
 
 FILES_${PN} += "${libdir}/firmware/head-*.hex \
                 ${libdir}/firmware/gantry-*.hex \
@@ -70,4 +73,5 @@ FILES_${PN} += "${libdir}/firmware/head-*.hex \
                 ${libdir}/firmware/pipettes-*.hex \
                 ${libdir}/firmware/rear-panel-*.bin \
                 ${libdir}/firmware/opentrons-firmware.json \
+                /opentrons_versions/opentrons-firmware-version.json \
                 "
