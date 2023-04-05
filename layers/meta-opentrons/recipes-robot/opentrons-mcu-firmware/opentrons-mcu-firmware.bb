@@ -56,7 +56,7 @@ do_install(){
     # install the compiled binaries to /usr/lib/firmware
     install -d ${D}${FIRMWARE_DIR}
     find ${B}/dist/applications -type f -exec install -m 0644 {} ${D}${FIRMWARE_DIR} \;
-    install -d ${D}/opentrons_versions
+    install -d ${STAGING_DIR_HOST}/opentrons_versions
     install ${B}/firmware-versions.json ${STAGING_DIR_HOST}/opentrons_versions/opentrons-firmware-version.json
 }
 
