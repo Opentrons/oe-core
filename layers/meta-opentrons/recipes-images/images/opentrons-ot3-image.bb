@@ -106,8 +106,9 @@ python do_create_opentrons_manifest() {
                                    "opentrons-firmware-version.json"]
 
     opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')
-    for version_file in os.listdir(opentrons_versions_dir):
-        if version_file not in expected_opentrons_versions:
+    version_files_present = os.listdir(opentrons_versions_dir)
+    for version_file in expected_opentrons_versions:
+        if version_file not in version_files_present:
             bb.error("version file does not exist - %s" % version_file)
             exit()
 

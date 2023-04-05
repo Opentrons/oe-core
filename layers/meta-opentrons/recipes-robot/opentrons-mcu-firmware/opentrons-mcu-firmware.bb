@@ -70,5 +70,4 @@ FILES_${PN} += "${libdir}/firmware/head-*.hex \
                 ${libdir}/firmware/pipettes-*.hex \
                 ${libdir}/firmware/rear-panel-*.bin \
                 ${libdir}/firmware/opentrons-firmware.json \
-                /opentrons_versions/opentrons-firmware-version.json \
                 "
