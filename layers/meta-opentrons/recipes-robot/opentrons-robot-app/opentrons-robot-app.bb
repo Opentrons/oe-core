@@ -16,7 +16,7 @@ do_configure(){
     # Move the yarn package configs to a mapped location when running in container
     if [ ! -z "${YARN_CACHE_DIR}" ]; then
         bbnote "Seting the yarn cache location to - ${YARN_CACHE_DIR}"
-        yarn config set cache-folder $YARN_CACHE_DIR
+        yarn config set cache-folder "${YARN_CACHE_DIR}"
     fi
 
     yarn
