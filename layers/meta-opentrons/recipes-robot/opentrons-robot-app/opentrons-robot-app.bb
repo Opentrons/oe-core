@@ -9,17 +9,15 @@ inherit features_check
 
 inherit insane
 
-YARN_CACHE_DIR = "${d.getVar("YARN_CACHE_DIR", "")}"
-
 do_configure(){
     npm install -g yarn
     cd ${S}
 
     # Move the yarn package configs to a mapped location when running in container
-    bberror("YARN_CACHE_DIR: ${YARN_CACHE_DIR}")
-    if [! -z "$YARN_CACHE_DIR"]:
-        bbnote("Seting the yarn cache location to - ${YARN_CACHE_DIR}")
+    if [ ! -z "${YARN_CACHE_DIR}" ]; then
+        bbnote "Seting the yarn cache location to - ${YARN_CACHE_DIR}"
         yarn config set cache-folder $YARN_CACHE_DIR
+    fi
 
     yarn
     cd ${S}/app-shell-odd
