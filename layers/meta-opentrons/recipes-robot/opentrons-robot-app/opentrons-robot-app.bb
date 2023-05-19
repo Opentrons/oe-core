@@ -9,10 +9,16 @@ inherit features_check
 
 inherit insane
 
-
 do_configure(){
     npm install -g yarn
     cd ${S}
+
+    # Move the yarn package configs to a mapped location when running in container
+    if [ ! -z "${YARN_CACHE_DIR}" ]; then
+        bbnote "Seting the yarn cache location to - ${YARN_CACHE_DIR}"
+        yarn config set cache-folder "${YARN_CACHE_DIR}"
+    fi
+
     yarn
     cd ${S}/app-shell-odd
     yarn electron-rebuild --arch=arm64
