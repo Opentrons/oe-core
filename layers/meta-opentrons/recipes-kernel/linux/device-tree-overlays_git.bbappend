@@ -4,6 +4,7 @@ SRC_URI_append = "\
   file://verdin-imx8mm_MCP2518_overlay.dts \
   file://verdin-imx8mm_usbotg1-force-peripheral.dts \
   file://verdin-imx8mm_force-lcd-on.dts \
+  file://verdin-imx8mm_M24128-eeprom_overlay.dts \
   "
 
 FILESEXTRAPATHS_append := ":${THISDIR}/overlays"
