@@ -1,0 +1,33 @@
+// SPDX-License-Identifier: Apache-2
+/*
+ * Copyright 2020-2021 Opentrons
+ */
+
+// add M24128 eeprom on carrier board.
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "toradex,verdin-imx8mm";
+};
+
+/* Disable EEPROM on display adapter boards */
+&eeprom_display_adapter {
+	status = "disabled";
+};
+
+/* Disable EEPROM on Verdin Development board */
+&eeprom_carrier_board {
+	status = "disabled";
+};
+
+/* Enable EEPROM M24128 on the Opentrons carrier board Verdin I2C_1 bus line.*/
+&i2c4 {
+	eeprom_opentrons_carrier_board: eeprom@50 {
+		compatible = "st,24c128";
+		pagesize = <64>;
+		reg = <0x50>;
+		status = "okay";
+	};
+};
