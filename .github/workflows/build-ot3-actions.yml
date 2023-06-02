@@ -89,6 +89,14 @@ jobs:
           secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           stage: ${{ matrix.build_env }}
+      - name: Symlink cache dir
+        shell: bash
+        run: |
+          here=$(pwd)
+          echo "current_dir: ${here}"
+          echo "$local_cache_dir: {LOCAL_CACHE:-./cache}"
+          df -ah
+          exit 1
       - name: Build container
         run: |
           cd oe-core
