@@ -17,13 +17,6 @@ cleanup () {
   popd >/dev/null
 }
 
-
-# FIX ME:
-# electron is BIG BAD and does not respect yarn download location
-# So we need to symlink the location it writes to, to a location on the host
-ln -s /volumes/cache/electron ~/.cache/electron
-
-
 DEFAULT_TARGET=opentrons-ot3-image
 THISDIR="${1}"
 shift

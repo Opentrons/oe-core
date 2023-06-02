@@ -89,13 +89,6 @@ jobs:
           secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           stage: ${{ matrix.build_env }}
-      - name: Symlink cache dir
-        shell: bash
-        run: |
-          here=$(pwd)
-          echo "current_dir: ${here}"
-          echo "$local_cache_dir: {LOCAL_CACHE:-./cache}"
-          df -ah
       - name: Build container
         run: |
           cd oe-core
@@ -112,7 +105,7 @@ jobs:
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
           echo 'OT_BUILD_TYPE = "${{steps.build-refs.outputs.build-type}}"' >> ./build/conf/local.conf
           echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./build/conf/local.conf
-          echo 'ELECRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
+          echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
           cd ..
       - name: Pull S3 cache
         shell: bash
