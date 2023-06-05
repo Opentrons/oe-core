@@ -17,6 +17,7 @@ do_configure(){
     if [ ! -z "${YARN_CACHE_DIR}" ]; then
         bbnote "Seting the yarn cache location to - ${YARN_CACHE_DIR}"
         yarn config set cache-folder "${YARN_CACHE_DIR}"
+        export electron_config_cache="${ELECTRON_CACHE_DIR}"
     fi
 
     yarn
