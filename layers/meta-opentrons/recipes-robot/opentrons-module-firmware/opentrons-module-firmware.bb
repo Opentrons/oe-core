@@ -1,0 +1,37 @@
+SUMMARY = "This recipe will download and install the module firmware binaries."
+HOMEPAGE = "https://github.com/Opentrons/opentrons-modules"
+LICENSE = "Apache-2.0"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
+
+BASE_URL="https://opentrons-modules-builds.s3.us-east-2.amazonaws.com"
+
+TEMPERATURE_MODULE_VERSION="v2.1.0"
+TEMPERATURE_MODULE_SOURCE="temp-deck-arduino.ino.hex"
+TEMPERATURE_MODULE_URL="temperature-module/${TEMPERATURE_MODULE_VERSION}/${TEMPERATURE_MODULE_SOURCE}"
+SRC_URI += "${BASE_URL}/${TEMPERATURE_MODULE_URL};sha256sum=4e4ef00b44a320fe461265dbd0484d90247a13f405125657be8915c8ea214408"
+
+THERMOCYCLER-GEN2_MODULE_VERSION="v1.0.4"
+THERMOCYCLER-GEN2_MODULE_SOURCE="thermocycler-gen2@${THERMOCYCLER-GEN2_MODULE_VERSION}.bin"
+THERMOCYCLER-GEN2_MODULE_URL="thermocycler-gen2/${THERMOCYCLER-GEN2_MODULE_VERSION}/${THERMOCYCLER-GEN2_MODULE_SOURCE}"
+SRC_URI += "${BASE_URL}/${THERMOCYCLER-GEN2_MODULE_URL};sha256sum=0a6fd09e57368f746b2e14a7ae9ad473f7a4a944bde2e8769461aeb9c0d115fa"
+
+HEATER-SHAKER_MODULE_VERSION="v1.0.4"
+HEATER-SHAKER_MODULE_SOURCE="heater-shaker@${HEATER-SHAKER_MODULE_VERSION}.bin"
+HEATER-SHAKER_MODULE_URL="heater-shaker/${HEATER-SHAKER_MODULE_VERSION}/${HEATER-SHAKER_MODULE_SOURCE}"
+SRC_URI += "${BASE_URL}/${HEATER-SHAKER_MODULE_URL};sha256sum=33f2c876339f608917d69c4793eca1bbc409013b123bd2d2afd2609c9dac3248"
+
+FIRMWARE_DIR="${libdir}/firmware"
+
+S = "${WORKDIR}"
+
+do_install(){
+    # install the downloaded binaries to /usr/lib/firmware
+    install -d ${D}${FIRMWARE_DIR}
+    install ${S}/${TEMPERATURE_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
+    install ${S}/${THERMOCYCLER-GEN2_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
+    install ${S}/${HEATER-SHAKER_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
+}
+
+FILES_${PN} += "${libdir}/firmware/${TEMPERATURE_MODULE_SOURCE} \
+                ${libdir}/firmware/${THERMOCYCLER-GEN2_MODULE_SOURCE} \
+                ${libdir}/firmware/${HEATER-SHAKER_MODULE_SOURCE} \"
