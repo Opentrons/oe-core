@@ -1,6 +1,7 @@
+FILESEXTRAPATHS_append := ":${THISDIR}/${PN}"
 
-SRC_URI_append = "\
-    file://opentrons-journald.conf
+SRC_URI_append := " \
+    file://opentrons-journald.conf \
 "
 
 do_install_append() {
