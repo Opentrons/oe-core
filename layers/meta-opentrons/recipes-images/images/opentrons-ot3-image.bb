@@ -172,6 +172,8 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
     mkdir -p ${USERFS_DIR}${sysconfdir}
+    rm -rf ${USERFS_DIR}/log/journal
+    mkdir -p ${USERFS_DIR}/log/journal
 
     # add hostname and machine-info to userfs
     cat ${IMAGE_ROOTFS}${sysconfdir}/hostname > ${USERFS_DIR}${sysconfdir}/hostname
