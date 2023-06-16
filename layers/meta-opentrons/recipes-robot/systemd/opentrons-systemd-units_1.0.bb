@@ -18,5 +18,5 @@ FILES_${PN} += "\
 
 do_install() {
    install -d ${D}${systemd_unitdir}/system/
-   install -m 0644 ${WORKDIR}/var-log-journal.service ${D}${systemd_unitdir}/system
+   install -m 0644 ${WORKDIR}/var-log-journal.service ${D}${systemd_unitdir}/system/var-log-journal.service
 }
