@@ -13,10 +13,10 @@ SYSTEMD_SERVICE_${PN} += " var-log-journal.service"
 SYSTEMD_PACKAGES = "${PN}"
 
 FILES_${PN} += "\
-      ${systemd_unitdir}/system/var-log-journal.service \
+      ${systemd_system_unitdir}/system/var-log-journal.service \
       "
 
 do_install() {
-   install -d ${D}${systemd_unitdir}/system/
-   install -m 0644 ${WORKDIR}/var-log-journal.service ${D}${systemd_unitdir}/system/var-log-journal.service
+   install -d ${D}${systemd_system_unitdir}
+   install -m 0644 ${WORKDIR}/var-log-journal.service ${D}${systemd_system_unitdir}/var-log-journal.service
 }
