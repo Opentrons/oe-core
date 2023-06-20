@@ -11,7 +11,6 @@ DEPENDS += "rsync-native zip-native \
     opentrons-usb-bridge \
     opentrons-system-server \
     opentrons-mcu-firmware \
-    opentrons-systemd-units \
     "
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
@@ -53,6 +52,7 @@ IMAGE_INSTALL += " \
     opentrons-jupyter-notebook opentrons-usb-bridge \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
+    opentrons-systemd-units \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
@@ -173,8 +173,8 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
     mkdir -p ${USERFS_DIR}${sysconfdir}
-    rm -rf ${USERFS_DIR}/log/journal
-    mkdir -p ${USERFS_DIR}/log/journal
+    rm -rf ${USERFS_DIR}/var/log
+    mkdir -p ${USERFS_DIR}/var/log
 
     # add hostname and machine-info to userfs
     cat ${IMAGE_ROOTFS}${sysconfdir}/hostname > ${USERFS_DIR}${sysconfdir}/hostname
