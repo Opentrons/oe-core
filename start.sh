@@ -38,5 +38,10 @@ ls -la /volumes/cache/
 
 df -h
 
+# electron is ignoring the cache download set by the electron_config_cache env var
+# so for now lets manually create a symlink and set its download location to /volumes/cache
+ln -s /volumes/cache/electron ~/.cache/electron/
+
+
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
