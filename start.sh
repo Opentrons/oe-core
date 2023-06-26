@@ -33,5 +33,10 @@ patch -f ./layers/meta-jupyter/conf/layer.conf ./meta-jupyter-backport.patch
 export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
+ls -la /volumes
+ls -la /volumes/cache/
+
+df -h
+
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
