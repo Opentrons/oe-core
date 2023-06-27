@@ -35,8 +35,8 @@ export BITBAKEDIR=${THISDIR}/tools/bitbake
 
 # electron is ignoring the cache download set by the electron_config_cache env var
 # so for now lets manually create a symlink and set its download location to /volumes/cache
-mkdir -p ~/.cache/electron
-ln -s /volumes/cache/electron ~/.cache/electron/
+mkdir -p /volumes/cache/electron
+ln -sf /volumes/cache/electron ~/.config/electron
 
 ls -la /volumes
 ls -la /volumes/cache/
