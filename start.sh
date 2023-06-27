@@ -39,11 +39,5 @@ mkdir -p /volumes/cache/electron
 mkdir -p ~/.cache/
 ln -sf /volumes/cache/electron ~/.cache/electron
 
-ls -la ~/.cache
-ls -la /volumes
-ls -la /volumes/cache/
-
-df -h
-
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
