@@ -82,7 +82,7 @@ jobs:
           ./update.sh
           cd ..
       - name: Configure AWS Credentials
-        uses: './.github/actions/aws-credentials'
+        uses: './oe-core-for-workflow/.github/actions/aws-credentials'
         id: aws
         with:
           access_key_id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
