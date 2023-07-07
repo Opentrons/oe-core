@@ -3,7 +3,7 @@
 # Make sure the device's random machine ID is saved to persistent storage on
 # the active root filesystem. If it's already been saved, do nothing.
 #
-# This matters for the first boot after flashing a fresh SD card.
+# This matters for the first boot after flashing a fresh SOM image.
 #
 #
 # Background:
@@ -12,7 +12,7 @@
 # should remain constant across reboots. Userspace programs like journald rely
 # on this.
 #
-# /etc/machine-id comes unpopulated on our SD card images. So, when the system
+# /etc/machine-id comes unpopulated on our SOM images. So, when the system
 # boots, systemd autogenerates a random, transient machine ID in its place. It
 # bind-mounts that transient ID atop /etc/machine-id so that other userspace
 # programs will be able to find it there.
@@ -54,9 +54,6 @@ MACHINE_ID_FILE=/etc/machine-id
 function already_committed {
     # Return success if there's already a machine ID committed to persistent
     # storage, or false otherwise.
-
-    # todo(mm, 2021-02-25): Instead of checking like this, should we use
-    # systemd's ConditionFirstBoot to only run this script at all on first boot?
 
     # If $MACHINE_ID_FILE was unpopulated at the beginning of this
     # boot, then systemd will have bind-mounted a transient file atop it.
