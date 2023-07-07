@@ -29,5 +29,5 @@ do_install() {
 
    # install supporting files
    install -d ${D}/${bindir}
-   install -m 0644 ${WORKDIR}/ot-commit-machine-id ${D}/${bindir}/ot-commit-machine-id
+   install -m 0744 ${WORKDIR}/ot-commit-machine-id ${D}/${bindir}/ot-commit-machine-id
 }
