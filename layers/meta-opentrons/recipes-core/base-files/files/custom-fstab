@@ -12,5 +12,6 @@ tmpfs                /var/volatile        tmpfs      defaults              0  0
 /userfs/home             /home                 none       defaults,bind         0  0
 /userfs/data             /data                 none       defaults,bind         0  0
 /userfs/var              /var                  none       defaults,bind         0  0
+/userfs/var/mnt          /mnt                  none       defaults,bind         0  0
 /userfs/etc/hostname     /etc/hostname         none       defaults,bind,nofail  0  0
 /userfs/etc/machine-info /etc/machine-info     none       defaults,bind,nofail  0  0
