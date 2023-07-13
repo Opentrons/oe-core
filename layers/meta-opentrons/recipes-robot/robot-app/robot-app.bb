@@ -13,6 +13,7 @@ inherit insane
 do_configure(){
     npm install -g yarn
     cd ${S}
+    yarn remove -W cypress @cypress/webpack-preprocessor cypress-file-upload eslint-plugin-cypress
     yarn
     cd ${S}/app-shell
     yarn electron-rebuild --arch=arm64
