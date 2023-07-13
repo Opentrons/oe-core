@@ -1,0 +1,15 @@
+[Unit]
+Description=Make the directory for journals
+DefaultDependencies=false
+Before=local-fs.target systemd-journal-flush.service
+RequiresMountsFor=/var/log
+ConditionPathIsSymbolicLink=/var/log
+
+[Service]
+Type=oneshot
+ExecStart=/bin/rm /var/log
+ExecStart=/bin/mkdir -p /var/log/journal
+
+[Install]
+WantedBy=local-fs.target
+WantedBy=systemd-journal-flush.service
