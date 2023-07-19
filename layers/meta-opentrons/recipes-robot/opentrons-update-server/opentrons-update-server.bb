@@ -23,7 +23,7 @@ PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-update-server"
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = ""
 PIPENV_APP_BUNDLE_USE_GLOBAL = "python3-aiohttp systemd-python"
-PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=ot3"
+PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
 
 do_install_append() {
   # create json file to be used in VERSION.json
