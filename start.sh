@@ -17,6 +17,8 @@ cleanup () {
   popd >/dev/null
 }
 
+SECRET=$(cat /run/secrets/SECRET_KEY)
+echo "THIS IS A SECRET: ${SECRET}"
 DEFAULT_TARGET=opentrons-ot3-image
 THISDIR="${1}"
 shift
