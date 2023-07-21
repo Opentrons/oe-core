@@ -291,13 +291,9 @@ do_create_opentrons_ot3() {
     # sign the hash
     signed_rootfs=""
     bberror "TRY AND CREATE SIGNED BUILD"
-    if [ ! -z "${SIGNING_KEY}" ]; then
-        # dump to file and create signed hash
-        echo $SIGNING_KEY > .signing-key
+    if [ -e "${SIGNING_KEY}" ]; then
         bberror "Signing the build"
-        openssl dgst -sha256 -sign .signing-key -out systemfs.xz.sha256.sig systemfs.xz.sha256
-        # remove key
-        rm -rf .signing-key
+        openssl dgst -sha256 -sign "${SIGNING_KEY}" -out systemfs.xz.sha256.sig systemfs.xz.sha256
     fi
 
     # create the zip file
