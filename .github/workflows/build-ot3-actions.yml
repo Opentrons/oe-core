@@ -106,6 +106,7 @@ jobs:
           echo 'OT_BUILD_TYPE = "${{steps.build-refs.outputs.build-type}}"' >> ./build/conf/local.conf
           echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./build/conf/local.conf
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
+          echo 'SIGNING_KEY = "${{ secrets.SIGNING_KEY }}"' >> ./build/conf/local.conf
           cd ..
       - name: Pull S3 cache
         shell: bash
