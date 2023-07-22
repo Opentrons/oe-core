@@ -290,9 +290,8 @@ do_create_opentrons_ot3() {
 
     # sign the hash
     signed_rootfs=""
-    bberror "TRY AND CREATE SIGNED BUILD"
     if [ -e "${SIGNING_KEY}" ]; then
-        bberror "Signing the build"
+        bbinfo "Signing the build"
         openssl dgst -sha256 -sign "${SIGNING_KEY}" -out systemfs.xz.sha256.sig systemfs.xz.sha256
     fi
 
