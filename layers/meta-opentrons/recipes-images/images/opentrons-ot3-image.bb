@@ -293,6 +293,7 @@ do_create_opentrons_ot3() {
     if [ -e "${SIGNING_KEY}" ]; then
         bbnote "Signing the build"
         openssl dgst -sha256 -sign "${SIGNING_KEY}" -out systemfs.xz.sha256.sig systemfs.xz.sha256
+        signed_rootfs="systemfs.xz.sha256.sig"
     fi
 
     # create the zip file
