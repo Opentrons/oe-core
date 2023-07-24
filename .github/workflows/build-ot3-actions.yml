@@ -107,6 +107,11 @@ jobs:
           echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./build/conf/local.conf
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
           echo 'OPENTRONS_PROJECT = "ot3"' >> ./build/conf/local.conf
+          # setup signing key
+          echo 'SIGNING_KEY = "${TOPDIR}/.signing-key"' >> ./build/conf/local.conf
+          cat <<EOF >./build/.signing-key
+          ${{secrets.ROBOT_SIGNING_KEY}}
+          EOF
           cd ..
       - name: Pull S3 cache
         shell: bash
