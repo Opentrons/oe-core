@@ -23,6 +23,7 @@ PIPENV_APP_BUNDLE_DIR = "/opt/ot3usb"
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = ""
 PIPENV_APP_BUNDLE_USE_GLOBAL = "pyudev pyserial"
+PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
 
 do_install_append() {
   # create json file to be used in VERSION.json
