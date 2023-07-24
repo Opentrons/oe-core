@@ -38,6 +38,7 @@ do_install_append() {
 
   # install the cert key if this is a release build
   if [ ${OT_BUILD_TYPE} =~ "release" ]; then
+    bbnote "Installing pubkey to require signed updates"
     install -d ${D}/${sysconfdir}
     install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/${sysconfdir}/opentrons-robot-signing-key.crt
   fi
