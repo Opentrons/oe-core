@@ -14,7 +14,8 @@ inherit insane systemd
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE_${PN} = "opentrons-update-server.service"
 FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
-SRC_URI_append = " file://opentrons-update-server.service"
+SRC_URI_append = " file://opentrons-update-server.service \
+                   file://opentrons-robot-signing-key.crt \"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
@@ -32,6 +33,12 @@ do_install_append() {
 
   install -d ${D}/${systemd_unitdir}/system
   install -m 0644 ${WORKDIR}/opentrons-update-server.service ${D}/${systemd_unitdir}/system
+
+  # install the cert key
+  install -d ${D}/${sysconfdir}
+  install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/${sysconfdir}/opentrons-robot-signing-key.crt
 }
+
+FILES_${PN} += "${sysconfdir}/opentrons-robot-signing-key.crt"
 
 inherit pipenv_app_bundle
