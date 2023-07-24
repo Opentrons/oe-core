@@ -41,6 +41,9 @@ do_install_append() {
   install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/${sysconfdir}/opentrons-robot-signing-key.crt
 }
 
-FILES_${PN} += "${sysconfdir}/opentrons-robot-signing-key.crt"
+FILES_${PN} += "\
+               ${sysconfdir}/ \
+               ${sysconfdir}/opentrons-robot-signing-key.crt \
+               "
 
 inherit pipenv_app_bundle
