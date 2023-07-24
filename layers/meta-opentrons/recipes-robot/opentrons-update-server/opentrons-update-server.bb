@@ -14,8 +14,10 @@ inherit insane systemd
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE_${PN} = "opentrons-update-server.service"
 FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
-SRC_URI_append = " file://opentrons-update-server.service \
-                   file://opentrons-robot-signing-key.crt \"
+SRC_URI += "\
+           file://opentrons-update-server.service \
+           file://opentrons-robot-signing-key.crt \
+           "
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
