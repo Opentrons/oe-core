@@ -36,14 +36,19 @@ do_install_append() {
   install -d ${D}/${systemd_unitdir}/system
   install -m 0644 ${WORKDIR}/opentrons-update-server.service ${D}/${systemd_unitdir}/system
 
-  # install the cert key
-  install -d ${D}/${sysconfdir}
-  install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/${sysconfdir}/opentrons-robot-signing-key.crt
+  if [ -e "${SIGNING_KEY}" ]; then
+    # install the cert key
+    bbnote "Installing pubkey to require signed updates"
+    install -d ${D}/${sysconfdir}
+    install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/${sysconfdir}/opentrons-robot-signing-key.crt
+  fi
 }
 
-FILES_${PN} += "\
-               ${sysconfdir}/ \
-               ${sysconfdir}/opentrons-robot-signing-key.crt \
-               "
+if [ -e "${SIGNING_KEY}" ]; then
+   FILES_${PN} += "\
+                  ${sysconfdir}/ \
+                  ${sysconfdir}/opentrons-robot-signing-key.crt \
+                  "
+fi
 
 inherit pipenv_app_bundle
