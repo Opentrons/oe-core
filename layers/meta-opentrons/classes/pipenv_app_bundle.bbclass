@@ -182,4 +182,4 @@ do_install () {
 }
 
 
-FILES_${PN} = "${PIPENV_APP_BUNDLE_DIR} opentrons_versions"
+FILES_${PN} += "${PIPENV_APP_BUNDLE_DIR} opentrons_versions"
