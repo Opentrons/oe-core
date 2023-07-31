@@ -36,18 +36,14 @@ do_install_append() {
   install -d ${D}/${systemd_unitdir}/system
   install -m 0644 ${WORKDIR}/opentrons-update-server.service ${D}/${systemd_unitdir}/system
 
-  if [ -e "${SIGNING_KEY}" ]; then
+  if [ -z "${SIGNING_KEY}" ]; then
     bbnote "Installing pubkey to require signed updates"
     install -d ${D}/${sysconfdir}
     install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/${sysconfdir}/opentrons-robot-signing-key.crt
   fi
 }
 
-if [ -e "${SIGNING_KEY}" ]; then
-   FILES_${PN} += "\
-                  ${sysconfdir}/ \
-                  ${sysconfdir}/opentrons-robot-signing-key.crt \
-                  "
-fi
+# Only include cert if the signing key is given
+FILES_${PN} += "${@'${sysconfdir}/ \ ${sysconfdir}/opentrons-robot-signing-key.crt' if os.path.exists(d.getVar('SIGNING_KEY') else '')}"
 
 inherit pipenv_app_bundle
