@@ -44,6 +44,6 @@ do_install_append() {
 }
 
 # Only include cert if the signing key is given
-FILES_${PN} += "${@'${sysconfdir}/ \ ${sysconfdir}/opentrons-robot-signing-key.crt' if os.path.exists(d.getVar('SIGNING_KEY') else '')}"
+FILES_${PN} += "${@bb.utils.contains('SIGNING_KEY', '', '', '${sysconfdir}/ \${sysconfdir}/opentrons-robot-signing-key.crt \', d)}"
 
 inherit pipenv_app_bundle
