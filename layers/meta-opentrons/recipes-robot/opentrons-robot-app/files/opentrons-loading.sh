@@ -27,11 +27,3 @@ while true; do
     # grep for
     echo $playresponse | grep '"code"\s*:\s*0\s*,' && break || echo "Failed to start pipeline, trying again"
 done
-
-
-# Wait for the message to perform seek
-while true; do
-    # bus_read blocks until a message comes through
-    gstd-client bus_read opentronsloading
-    gstd-client event_seek opentronsloading 1.0
-done
