@@ -13,7 +13,7 @@ inherit insane systemd
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE_${PN} = "opentrons-update-server.service"
-FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
+FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 SRC_URI += "\
            file://opentrons-update-server.service \
            file://opentrons-robot-signing-key.crt \
