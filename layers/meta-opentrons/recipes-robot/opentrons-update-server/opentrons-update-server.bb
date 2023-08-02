@@ -28,6 +28,9 @@ PIPENV_APP_BUNDLE_EXTRAS = ""
 PIPENV_APP_BUNDLE_USE_GLOBAL = "python3-aiohttp systemd-python"
 PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
 
+# Only include cert if the signing key is set
+FILES_${PN}_append := "${@bb.utils.contains('SIGNING_KEY', '', ' ${sysconfdir}/opentrons-robot-signing-key.crt ', '', d)}"
+
 do_install_append() {
   # create json file to be used in VERSION.json
   install -d ${D}/opentrons_versions
@@ -36,14 +39,13 @@ do_install_append() {
   install -d ${D}/${systemd_unitdir}/system
   install -m 0644 ${WORKDIR}/opentrons-update-server.service ${D}/${systemd_unitdir}/system
 
-  if [ -z "${SIGNING_KEY}" ]; then
-    bbnote "Installing pubkey to require signed updates"
+  bberror "FILES: ${FILES_${PN}}"
+  if [ -e "${SIGNING_KEY}" ]; then
+    bberror "Installing pubkey to require signed updates"
     install -d ${D}/${sysconfdir}
     install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/${sysconfdir}/
   fi
 }
 
-# Only include cert if the signing key is set
-FILES_${PN}_append := "${@bb.utils.contains('SIGNING_KEY', '', ' ${sysconfdir}/opentrons-robot-signing-key.crt ', '', d)}"
 
 inherit pipenv_app_bundle
