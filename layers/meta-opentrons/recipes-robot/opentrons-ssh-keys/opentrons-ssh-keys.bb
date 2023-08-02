@@ -5,11 +5,9 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/Apache-2.0;md5=89aea4e17d99a7ca
 SRC_URI = "file://opentrons-flex.pub"
 
 do_install () {
-    install -d ${D}/home/root/.ssh
-    install ${WORKDIR}/opentrons-flex.pub ${D}/home/root/.ssh/
-    ln -s opentrons-flex.pub ${D}/home/root/.ssh/authorized_keys
+    install -m 700 -d ${D}/home/root/.ssh
+    install -m 644 ${WORKDIR}/opentrons-flex.pub ${D}/home/root/.ssh/authorized_keys
 }
 
 FILES_${PN} += "/home/root/.ssh/authorized_keys \
-                /home/root/.ssh/opentrons-flex.pub \
 "

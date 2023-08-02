@@ -1,0 +1,2 @@
+# Only allow root login with key
+DROPBEAR_EXTRA_ARGS="-g"
