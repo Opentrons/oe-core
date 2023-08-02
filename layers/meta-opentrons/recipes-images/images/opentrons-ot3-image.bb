@@ -288,8 +288,16 @@ do_create_opentrons_ot3() {
     # compute the sha256sum
     sha256sum systemfs.xz | cut -d " " -f 1 > systemfs.xz.sha256
 
+    # sign the hash
+    signed_rootfs=""
+    if [ -e "${SIGNING_KEY}" ]; then
+        bbnote "Signing the build"
+        openssl dgst -sha256 -sign "${SIGNING_KEY}" -out systemfs.xz.hash.sig systemfs.xz.sha256
+        signed_rootfs="systemfs.xz.hash.sig"
+    fi
+
     # create the zip file
-    zip ot3-system.zip systemfs.xz systemfs.xz.sha256 VERSION.json
+    zip ot3-system.zip systemfs.xz systemfs.xz.sha256 $signed_rootfs VERSION.json
 }
 
 do_create_filesystem[depends] += "virtual/fakeroot-native:do_populate_sysroot"

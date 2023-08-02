@@ -13,20 +13,21 @@ inherit insane
 do_configure(){
     npm install -g yarn
     cd ${S}
+    yarn remove -W cypress @cypress/webpack-preprocessor cypress-file-upload eslint-plugin-cypress
     yarn
     cd ${S}/app-shell
     yarn electron-rebuild --arch=arm64
     cd ${S}
-    make -C shared-data setup-js
+    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C shared-data setup-js
 }
 
 do_compile(){
     export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
     cd ${S}
-    make -C ${S}/app dist
-    make -C ${S}/app-shell lib
+    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app dist
+    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app-shell lib
     cd ${S}/app-shell
-    NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
+    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
 
 fakeroot do_install(){

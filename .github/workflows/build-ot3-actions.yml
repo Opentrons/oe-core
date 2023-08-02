@@ -1,4 +1,4 @@
-name: 'Build OT3 image on github workflows'
+name: 'Build OT3 internal-release image on github workflows'
 run-name: 'image: mono ${{ inputs.monorepo-ref }}, core ${{ inputs.oe-core-ref }}, fw ${{ inputs.ot3-firmware-ref }}'
 on:
   workflow_dispatch:
@@ -106,6 +106,12 @@ jobs:
           echo 'OT_BUILD_TYPE = "${{steps.build-refs.outputs.build-type}}"' >> ./build/conf/local.conf
           echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./build/conf/local.conf
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
+          echo 'OPENTRONS_PROJECT = "ot3"' >> ./build/conf/local.conf
+          # setup signing key
+          echo 'SIGNING_KEY = "${TOPDIR}/.signing-key"' >> ./build/conf/local.conf
+          cat <<EOF >./build/.signing-key
+          ${{secrets.ROBOT_SIGNING_KEY}}
+          EOF
           cd ..
       - name: Pull S3 cache
         shell: bash
