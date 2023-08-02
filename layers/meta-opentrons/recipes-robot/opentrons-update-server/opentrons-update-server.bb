@@ -43,7 +43,7 @@ do_install_append() {
   fi
 }
 
-# Only include cert if the signing key is given
-FILES_${PN}_append := "${@bb.utils.contains("SIGNING_KEY", "", "", " ${sysconfdir}/opentrons-robot-signing-key.crt ", d)}"
+# Only include cert if the signing key is set
+FILES_${PN}_append := "${@bb.utils.contains('SIGNING_KEY', '', ' ${sysconfdir}/opentrons-robot-signing-key.crt ', '', d)}"
 
 inherit pipenv_app_bundle
