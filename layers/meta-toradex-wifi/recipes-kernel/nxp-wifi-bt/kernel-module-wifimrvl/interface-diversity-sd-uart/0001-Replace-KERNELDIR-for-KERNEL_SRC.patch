@@ -1,0 +1,65 @@
+From 1b02265c8dc9e72add23f11bfc51e9c0a4622aeb Mon Sep 17 00:00:00 2001
+From: Rafael Beims <rafael.beims@toradex.com>
+Date: Fri, 26 May 2023 18:52:07 +0000
+Subject: [PATCH] Replace KERNELDIR for KERNEL_SRC
+
+---
+ Makefile | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 23130d4..6c2d6e3 100755
+--- a/Makefile
++++ b/Makefile
+@@ -19,15 +19,10 @@
+ CONFIG_COMPATDIR=n
+ ifeq ($(CONFIG_COMPATDIR), y)
+ COMPATDIR=/lib/modules/$(KERNELVERSION_X86)/build/compat-wireless-3.2-rc1-1/include
+-CC ?=		$(CROSS_COMPILE)gcc -I$(COMPATDIR)
+ else
+ CC ?=		$(CROSS_COMPILE)gcc -I$(COMPATDIR)
+ endif
+ 
+-LD ?=		$(CROSS_COMPILE)ld
+-BACKUP=		/root/backup
+-YMD=		`date +%Y%m%d%H%M`
+-
+ #############################################################################
+ # Configuration Options
+ #############################################################################
+@@ -137,7 +132,6 @@ ifneq ($(ANDROID_PRODUCT_OUT),)
+ ccflags-y += -DIMX_ANDROID
+ endif
+ endif
+-KERNELDIR ?= /usr/src/arm/linux_5_10_y_kernel/linux-nxp
+ CROSS_COMPILE ?= /opt/fsl-imx-internal-xwayland/5.10-gatesgarth/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux/aarch64-poky-linux-
+ 
+ LD += -S
+@@ -149,8 +143,6 @@ APPDIR= $(shell if test -d "mapp"; then echo mapp; fi)
+ # Compiler Flags
+ #############################################################################
+ 
+-	ccflags-y += -I$(KERNELDIR)/include
+-
+ 	ccflags-y += -DFPNUM='"92"'
+ 
+ ifeq ($(CONFIG_DEBUG),1)
+@@ -583,13 +575,13 @@ moal-objs := $(MOALOBJS)
+ else
+ 
+ default:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) modules
++	$(MAKE) -C $(KERNEL_SRC) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) modules
+ 
+ endif
+ 
+ ###############################################################
+ 
+-export		CC LD ccflags-y KERNELDIR
++export		CC LD ccflags-y KERNEL_SRC
+ 
+ ifeq ($(CONFIG_STA_SUPPORT),y)
+ ifeq ($(CONFIG_UAP_SUPPORT),y)
+-- 
+2.30.2
+

@@ -1,0 +1,229 @@
+From b492881a756f050a1e40432d434f20e45590e68a Mon Sep 17 00:00:00 2001
+From: Rafael Beims <rafael.beims@toradex.com>
+Date: Wed, 21 Jun 2023 17:04:49 +0000
+Subject: [PATCH 2/2] Bypass problems with redefinition of min and max stdlib
+ macros
+
+---
+ DutApiWiFiBt/DutBtApi89XXDll/DutBle.cpp       | 28 +++++++++----------
+ DutApiWiFiBt/DutBtApi89XXDll/DutBtApiClss.cpp | 16 +++++------
+ DutCommon/mathUtility.h                       |  4 +--
+ 3 files changed, 24 insertions(+), 24 deletions(-)
+
+diff --git a/DutApiWiFiBt/DutBtApi89XXDll/DutBle.cpp b/DutApiWiFiBt/DutBtApi89XXDll/DutBle.cpp
+index 4c19caa..afb92b0 100644
+--- a/DutApiWiFiBt/DutBtApi89XXDll/DutBle.cpp
++++ b/DutApiWiFiBt/DutBtApi89XXDll/DutBle.cpp
+@@ -48,7 +48,7 @@ int DutBtApiClssHeader WriteBtBleMemRegDword(DWORD address, DWORD data)
+ 	UINT BufSize = 0;
+ 
+ 	BufSize = sizeof(Bt_PfwCmd_BleMemRegWrite);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -84,8 +84,8 @@ int DutBtApiClssHeader ReadBtBleMemRegDword(DWORD address, DWORD *data)
+ 	UINT EventBuf = sizeof(EVENT_COMMAND_COMPLETE);
+ 	UINT BufSize = 0;
+ 
+-	BufSize = max(sizeof(Bt_PfwCmd_BleMemRegRead), sizeof(Bt_PfwEvent_BleMemRegRead));
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	BufSize = math_max(sizeof(Bt_PfwCmd_BleMemRegRead), sizeof(Bt_PfwEvent_BleMemRegRead));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -123,7 +123,7 @@ int DutBtApiClssHeader BleTxTest(int FreqIndex, int LenOfTxData, int PayloadPatt
+ 	UINT BufSize = 0;
+ 
+ 	BufSize = sizeof(Bt_PfwCmd_BleDataB3);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -158,7 +158,7 @@ int DutBtApiClssHeader BleEnhancedTxTest(int FreqIndex, int LenOfTxData, int Pay
+ 	UINT BufSize = 0;
+ 
+ 	BufSize = sizeof(Bt_PfwCmd_BleDataB4);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -195,7 +195,7 @@ int DutBtApiClssHeader BleRxTest(int FreqIndex)
+ 
+ 
+ 	BufSize = sizeof(Bt_PfwCmd_BleDataB);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -229,7 +229,7 @@ int DutBtApiClssHeader BleEnhancedRxTest(int FreqIndex, int Phy, int Modindex)
+ 
+ 
+ 	BufSize = sizeof(Bt_PfwCmd_BleDataB3);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -264,7 +264,7 @@ int DutBtApiClssHeader BleTestEnd(int *pRxedPckCnt)
+ 	UINT BufSize=0;
+ 
+ 	BufSize = sizeof(Bt_PfwEvent_BleDataW);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if(!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -299,7 +299,7 @@ int DutBtApiClssHeader BleGetTxTestPacketCnt(int *pPacketCnt)
+ 	UINT BufSize = 0;
+ 
+ 	BufSize = sizeof(Bt_PfwEvent_BleDataW);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -335,7 +335,7 @@ int DutBtApiClssHeader BleReadPhy(int Handle, int *pTRxPhy)
+ 	UINT BufSize = 0;
+ 
+ 	BufSize = sizeof(Bt_PfwCmd_BleDataB3);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -372,7 +372,7 @@ int DutBtApiClssHeader BleSetDefaultPhy(int AllPhy, int TxPhy, int RxPhy)
+ 	UINT BufSize = 0;
+ 
+ 	BufSize = sizeof(Bt_PfwCmd_BleDataB3);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -408,7 +408,7 @@ int DutBtApiClssHeader BleSetPhy(int Handle, int AllPhy, int TxPhy, int RxPhy)
+ 	UINT BufSize = 0;
+ 
+ 	BufSize = sizeof(Bt_PfwCmd_BleDataB4);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -445,7 +445,7 @@ int DutBtApiClssHeader BleGetRxTestBer(int *pCrcErrCnt, int *pNoCorrelationCnt)
+ 	UINT BufSize = 0;
+ 
+ 	BufSize = sizeof(Bt_PfwEvent_BleDataW2);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -521,7 +521,7 @@ int DutBtApiClssHeader BleWriteTxPower(int TxPwr)
+ 	UINT BufSize = 0;
+ 
+ 	BufSize = sizeof(Bt_PfwCmd_BleDataB);
+-	pBuf = (unsigned char*)malloc(max(BufSize, EventBuf));
++	pBuf = (unsigned char*)malloc(math_max(BufSize, EventBuf));
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+diff --git a/DutApiWiFiBt/DutBtApi89XXDll/DutBtApiClss.cpp b/DutApiWiFiBt/DutBtApi89XXDll/DutBtApiClss.cpp
+index 3697185..63da958 100644
+--- a/DutApiWiFiBt/DutBtApi89XXDll/DutBtApiClss.cpp
++++ b/DutApiWiFiBt/DutBtApi89XXDll/DutBtApiClss.cpp
+@@ -361,7 +361,7 @@ int DutBtApiClssHeader Inquiry(BYTE ExpectedBdAddress[SIZE_BDADDRESS_INBYTE],
+ 	if (NumResp)
+ 		*NumResp = 0;
+ 
+-	pBuf=(BYTE*)malloc(max(sizeof(COMMAND_INQUIRY),
++	pBuf=(BYTE*)malloc(math_max(sizeof(COMMAND_INQUIRY),
+ 					sizeof(EVENT_INQUIRY_RESULT)));
+ 	if (NULL == pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+@@ -1421,7 +1421,7 @@ int DutBtApiClssHeader BtMrvlRxTest(int RxChannel,
+ 			break;
+ 	}
+ 
+-	BufSize = max(sizeof(Bt_PfwCmd_RxTest), sizeof(Bt_PfwRsp_RxTest));
++	BufSize = math_max(sizeof(Bt_PfwCmd_RxTest), sizeof(Bt_PfwRsp_RxTest));
+ 	pBuf = (char*)malloc(BufSize);
+ 	if(!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+@@ -1488,7 +1488,7 @@ int DutBtApiClssHeader BtMrvlRxTestResult(
+ 	int currentBtCh=BT_CHANNEL_INVALID;
+ 	Bt_PacketTypeCmd *pPacketType=NULL;
+ 
+-	BufSize = max(sizeof(Bt_PfwCmd_RxTest), sizeof(Bt_PfwRsp_RxTest));
++	BufSize = math_max(sizeof(Bt_PfwCmd_RxTest), sizeof(Bt_PfwRsp_RxTest));
+ 	pBuf = (char*)malloc(BufSize);
+ 	if(!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+@@ -1662,7 +1662,7 @@ int DutBtApiClssHeader BtMrvlRxTestResult_Ext(
+ 	int currentBtCh = BT_CHANNEL_INVALID;
+ 	Bt_PacketTypeCmd *pPacketType = NULL;
+ 
+-	BufSize = max(sizeof(Bt_PfwCmd_RxTest), sizeof(Bt_PfwRsp_RxTest));
++	BufSize = math_max(sizeof(Bt_PfwCmd_RxTest), sizeof(Bt_PfwRsp_RxTest));
+ 	pBuf = (char*)malloc(BufSize);
+ 	if (!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+@@ -2624,7 +2624,7 @@ int DutBtApiClssHeader SetMrvlTempCompModeHC(int		SwPwrCtrlMode,
+ 	BYTE *pBuf=NULL;
+ 	UINT EventBuf=sizeof(EVENT_COMMAND_COMPLETE);
+ 
+- 	pBuf=(BYTE*)malloc(max(sizeof(*pTxBuf),	sizeof(EVENT_COMMAND_COMPLETE)));
++ 	pBuf=(BYTE*)malloc(math_max(sizeof(*pTxBuf),	sizeof(EVENT_COMMAND_COMPLETE)));
+ 	if(!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+ 
+@@ -2711,7 +2711,7 @@ int DutBtApiClssHeader SetBtSleepMode(int PowerMode)
+ 	UINT BufSize=0;
+    
+ 
+-	BufSize = max(sizeof(Bt_PfwCmd_SetBtSleepMode), sizeof(Bt_PfwRsp_MrvlLowPowerModeCtrolResp));
++	BufSize = math_max(sizeof(Bt_PfwCmd_SetBtSleepMode), sizeof(Bt_PfwRsp_MrvlLowPowerModeCtrolResp));
+ 	pBuf = (char*)malloc(BufSize);
+ 	if(!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+@@ -2789,7 +2789,7 @@ int DutBtApiClssHeader SetMrvlHiuModuleConfig(int ModuleShutDownBringUp,
+  
+   
+ 
+-	BufSize = max(sizeof(Bt_PfwCmd_MrvlHiuModuleConfig), sizeof(Bt_PfwRsp_MrvlHiuModuleConfig));
++	BufSize = math_max(sizeof(Bt_PfwCmd_MrvlHiuModuleConfig), sizeof(Bt_PfwRsp_MrvlHiuModuleConfig));
+ 	pBuf = (char*)malloc(BufSize);
+ 	if(!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+@@ -4193,7 +4193,7 @@ int DutBtApiClssHeader LoadConficData(DWORD *BtCaldata, int LengthInByte)
+ 	char* pBuf=NULL;
+ 	UINT BufSize=0;
+ 
+-	BufSize = max(sizeof(Bt_Pfw_BD_Laod_Config_Data), sizeof(Bt_Pfw_BD_Laod_Config_Data));
++	BufSize = math_max(sizeof(Bt_Pfw_BD_Laod_Config_Data), sizeof(Bt_Pfw_BD_Laod_Config_Data));
+ 	pBuf = (char*)malloc(BufSize);
+ 	if(!pBuf)
+ 		return ERROR_SPACENOTAVAILABLE;
+diff --git a/DutCommon/mathUtility.h b/DutCommon/mathUtility.h
+index b9e7980..fe8c17c 100644
+--- a/DutCommon/mathUtility.h
++++ b/DutCommon/mathUtility.h
+@@ -33,8 +33,8 @@
+ #ifndef _LINUX_
+ //;MATHCALL double round(double x);
+ #else 
+-#define max(a, b) (((a) > (b)) ? (a) : (b))
+-#define min(a, b) (((a) < (b)) ? (a) : (b))
++#define math_max(a, b) (((a) > (b)) ? (a) : (b))
++#define math_min(a, b) (((a) < (b)) ? (a) : (b))
+ #endif //#ifndef _LINUX_
+ 
+ 
+-- 
+2.30.2
+

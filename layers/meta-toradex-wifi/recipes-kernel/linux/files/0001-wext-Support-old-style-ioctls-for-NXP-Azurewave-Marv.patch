@@ -1,0 +1,46 @@
+From 3848f66863602ec1c7919e2c8a70c9f52d5e798e Mon Sep 17 00:00:00 2001
+From: Drew Moseley <drew@moseleynet.net>
+Date: Tue, 27 Jul 2021 15:25:19 -0400
+Subject: [PATCH] wext: Support old style ioctls for NXP/Azurewave/Marvell mfg
+ mode.
+
+Details can be found in the "MFG tool User Guide.pdf" available from
+Azurewave directly
+
+Signed-off-by: Drew Moseley <drew@moseleynet.net>
+---
+ net/wireless/wext-core.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/net/wireless/wext-core.c b/net/wireless/wext-core.c
+index 76a80a41615b..19000da5c7b2 100644
+--- a/net/wireless/wext-core.c
++++ b/net/wireless/wext-core.c
+@@ -920,7 +920,9 @@ static int wireless_process_ioctl(struct net *net, struct iwreq *iwr,
+ 				  wext_ioctl_func standard,
+ 				  wext_ioctl_func private)
+ {
+-	struct net_device *dev;
++    struct ifreq *ifr = (struct ifreq *) iwr;
++
++    struct net_device *dev;
+ 	iw_handler	handler;
+ 
+ 	/* Permissions are already checked in dev_ioctl() before calling us.
+@@ -956,7 +958,12 @@ static int wireless_process_ioctl(struct net *net, struct iwreq *iwr,
+ 		else if (private)
+ 			return private(dev, iwr, cmd, info, handler);
+ 	}
+-	return -EOPNOTSUPP;
++
++    // /* Old driver API : call driver ioctl handler */
++    if (dev->netdev_ops->ndo_do_ioctl)
++        return dev->netdev_ops->ndo_do_ioctl(dev, ifr, cmd);
++
++   return -EOPNOTSUPP;
+ }
+ 
+ /* If command is `set a parameter', or `get the encoding parameters',
+-- 
+2.32.0
+

@@ -1,0 +1,40 @@
+From 14ba4d7f437f6b483fc2f98b71787811e77de2f0 Mon Sep 17 00:00:00 2001
+From: Rafael Beims <rafael.beims@toradex.com>
+Date: Wed, 21 Jun 2023 17:03:28 +0000
+Subject: [PATCH 1/2] Adapt makefile for yocto build
+
+---
+ DutApiWiFiBt/MakeFile_W8997_FC18 | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/DutApiWiFiBt/MakeFile_W8997_FC18 b/DutApiWiFiBt/MakeFile_W8997_FC18
+index edede6d..7639d5e 100644
+--- a/DutApiWiFiBt/MakeFile_W8997_FC18
++++ b/DutApiWiFiBt/MakeFile_W8997_FC18
+@@ -8,10 +8,10 @@ MAKEFLAGS += --no-builtin-rules
+ PROJECT=	labtool
+ BACKUP=		/home/marvell/backup
+ TOOLPATH=	/usr/bin/
+-CROSS=		$(TOOLPATH)
+-CC=		$(CROSS)g++
+-LINK=		$(CC) -o labtool  
+-STRIP=		$(CROSS)strip
++#CROSS=		$(TOOLPATH)
++#CC=		$(CROSS)g++
++LINK=		$(CXX) -o labtool  
++#STRIP=		$(CROSS)strip
+ YMD=		`date +%Y%m%d%H%M`
+ 
+ 
+@@ -94,7 +94,7 @@ LABTOOL_OBJS += W89XX_NFC.o DutNFC.o
+ endif 
+ 
+ labtool:	$(LABTOOL_OBJS)		
+-		$(LINK) $(CFLAGS) $(LABTOOL_OBJS) -lpthread $(DRVR_STACK)
++		$(LINK) $(CFLAGS) $(LABTOOL_OBJS) -lpthread $(DRVR_STACK) -lm
+ 		$(STRIP) $@
+ 
+ 		#cp labtool /tftpboot/bulverde/root/
+-- 
+2.30.2
+

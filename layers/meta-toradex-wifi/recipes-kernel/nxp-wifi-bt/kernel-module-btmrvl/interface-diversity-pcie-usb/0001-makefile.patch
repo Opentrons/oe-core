@@ -1,0 +1,65 @@
+From 9eb9d7cc8dd3ffdf995d3c22d1075357822a4a9d Mon Sep 17 00:00:00 2001
+From: Drew Moseley <drew@moseleynet.net>
+Date: Sat, 27 Feb 2021 16:11:52 -0500
+Subject: [PATCH] Makefile update for Yocto
+
+---
+ Makefile | 17 +++++------------
+ 1 file changed, 5 insertions(+), 12 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 821b08e..6b70c70 100755
+--- a/Makefile
++++ b/Makefile
+@@ -2,12 +2,6 @@
+ # Copyright 2014-2020 NXP
+ #
+ 
+-CC=		$(CROSS_COMPILE)gcc
+-LD=		$(CROSS_COMPILE)ld
+-
+-BACKUP=		/root/backup
+-YMD=		`date +%Y%m%d%H%M`
+-
+ #############################################################################
+ # Configuration Options
+ #############################################################################
+@@ -51,10 +45,6 @@ endif
+ 
+ 
+ 
+-KERNELVERSION_X86 := 	$(shell uname -r)
+-KERNELDIR?=/lib/modules/$(KERNELVERSION_X86)/build
+-
+-
+ EXTRA_CFLAGS += -I$(M)/bt
+ LD += -S
+ 
+@@ -103,12 +93,12 @@ endif
+ # Otherwise we were called directly from the command line; invoke the kernel build system.
+ else
+ default:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
++	$(MAKE) -C $(KERNEL_SRC) M=$(PWD) modules
+ endif
+ 
+ ###############################################################
+ 
+-export		CC LD EXTRA_CFLAGS KERNELDIR
++export		CC LD EXTRA_CFLAGS KERNEL_SRC
+ 
+ .PHONY: app/fm_app clean distclean
+ 
+@@ -151,6 +141,9 @@ clean:
+ 	-rm -rf .tmp_versions
+ 	$(MAKE) -C app/fm_app $@
+ 
++modules_install:
++	$(MAKE) -C $(KERNEL_SRC) M=$(PWD) modules_install
++
+ install: default
+ 
+ distclean:
+-- 
+2.30.0
+

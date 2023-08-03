@@ -1,0 +1,57 @@
+From 91bc22952db8bd84643824f69eaabc91f9d68f08 Mon Sep 17 00:00:00 2001
+From: Drew Moseley <drew@moseleynet.net>
+Date: Mon, 1 Mar 2021 18:02:39 -0500
+Subject: [PATCH] Fix kernel version logic related to pm_usage_cnt.
+
+This was removed in kernel v5.0.
+
+Signed-off-by: Drew Moseley <drew@moseleynet.net>
+---
+ mlinux/moal_main.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/mlinux/moal_main.c b/mlinux/moal_main.c
+index 7b66ca8..cc02766 100755
+--- a/mlinux/moal_main.c
++++ b/mlinux/moal_main.c
+@@ -4091,7 +4091,8 @@ int
+ woal_open(struct net_device *dev)
+ {
+ 	moal_private *priv = (moal_private *)netdev_priv(dev);
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && \
++    LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+ 	struct usb_interface *intf =
+ 		((struct usb_card_rec *)priv->phandle->card)->intf;
+ #endif /* >= 2.6.24 */
+@@ -4112,7 +4113,7 @@ woal_open(struct net_device *dev)
+ 		LEAVE();
+ 		return -EIO;
+ 	}
+-#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+ 	atomic_set(&intf->pm_usage_cnt, 1);
+ #endif /* < 2.6.34 */
+ #endif /* >= 2.6.24 */
+@@ -4186,7 +4187,8 @@ int
+ woal_close(struct net_device *dev)
+ {
+ 	moal_private *priv = (moal_private *)netdev_priv(dev);
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && \
++    LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+ 	struct usb_interface *intf =
+ 		((struct usb_card_rec *)priv->phandle->card)->intf;
+ #endif /* >= 2.6.24 */
+@@ -4249,7 +4251,7 @@ woal_close(struct net_device *dev)
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 34)
+ 	usb_autopm_put_interface(intf);
+-#else
++#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+ 	atomic_set(&intf->pm_usage_cnt, 0);
+ #endif /* < 2.6.34 */
+ #endif /* >= 2.6.24 */
+-- 
+2.30.1
+

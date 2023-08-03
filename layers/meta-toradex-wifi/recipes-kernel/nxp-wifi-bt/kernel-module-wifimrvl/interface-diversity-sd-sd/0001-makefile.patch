@@ -1,0 +1,82 @@
+From 874aefd062201347ed5ad2478bda82106e90d1e4 Mon Sep 17 00:00:00 2001
+From: Drew Moseley <drew@moseleynet.net>
+Date: Mon, 23 Aug 2021 15:39:00 -0400
+Subject: [PATCH] Update Makefile for Yocto based builds
+
+---
+ Makefile | 19 ++++++-------------
+ 1 file changed, 6 insertions(+), 13 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 08c5c63..7b0d271 100755
+--- a/Makefile
++++ b/Makefile
+@@ -16,12 +16,6 @@
+ #  this warranty disclaimer.
+ #
+ 
+-COMPATDIR=/lib/modules/$(KERNELVERSION_X86)/build/compat-wireless-3.2-rc1-1/include
+-CC=		$(CROSS_COMPILE)gcc -I$(COMPATDIR)
+-LD=		$(CROSS_COMPILE)ld
+-BACKUP=		/root/backup
+-YMD=		`date +%Y%m%d%H%M`
+-
+ ifneq ($(COMPAT_VERSION_CODE),)
+ DRV_DIR ?= $(shell pwd)
+ export DRV_DIR
+@@ -119,8 +113,6 @@ ccflags-y += -DLINUX
+ 
+ 
+ 
+-KERNELVERSION_X86 := 	$(shell uname -r)
+-KERNELDIR ?= /lib/modules/$(KERNELVERSION_X86)/build
+ LD += -S
+ 
+ BINDIR = ../bin_sd8997
+@@ -130,8 +122,6 @@ APPDIR= $(shell if test -d "mapp"; then echo mapp; fi)
+ # Compiler Flags
+ #############################################################################
+ 
+-	ccflags-y += -I$(KERNELDIR)/include
+-
+ 	ccflags-y += -DFPNUM='"68"'
+ 
+ 
+@@ -231,7 +221,7 @@ ifeq ($(CONFIG_T50), y)
+ endif
+ 
+ # add -Wno-packed-bitfield-compat when GCC version greater than 4.4
+-GCC_VERSION := $(shell echo `gcc -dumpversion | cut -f1-2 -d.` \>= 4.4 | sed -e 's/\./*100+/g' | bc )
++GCC_VERSION := $(shell echo `${CC} -dumpversion | cut -f1-2 -d.` \>= 4.4 | sed -e 's/\./*100+/g' | bc )
+ ifeq ($(GCC_VERSION),1)
+ 	ccflags-y += -Wno-packed-bitfield-compat
+ endif
+@@ -445,13 +435,13 @@ sd8xxx-objs := $(MOALOBJS)
+ else
+ 
+ default:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
++	$(MAKE) -C $(KERNEL_SRC) M=$(PWD) modules
+ 
+ endif
+ 
+ ###############################################################
+ 
+-export		CC LD ccflags-y KERNELDIR
++export		CC LD ccflags-y KERNEL_SRC
+ 
+ ifeq ($(CONFIG_STA_SUPPORT),y)
+ ifeq ($(CONFIG_UAP_SUPPORT),y)
+@@ -560,6 +550,9 @@ endif
+ 	$(MAKE) -C mapp/mlanevent $@
+ endif
+ 
++modules_install:
++	$(MAKE) -C $(KERNEL_SRC) M=$(PWD) modules_install
++
+ install: default
+ 
+ 	cp -f mlan.$(MODEXT) $(INSTALLDIR)/mlan$(DBG).$(MODEXT)
+-- 
+2.33.0
+

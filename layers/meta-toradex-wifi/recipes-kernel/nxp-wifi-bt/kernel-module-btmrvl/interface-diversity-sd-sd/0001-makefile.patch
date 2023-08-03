@@ -1,0 +1,54 @@
+diff --git a/Makefile b/Makefile
+index 9976333..738ac4b 100755
+--- a/Makefile
++++ b/Makefile
+@@ -2,12 +2,6 @@
+ # Copyright 2014-2020 NXP
+ #
+ 
+-CC=		$(CROSS_COMPILE)gcc
+-LD=		$(CROSS_COMPILE)ld
+-
+-BACKUP=		/root/backup
+-YMD=		`date +%Y%m%d%H%M`
+-
+ #############################################################################
+ # Configuration Options
+ #############################################################################
+@@ -53,11 +47,6 @@ endif
+ 
+ 
+ 
+-KERNELVERSION_X86 := 	$(shell uname -r)
+-KERNELDIR?=/lib/modules/$(KERNELVERSION_X86)/build
+-
+-EXTRA_CFLAGS += -I$(KERNELDIR)/include
+-
+ EXTRA_CFLAGS += -I$(M)/bt
+ LD += -S
+ 
+@@ -109,12 +98,12 @@ endif
+ # Otherwise we were called directly from the command line; invoke the kernel build system.
+ else
+ default:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
++	$(MAKE) -C $(KERNEL_SRC) M=$(PWD) modules
+ endif
+ 
+ ###############################################################
+ 
+-export		CC LD EXTRA_CFLAGS KERNELDIR
++export		CC LD EXTRA_CFLAGS KERNEL_SRC
+ 
+ .PHONY: app/fm_app clean distclean
+ 
+@@ -158,6 +147,9 @@ clean:
+ 	-rm -rf .tmp_versions
+ 	$(MAKE) -C app/fm_app $@
+ 
++modules_install:
++	$(MAKE) -C $(KERNEL_SRC) M=$(PWD) modules_install
++
+ install: default
+ 
+ distclean:

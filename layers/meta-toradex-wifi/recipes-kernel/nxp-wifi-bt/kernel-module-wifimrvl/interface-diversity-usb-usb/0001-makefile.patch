@@ -1,0 +1,83 @@
+From 24155edd1e56b5afec654be853e3a347e7ce1f0b Mon Sep 17 00:00:00 2001
+From: Drew Moseley <drew@moseleynet.net>
+Date: Sat, 27 Feb 2021 16:13:45 -0500
+Subject: [PATCH] Makefile update for Yocto
+
+Signed-off-by: Drew Moseley <drew@moseleynet.net>
+---
+ Makefile | 19 ++++++-------------
+ 1 file changed, 6 insertions(+), 13 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index c649ccb..2beede9 100755
+--- a/Makefile
++++ b/Makefile
+@@ -16,12 +16,6 @@
+ #  this warranty disclaimer.
+ #
+ 
+-COMPATDIR=/lib/modules/$(KERNELVERSION_X86)/build/compat-wireless-3.2-rc1-1/include
+-CC=		$(CROSS_COMPILE)gcc -I$(COMPATDIR)
+-LD=		$(CROSS_COMPILE)ld
+-BACKUP=		/root/backup
+-YMD=		`date +%Y%m%d%H%M`
+-
+ ifneq ($(COMPAT_VERSION_CODE),)
+ DRV_DIR ?= $(shell pwd)
+ export DRV_DIR
+@@ -111,8 +105,6 @@ ccflags-y += -DLINUX
+ 
+ 
+ 
+-KERNELVERSION_X86 := 	$(shell uname -r)
+-KERNELDIR ?= /lib/modules/$(KERNELVERSION_X86)/build
+ LD += -S
+ 
+ INSTALLDIR=/lib/modules/$(KERNELVERSION_X86)/kernel/drivers/usb
+@@ -123,8 +115,6 @@ APPDIR= $(shell if test -d "mapp"; then echo mapp; fi)
+ # Compiler Flags
+ #############################################################################
+ 
+-	ccflags-y += -I$(KERNELDIR)/include
+-
+ 	ccflags-y += -DFPNUM='"68"'
+ 
+ 
+@@ -214,7 +204,7 @@ ifeq ($(CONFIG_T50), y)
+ endif
+ 
+ # add -Wno-packed-bitfield-compat when GCC version greater than 4.4
+-GCC_VERSION := $(shell echo `gcc -dumpversion | cut -f1-2 -d.` \>= 4.4 | sed -e 's/\./*100+/g' | bc )
++GCC_VERSION := $(shell echo `${CC} -dumpversion | cut -f1-2 -d.` \>= 4.4 | sed -e 's/\./*100+/g' | bc )
+ ifeq ($(GCC_VERSION),1)
+ 	ccflags-y += -Wno-packed-bitfield-compat
+ endif
+@@ -424,13 +414,13 @@ usb8xxx-objs := $(MOALOBJS)
+ else
+ 
+ default:
+-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
++	$(MAKE) -C $(KERNEL_SRC) M=$(PWD) modules
+ 
+ endif
+ 
+ ###############################################################
+ 
+-export		CC LD ccflags-y KERNELDIR
++export		CC LD ccflags-y KERNEL_SRC
+ 
+ ifeq ($(CONFIG_STA_SUPPORT),y)
+ ifeq ($(CONFIG_UAP_SUPPORT),y)
+@@ -540,6 +530,9 @@ endif
+ 	$(MAKE) -C mapp/mlanevent $@
+ endif
+ 
++modules_install:
++	$(MAKE) -C $(KERNEL_SRC) M=$(PWD) modules_install
++
+ install: default
+ 
+ 	cp -f mlan.$(MODEXT) $(INSTALLDIR)/mlan$(DBG).$(MODEXT)
+-- 
+2.30.0
+
