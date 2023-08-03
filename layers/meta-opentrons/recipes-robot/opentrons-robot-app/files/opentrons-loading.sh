@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Get the brightness set as early as possibly to prevent flickers
+echo 1 > /sys/class/backlight/backlight/brightness
 
 # Absolute path to the video location
 VIDEO=$1
