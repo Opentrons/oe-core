@@ -139,6 +139,11 @@ do_make_rootfs_changes() {
     cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}${sysconfdir}/VERSION.json
     # copy the release notes to the output dir
     cat ${IMAGE_ROOTFS}${sysconfdir}/release-notes.md > ${DEPLOY_DIR_IMAGE}/release-notes.md
+    # copy the signing key if we have a signing key
+    if [ -e "${SIGNING_KEY}" ]; then
+       bbinfo "Installing pubkey to require signed updates"
+       install -m 644 ${IMAGE_ROOTFS}/opentrons_versions/opentrons-robot-signing-key.crt ${IMAGE_ROOTFS}${sysconfdir}/
+    fi
 
     # add hostname to rootfs
     printf "opentrons" > ${IMAGE_ROOTFS}${sysconfdir}/hostname
