@@ -112,8 +112,6 @@ jobs:
           cat <<EOF >./build/.signing-key
           ${{secrets.ROBOT_SIGNING_KEY}}
           EOF
-          ## Test
-          cat ./build/conf/local.conf
           cd ..
       - name: Pull S3 cache
         shell: bash
