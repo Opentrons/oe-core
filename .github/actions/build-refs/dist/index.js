@@ -9759,6 +9759,25 @@ function mainRefFor(input) {
 function restAPICompliantRef(input) {
     return input.replace('refs/', '');
 }
+function variantForRef(ref) {
+    if (ref.startsWith('refs/heads')) {
+        if (ref.includes('internal-release')) {
+            return 'internal-release';
+        }
+        else {
+            return 'release';
+        }
+    }
+    else if (ref.startsWith('refs/tags')) {
+        if (ref.includes('ot3@')) {
+            return 'internal-release';
+        }
+        else if (ref.startsWith('refs/tags/v')) {
+            return 'release';
+        }
+    }
+    return 'internal-release';
+}
 function latestTagPrefixFor(repo) {
     if (repo === 'monorepo')
         return 'refs/tags/v';
@@ -9890,8 +9909,11 @@ function run() {
             // Determine the build-type based on the monorepo ref
             if (repo === 'monorepo') {
                 const buildType = resolveBuildType(ref);
+                const variant = variantForRef(ref);
                 _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved oe-core build-type to ${buildType}`);
                 _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('build-type', buildType);
+                _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('variant', variant);
+                _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved oe-core variant to ${variant}`);
             }
         });
     });

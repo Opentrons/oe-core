@@ -36,7 +36,7 @@ jobs:
         build_env: [ '${{ inputs.infra-stage }}' ]
     name: 'Building images on ${{ matrix.build_env }}'
     timeout-minutes: 480
-    runs-on: ['self-hosted', '${{matrix.build_env}}']
+    runs-on: ['self-hosted', '${{matrix.build_env}}', 'internal-release']
     steps:
       - name: Fetch initial sources for action
         uses: 'actions/checkout@v3'
