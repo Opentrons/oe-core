@@ -23,7 +23,7 @@ SYSTEMD_DEFAULT_TARGET = "graphical.target"
 
 # removes root password if develop
 EXTRA_IMAGE_FEATURES += " \
-    ${@bb.utils.contains('OT_BUILD_TYPE', 'develop', 'debug-tweaks', '', d)} \
+    ${@bb.utils.contains('OT_BUILD_TYPE', 'develop', 'debug-tweaks', 'allow-root-login', d)} \
 "
 
 IMAGE_INSTALL += " \

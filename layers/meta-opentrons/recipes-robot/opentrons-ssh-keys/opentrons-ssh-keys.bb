@@ -9,5 +9,4 @@ do_install () {
     install -m 644 ${WORKDIR}/opentrons-flex.pub ${D}/home/root/.ssh/authorized_keys
 }
 
-FILES_${PN} += "/home/root/.ssh/authorized_keys \
-"
+FILES_${PN} += "/home/root/.ssh/authorized_keys"
