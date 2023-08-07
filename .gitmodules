@@ -17,6 +17,7 @@
 [submodule "layers/meta-toradex-bsp-common"]
 	path = layers/meta-toradex-bsp-common
 	url = https://git.toradex.com/meta-toradex-bsp-common.git
+	branch = dunfell-5.x.y
 [submodule "layers/meta-toradex-demos"]
 	path = layers/meta-toradex-demos
 	url = https://git.toradex.com/meta-toradex-demos.git

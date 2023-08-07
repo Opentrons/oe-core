@@ -46,13 +46,7 @@ IMAGE_INSTALL += " \
     timestamp-service networkmanager crda ch341ser \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
-    robot-app-wayland-launch opentrons-robot-app \
-    opentrons-robot-server opentrons-update-server \
-    python3 python3-misc python3-modules python3-jupyter \
-    opentrons-jupyter-notebook opentrons-usb-bridge \
-    opentrons-system-server opentrons-mcu-firmware \
-    opentrons-user-environment opentrons-module-firmware \
-    opentrons-systemd-units \
+    wifi-mode-switch \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
@@ -99,12 +93,7 @@ python do_create_opentrons_manifest() {
     }
 
     # check that we have the expected version files and write them to the VERSION.json
-    expected_opentrons_versions = ["opentrons-robot-server-version.json", \
-                                   "opentrons-update-server-version.json", \
-                                   "opentrons-system-server-version.json", \
-                                   "opentrons-api-version.json", \
-                                   "opentrons-usb-bridge-version.json", \
-                                   "opentrons-firmware-version.json"]
+    expected_opentrons_versions = []
 
     opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')
     version_files_present = os.listdir(opentrons_versions_dir)
@@ -138,7 +127,7 @@ do_make_rootfs_changes() {
     # add the VERSION.json file
     cat ${DEPLOY_DIR_IMAGE}/VERSION.json > ${IMAGE_ROOTFS}${sysconfdir}/VERSION.json
     # copy the release notes to the output dir
-    cat ${IMAGE_ROOTFS}${sysconfdir}/release-notes.md > ${DEPLOY_DIR_IMAGE}/release-notes.md
+    #cat ${IMAGE_ROOTFS}${sysconfdir}/release-notes.md > ${DEPLOY_DIR_IMAGE}/release-notes.md
 
     # add hostname to rootfs
     printf "opentrons" > ${IMAGE_ROOTFS}${sysconfdir}/hostname
