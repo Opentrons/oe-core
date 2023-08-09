@@ -35,7 +35,7 @@ export interface GitHubApiTag {
   ref: Tag
 }
 
-function variantForRef(ref: Ref): Variant {
+export function variantForRef(ref: Ref): Variant {
   if (ref.startsWith('refs/heads')) {
     if (ref.includes('internal-release')) {
       return 'internal-release'
@@ -197,7 +197,7 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
     resolved.set(
       repo,
       await Promise.all(refList.map(ref => refResolves(repo, ref))).then(
-        presentRefs => presentRefs.find(maybeRef => maybeRef !== null)
+        presentRefs => presentRefs.find(maybeRef => maybeRef !== null) || null
       )
     )
   }
@@ -232,6 +232,11 @@ async function run() {
 
   const resolved = await resolveRefs(attemptable)
   resolved.forEach((ref, repo) => {
+    if (!ref) {
+      throw new Error(
+        `Could not resolve ${repo} input reference ${inputs.get(repo)}`
+      )
+    }
     core.info(`Resolved ${repo} to ${ref}`)
     core.setOutput(repo, ref)
 

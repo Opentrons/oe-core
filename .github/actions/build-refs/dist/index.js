@@ -9728,6 +9728,7 @@ var __webpack_exports__ = {};
 __nccwpck_require__.r(__webpack_exports__);
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   "restAPICompliantRef": () => (/* binding */ restAPICompliantRef),
+/* harmony export */   "variantForRef": () => (/* binding */ variantForRef),
 /* harmony export */   "latestTag": () => (/* binding */ latestTag),
 /* harmony export */   "authoritativeRef": () => (/* binding */ authoritativeRef),
 /* harmony export */   "refsToAttempt": () => (/* binding */ refsToAttempt),
@@ -9878,7 +9879,7 @@ function resolveRefs(toAttempt) {
                     return availableRefs.includes(correctRef) ? correctRef : null;
                 });
             });
-            resolved.set(repo, yield Promise.all(refList.map(ref => refResolves(repo, ref))).then(presentRefs => presentRefs.find(maybeRef => maybeRef !== null)));
+            resolved.set(repo, yield Promise.all(refList.map(ref => refResolves(repo, ref))).then(presentRefs => presentRefs.find(maybeRef => maybeRef !== null) || null));
         }
         return resolved;
     });
@@ -9904,6 +9905,9 @@ function run() {
         });
         const resolved = yield resolveRefs(attemptable);
         resolved.forEach((ref, repo) => {
+            if (!ref) {
+                throw new Error(`Could not resolve ${repo} input reference ${inputs.get(repo)}`);
+            }
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved ${repo} to ${ref}`);
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput(repo, ref);
             // Determine the build-type based on the monorepo ref
