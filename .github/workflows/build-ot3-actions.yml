@@ -1,4 +1,4 @@
-name: 'Build OT3 internal-release image on github workflows'
+name: 'Build Flex image on github workflows'
 run-name: 'image: mono ${{ inputs.monorepo-ref }}, core ${{ inputs.oe-core-ref }}, fw ${{ inputs.ot3-firmware-ref }}'
 on:
   workflow_dispatch:
@@ -44,7 +44,6 @@ jobs:
         uses: 'actions/checkout@v3'
         with:
           submodules: false
-          fetch-depth: 0
           path: ./oe-core-for-workflow
       - name: Decide refs to build
         id: build-refs
