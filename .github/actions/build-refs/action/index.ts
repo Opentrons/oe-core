@@ -3,7 +3,7 @@ import * as core from '@actions/core'
 
 export type Repo = 'oe-core' | 'monorepo' | 'ot3-firmware'
 export type BuildType = 'develop' | 'release'
-
+export type Variant = 'internal-release' | 'release'
 const orderedRepos: Repo[] = ['monorepo', 'oe-core', 'ot3-firmware']
 
 export type Branch = string
@@ -35,6 +35,22 @@ export interface GitHubApiTag {
   ref: Tag
 }
 
+export function variantForRef(ref: Ref): Variant {
+  if (ref.startsWith('refs/heads')) {
+    if (ref.includes('internal-release')) {
+      return 'internal-release'
+    } else {
+      return 'release'
+    }
+  } else if (ref.startsWith('refs/tags')) {
+    if (ref.includes('ot3@')) {
+      return 'internal-release'
+    } else if (ref.startsWith('refs/tags/v')) {
+      return 'release'
+    }
+  }
+  return 'internal-release'
+}
 function latestTagPrefixFor(repo: Repo): string {
   if (repo === 'monorepo') return 'refs/tags/v'
   if (repo === 'oe-core') return 'refs/tags/v'
@@ -181,7 +197,7 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
     resolved.set(
       repo,
       await Promise.all(refList.map(ref => refResolves(repo, ref))).then(
-        presentRefs => presentRefs.find(maybeRef => maybeRef !== null)
+        presentRefs => presentRefs.find(maybeRef => maybeRef !== null) || null
       )
     )
   }
@@ -216,14 +232,22 @@ async function run() {
 
   const resolved = await resolveRefs(attemptable)
   resolved.forEach((ref, repo) => {
+    if (!ref) {
+      throw new Error(
+        `Could not resolve ${repo} input reference ${inputs.get(repo)}`
+      )
+    }
     core.info(`Resolved ${repo} to ${ref}`)
     core.setOutput(repo, ref)
 
     // Determine the build-type based on the monorepo ref
     if (repo === 'monorepo') {
       const buildType = resolveBuildType(ref)
+      const variant = variantForRef(ref)
       core.info(`Resolved oe-core build-type to ${buildType}`)
       core.setOutput('build-type', buildType)
+      core.setOutput('variant', variant)
+      core.info(`Resolved oe-core variant to ${variant}`)
     }
   })
 }

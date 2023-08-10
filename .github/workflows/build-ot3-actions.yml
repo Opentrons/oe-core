@@ -1,4 +1,4 @@
-name: 'Build OT3 internal-release image on github workflows'
+name: 'Build Flex image on github workflows'
 run-name: 'image: mono ${{ inputs.monorepo-ref }}, core ${{ inputs.oe-core-ref }}, fw ${{ inputs.ot3-firmware-ref }}'
 on:
   workflow_dispatch:
@@ -30,19 +30,20 @@ on:
         default: 'stage-prod'
 
 jobs:
-  run-build:
-    strategy:
-      matrix:
-        build_env: [ '${{ inputs.infra-stage }}' ]
-    name: 'Building images on ${{ matrix.build_env }}'
-    timeout-minutes: 480
-    runs-on: ['self-hosted', '${{matrix.build_env}}']
+  decide-refs:
+    runs-on: ubuntu-latest
+    outputs:
+      oe-core: ${{ steps.build-refs.outputs.oe-core }}
+      monorepo: ${{ steps.build-refs.outputs.monorepo }}
+      ot3-firmware: ${{ steps.build-refs.outputs.ot3-firmware }}
+      variant: ${{ steps.build-refs.outputs.variant }}
+      build-type: ${{ steps.build-refs.outputs.build-type }}
+    name: 'deciding refs to build'
     steps:
       - name: Fetch initial sources for action
         uses: 'actions/checkout@v3'
         with:
           submodules: false
-          fetch-depth: 0
           path: ./oe-core-for-workflow
       - name: Decide refs to build
         id: build-refs
@@ -52,25 +53,40 @@ jobs:
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
           ot3-firmware: ${{ inputs.ot3-firmware-ref }}
+  run-build:
+    needs: decide-refs
+    strategy:
+      matrix:
+        build_env: [ '${{ inputs.infra-stage }}' ]
+    name: 'Building ${{needs.decide-refs.outputs.variant}} images on ${{ matrix.build_env }}'
+    timeout-minutes: 480
+    runs-on: ['self-hosted', '${{matrix.build_env}}', '${{needs.decide-refs.outputs.variant}}']
+    steps:
+      - name: Fetch initial sources for action
+        uses: 'actions/checkout@v3'
+        with:
+          submodules: false
+          fetch-depth: 0
+          path: ./oe-core-for-workflow
       - name: Fetch oe-core source
         uses: 'actions/checkout@v3'
         with:
           submodules: false
           fetch-depth: 0
-          ref: ${{steps.build-refs.outputs.oe-core}}
+          ref: ${{needs.decide-refs.outputs.oe-core}}
           path: ./oe-core
       - name: Fetch monorepo source
         uses: 'actions/checkout@v3'
         with:
           fetch-depth: 0
-          ref: ${{ steps.build-refs.outputs.monorepo }}
+          ref: ${{ needs.decide-refs.outputs.monorepo }}
           repository: Opentrons/opentrons
           path: ./opentrons
       - name: Fetch ot3-firmware source
         uses: 'actions/checkout@v3'
         with:
           fetch-depth: 0
-          ref: ${{ steps.build-refs.outputs.ot3-firmware }}
+          ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
           repository: Opentrons/ot3-firmware
           path: ./ot3-firmware
       - name: Sync oe-core submodules
@@ -103,10 +119,10 @@ jobs:
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
           echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
-          echo 'OT_BUILD_TYPE = "${{steps.build-refs.outputs.build-type}}"' >> ./build/conf/local.conf
+          echo 'OT_BUILD_TYPE = "${{needs.decide-refs.outputs.build-type}}"' >> ./build/conf/local.conf
           echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./build/conf/local.conf
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
-          echo 'OPENTRONS_PROJECT = "ot3"' >> ./build/conf/local.conf
+          echo 'OPENTRONS_PROJECT = "${{needs.decide-refs.outputs.variant == 'release' && 'robot-stack' || 'ot3'}}"' >> ./build/conf/local.conf
           # setup signing key
           echo 'SIGNING_KEY = "${TOPDIR}/.signing-key"' >> ./build/conf/local.conf
           cat <<EOF >./build/.signing-key
@@ -194,9 +210,9 @@ jobs:
           tar czf ${_artifact_s3}/buildstats.tar.gz ${_oe_tmp}/buildstats
 
           mkdir -p ${_artifact_versioned}
-          _fulltag="${{steps.build-refs.outputs.monorepo}}"
+          _fulltag="${{needs.decide-refs.outputs.monorepo}}"
           echo "monorepo_shorttag=${_fulltag:10}" >> $GITHUB_OUTPUT
-          _vers_suffix="${_fulltag:14}"
+          _vers_suffix=${{needs.decide-refs.outputs.variant == 'release' && '${_fulltag:11}' || '${_fulltag:14}'}}
           _system_zipname="ot3-system-${_vers_suffix}.zip"
           _version_jsonname="VERSION-${_vers_suffix}.json"
           _fullimage_tarname="ot3-fullimage-${_vers_suffix}.tar"
@@ -211,7 +227,7 @@ jobs:
           echo "artifact_unversioned_subdir=${_artifact_unversioned_subdir}" >> $GITHUB_OUTPUT
           echo "artifact_versioned=${_artifact_versioned}" >> $GITHUB_OUTPUT
       - name: Handle Release
-        if: ${{ steps.build-refs.outputs.build-type == 'release' }}
+        if: ${{ needs.decide-refs.outputs.build-type == 'release' }}
         shell: bash
         id: 'handle-release'
         run: |
@@ -236,7 +252,7 @@ jobs:
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
           popd
       - name: Upload system zip to monorepo release
-        if: steps.build-refs.outputs.build-type == 'release'
+        if: needs.decide-refs.outputs.build-type == 'release'
         uses: 'ncipollo/release-action@v1.12.0'
         with:
           allowUpdates: true
@@ -250,7 +266,7 @@ jobs:
           artifactContentType: application/zip
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       - name: Upload fullimage tar to monorepo release
-        if: steps.build-refs.outputs.build-type == 'release'
+        if: needs.decide-refs.outputs.build-type == 'release'
         uses: 'ncipollo/release-action@v1.12.0'
         with:
           allowUpdates: true
@@ -264,7 +280,7 @@ jobs:
           artifactContentType: application/x-tar
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       - name: Upload version json to monorepo release
-        if: steps.build-refs.outputs.build-type == 'release'
+        if: needs.decide-refs.outputs.build-type == 'release'
         uses: 'ncipollo/release-action@v1.12.0'
         with:
           allowUpdates: true
@@ -277,13 +293,21 @@ jobs:
           artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
-      - name: Post results
-        if: ${{ matrix.build_env == 'stage-prod' }}
+      - name: Post results as internal-release
+        if: ${{ matrix.build_env == 'stage-prod' && needs.decide-refs.outputs.variant=='internal-release' }}
         uses: slackapi/slack-github-action@v1.14.0
         with:
-          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ steps.build-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.build-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.build-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
+          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ needs.decide-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ needs.decide-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ needs.decide-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Post results as release
+        if: ${{ matrix.build_env == 'stage-prod' && needs.decide-refs.outputs.variant== 'release' }}
+        uses: slackapi/slack-github-action@v1.14.0
+        with:
+          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ needs.decide-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ needs.decide-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ needs.decide-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}
       - name: Remove build data
         if: always()
         run: |

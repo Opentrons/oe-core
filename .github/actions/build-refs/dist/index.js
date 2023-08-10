@@ -9728,6 +9728,7 @@ var __webpack_exports__ = {};
 __nccwpck_require__.r(__webpack_exports__);
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   "restAPICompliantRef": () => (/* binding */ restAPICompliantRef),
+/* harmony export */   "variantForRef": () => (/* binding */ variantForRef),
 /* harmony export */   "latestTag": () => (/* binding */ latestTag),
 /* harmony export */   "authoritativeRef": () => (/* binding */ authoritativeRef),
 /* harmony export */   "refsToAttempt": () => (/* binding */ refsToAttempt),
@@ -9758,6 +9759,25 @@ function mainRefFor(input) {
 }
 function restAPICompliantRef(input) {
     return input.replace('refs/', '');
+}
+function variantForRef(ref) {
+    if (ref.startsWith('refs/heads')) {
+        if (ref.includes('internal-release')) {
+            return 'internal-release';
+        }
+        else {
+            return 'release';
+        }
+    }
+    else if (ref.startsWith('refs/tags')) {
+        if (ref.includes('ot3@')) {
+            return 'internal-release';
+        }
+        else if (ref.startsWith('refs/tags/v')) {
+            return 'release';
+        }
+    }
+    return 'internal-release';
 }
 function latestTagPrefixFor(repo) {
     if (repo === 'monorepo')
@@ -9859,7 +9879,7 @@ function resolveRefs(toAttempt) {
                     return availableRefs.includes(correctRef) ? correctRef : null;
                 });
             });
-            resolved.set(repo, yield Promise.all(refList.map(ref => refResolves(repo, ref))).then(presentRefs => presentRefs.find(maybeRef => maybeRef !== null)));
+            resolved.set(repo, yield Promise.all(refList.map(ref => refResolves(repo, ref))).then(presentRefs => presentRefs.find(maybeRef => maybeRef !== null) || null));
         }
         return resolved;
     });
@@ -9885,13 +9905,19 @@ function run() {
         });
         const resolved = yield resolveRefs(attemptable);
         resolved.forEach((ref, repo) => {
+            if (!ref) {
+                throw new Error(`Could not resolve ${repo} input reference ${inputs.get(repo)}`);
+            }
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved ${repo} to ${ref}`);
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput(repo, ref);
             // Determine the build-type based on the monorepo ref
             if (repo === 'monorepo') {
                 const buildType = resolveBuildType(ref);
+                const variant = variantForRef(ref);
                 _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved oe-core build-type to ${buildType}`);
                 _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('build-type', buildType);
+                _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('variant', variant);
+                _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved oe-core variant to ${variant}`);
             }
         });
     });
