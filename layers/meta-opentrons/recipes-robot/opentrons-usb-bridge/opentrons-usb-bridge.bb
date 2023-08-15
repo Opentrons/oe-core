@@ -28,7 +28,7 @@ PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
 do_install_append() {
   # create json file to be used in VERSION.json
   install -d ${D}/opentrons_versions
-  python3 ${S}/scripts/python_build_utils.py usb-bridge ot3 dump_br_version > ${D}/opentrons_versions/opentrons-usb-bridge-version.json
+  python3 ${S}/scripts/python_build_utils.py usb-bridge ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-usb-bridge-version.json
 
   install -d ${D}/${systemd_system_unitdir}
   install -m 0644 ${WORKDIR}/opentrons-usb-bridge.service ${D}/${systemd_system_unitdir}/opentrons-usb-bridge.service
