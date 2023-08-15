@@ -31,7 +31,7 @@ PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
 do_install_append() {
   # create json file to be used in VERSION.json
   install -d ${D}/opentrons_versions
-  python3 ${S}/scripts/python_build_utils.py update-server ot3 dump_br_version > ${D}/opentrons_versions/opentrons-update-server-version.json
+  python3 ${S}/scripts/python_build_utils.py update-server ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-update-server-version.json
 
   install -d ${D}/${systemd_unitdir}/system
   install -m 0644 ${WORKDIR}/opentrons-update-server.service ${D}/${systemd_unitdir}/system

@@ -9885,7 +9885,7 @@ function resolveRefs(toAttempt) {
     });
 }
 function resolveBuildType(ref) {
-    return ref.includes('refs/tags/ot3') ? 'release' : 'develop';
+    return ref.includes('refs/tags') ? 'release' : 'develop';
 }
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
