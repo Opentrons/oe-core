@@ -30,10 +30,10 @@ do_configure(){
 do_compile(){
     export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
     cd ${S}
-    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app dist
-    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app-shell-odd lib
+    MIXPANEL_ID=${MIXPANEL_ID} OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app dist
+    MIXPANEL_ID=${MIXPANEL_ID} OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app-shell-odd lib
     cd ${S}/app-shell-odd
-    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
+    MIXPANEL_ID=${MIXPANEL_ID} OPENTRONS_PROJECT=${OPENTRONS_PROJECT} NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
 
 fakeroot do_install(){
