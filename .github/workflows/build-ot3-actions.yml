@@ -139,7 +139,7 @@ jobs:
         if: needs.decide-refs.outputs.build-type == 'release'
         run: |
           cd oe-core
-          echo 'MIXPANEL_ID' = "${{ secrets.MIXPANEL_ID }}" >> ./build/conf/local.conf
+          echo 'MIXPANEL_ID = "${{ secrets.MIXPANEL_ID }}"' >> ./build/conf/local.conf
           # setup signing key
           echo 'SIGNING_KEY = "${TOPDIR}/.signing-key"' >> ./build/conf/local.conf
           cat <<EOF >./build/.signing-key
