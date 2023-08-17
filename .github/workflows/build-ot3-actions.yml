@@ -124,13 +124,13 @@ jobs:
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
           cd ..
       - name: Apply internal-release variant CI config overrides
-        if: needs.decide-refs.outputs.variant == "internal-release"
+        if: needs.decide-refs.outputs.variant == 'internal-release'
         run: |
           cd oe-core
           echo 'OPENTRONS_PROJECT = "ot3"' >> ./build/conf/local.conf
           cd ..
       - name: Apply release variant CI config overrides
-        if: needs.decide-refs.outputs.variant == "release"
+        if: needs.decide-refs.outputs.variant == 'release'
         run: |
           cd oe-core
           echo 'OPENTRONS_PROJECT = "robot-stack"' >> ./build/conf/local.conf
