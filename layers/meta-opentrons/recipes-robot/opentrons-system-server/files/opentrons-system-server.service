@@ -11,8 +11,6 @@ Environment=PYTHONPATH=/opt/opentrons-system-server:/usr/lib/python3.8/site-pack
 Environment=OT_SYSTEM_SERVER_persistence_directory=/var/lib/opentrons-system-server
 Restart=on-failure
 TimeoutStartSec=3min
-After=nginx.service
-Wants=nginx.service
 
 [Install]
 WantedBy=multi-user.target
