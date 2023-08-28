@@ -2,6 +2,8 @@
 Description=Opentrons Robot HTTP Server
 Requires=nginx.service
 After=nginx.service
+After=opentrons-ot3-canbus
+Wants=opentrons-ot3-canbus
 
 [Service]
 Type=notify
@@ -14,8 +16,6 @@ Environment=OT_ROBOT_SERVER_persistence_directory=%S/opentrons-robot-server
 Environment=OT_ROBOT_SERVER_maximum_unused_protocols=20
 Restart=on-failure
 TimeoutStartSec=10min
-After=opentrons-ot3-canbus
-Wants=opentrons-ot3-canbus
 
 [Install]
 WantedBy=multi-user.target
