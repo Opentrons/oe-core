@@ -10,7 +10,7 @@ def get_ot_package_version(d):
     try:
         sys.path.append(os.path.join(s, 'scripts'))
         from python_build_utils import get_version
-        return get_version(d.getVar('OT_PACKAGE', 'robot-server'), 'ot3')
+        return get_version(d.getVar('OT_PACKAGE', 'robot-server'), d.getVar('OPENTRONS_PROJECT', 'ot3'))
     finally:
         sys.path = sys.path[:-1]
 

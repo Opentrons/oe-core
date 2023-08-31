@@ -13,7 +13,7 @@ inherit insane systemd
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE_${PN} = "opentrons-update-server.service"
-FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
+FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 SRC_URI += "\
            file://opentrons-update-server.service \
            file://opentrons-robot-signing-key.crt \
@@ -31,20 +31,13 @@ PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
 do_install_append() {
   # create json file to be used in VERSION.json
   install -d ${D}/opentrons_versions
-  python3 ${S}/scripts/python_build_utils.py update-server ot3 dump_br_version > ${D}/opentrons_versions/opentrons-update-server-version.json
+  python3 ${S}/scripts/python_build_utils.py update-server ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-update-server-version.json
 
   install -d ${D}/${systemd_unitdir}/system
   install -m 0644 ${WORKDIR}/opentrons-update-server.service ${D}/${systemd_unitdir}/system
 
-  # install the cert key if this is a release build
-  if [ ${OT_BUILD_TYPE} =~ "release" ]; then
-    bbnote "Installing pubkey to require signed updates"
-    install -d ${D}/${sysconfdir}
-    install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/${sysconfdir}/opentrons-robot-signing-key.crt
-  fi
+  # install the signing key, we decide if we keep it in the opentrons-ot3-image recipe
+  install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/opentrons_versions/opentrons-robot-signing-key.crt
 }
-
-# Only include cert if this is a release build
-FILES_${PN} += "${@bb.utils.contains('OT_BUILD_TYPE', 'release', '${sysconfdir}/ \${sysconfdir}/opentrons-robot-signing-key.crt', '', d)}"
 
 inherit pipenv_app_bundle

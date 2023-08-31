@@ -1,5 +1,5 @@
 import * as action from '../index'
-import type { InputRefs, Ref, Branch, BuildType } from '../index'
+import type { InputRefs, Ref, Branch, BuildType, Variant } from '../index'
 
 const AUTHORITATIVE_REF_TEST_SPECS: Array<
   [string, InputRefs, [string, boolean]]
@@ -138,8 +138,13 @@ const BUILD_TYPE_TEST_SPECS: Array<[string, [Ref], BuildType]> = [
     'develop',
   ],
   [
-    'when monorepo ref is a release tag is release',
+    'when monorepo ref is an internal-release tag is release',
     ['refs/tags/ot3@0.0.0-dev'],
+    'release',
+  ],
+  [
+    'when monorepo ref is a release tag is release',
+    ['refs/tags/v12.12.9-alpha.12'],
     'release',
   ],
 ]
@@ -148,6 +153,52 @@ BUILD_TYPE_TEST_SPECS.forEach(
   ([testNameFragment, [testMonorepoRef], testExpectedResult]) => {
     test(`buildType ${testNameFragment}`, () => {
       expect(action.resolveBuildType(testMonorepoRef)).toStrictEqual(
+        testExpectedResult
+      )
+    })
+  }
+)
+
+const VARIANT_TEST_SPECS: Array<[string, Ref, Variant]> = [
+  [
+    'when monorepo ref is a general branch name',
+    'refs/heads/some-random-branch',
+    'release',
+  ],
+  ['when monorepo ref is edge', 'refs/heads/edge', 'release'],
+  ['when monorepo ref is release branch', 'refs/heads/main', 'release'],
+  [
+    'when monorepo ref is a release candidate branch',
+    'refs/heads/release_7.1.0',
+    'release',
+  ],
+  [
+    'when monorepo ref is a release candidate branch with old style name',
+    'refs/heads/chore_release-8.1.0',
+    'release',
+  ],
+  [
+    'when monorepo ref is an internal-release branch',
+    'refs/heads/internal-release',
+    'internal-release',
+  ],
+  [
+    'when monorepo ref is an internal-release candidate branch',
+    'refs/heads/internal-release_0.165.0',
+    'internal-release',
+  ],
+  ['when monorepo ref is a release tag', 'refs/tags/v123.213.8', 'release'],
+  [
+    'when monorepo ref is an internal-release tag',
+    'refs/tags/ot3@0.1231.8-alpha.2',
+    'internal-release',
+  ],
+]
+
+VARIANT_TEST_SPECS.forEach(
+  ([testNameFragment, testMonorepoRef, testExpectedResult]) => {
+    test(`variant ${testNameFragment}`, () => {
+      expect(action.variantForRef(testMonorepoRef)).toStrictEqual(
         testExpectedResult
       )
     })

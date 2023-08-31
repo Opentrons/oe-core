@@ -10,8 +10,6 @@ StateDirectory=opentrons-usb-bridge
 Environment=PYTHONPATH=/opt/ot3usb:/usr/lib/python3.8/site-packages
 Restart=on-failure
 TimeoutStartSec=3min
-After=nginx.service
-Wants=nginx.service
 
 [Install]
 WantedBy=multi-user.target

@@ -25,6 +25,8 @@ outputs:
     description: "the ref of the ot3-firmware to use"
   build-type:
     description: "the type of build oe-core will create (develop, release)"
+  variant:
+    description: "internal-release or release"
 runs:
   using: 'node16'
   main: 'dist/index.js'

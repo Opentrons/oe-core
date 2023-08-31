@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Get the brightness set as early as possibly to prevent flickers
+echo 1 > /sys/class/backlight/backlight/brightness
 
 # Absolute path to the video location
 VIDEO=$1
@@ -26,12 +28,4 @@ while true; do
     # will be 0 on success and non-zero otherwise, perfect to
     # grep for
     echo $playresponse | grep '"code"\s*:\s*0\s*,' && break || echo "Failed to start pipeline, trying again"
-done
-
-
-# Wait for the message to perform seek
-while true; do
-    # bus_read blocks until a message comes through
-    gstd-client bus_read opentronsloading
-    gstd-client event_seek opentronsloading 1.0
 done
