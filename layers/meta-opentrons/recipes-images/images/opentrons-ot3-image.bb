@@ -208,7 +208,7 @@ python do_create_tezi_manifest(){
     tezi_manifest = {}
 
     # define the ot3  partitions
-    systemfs_size_mb = int(d.getVar('IMAGE_ROOTFS_SIZE')) / 1024
+    systemfs_size_mb = int(d.getVar('IMAGE_ROOTFS_SIZE')) // 1024
     ot3_partitions = [{
                     "partition_size_nominal": 48,
                     "want_maximised": False,
