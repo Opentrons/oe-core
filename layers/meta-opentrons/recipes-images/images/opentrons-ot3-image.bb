@@ -178,6 +178,7 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/home ${USERFS_DIR}/
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
+    mkdir -p ${USERFS_DIR}/media
     mkdir -p ${USERFS_DIR}${sysconfdir}
     rm -rf ${USERFS_DIR}/var/log
     mkdir -p ${USERFS_DIR}/var/log

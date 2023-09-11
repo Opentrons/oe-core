@@ -11,6 +11,7 @@ tmpfs                /var/volatile        tmpfs      defaults              0  0
 /dev/mmcblk0p4           /userfs               auto       rw,x-systemd.growfs   0  2
 /userfs/home             /home                 none       defaults,bind         0  0
 /userfs/data             /data                 none       defaults,bind         0  0
+/userfs/media            /media                none       defaults,bind         0  0
 /userfs/var              /var                  none       defaults,bind         0  0
 /userfs/var/mnt          /mnt                  none       defaults,bind         0  0
 /userfs/etc/hostname     /etc/hostname         none       defaults,bind,nofail  0  0
