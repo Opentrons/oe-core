@@ -7,3 +7,6 @@ build/
 -build/conf
 downloads/
 sstate-cache/
+
+# ignore linux swap files
+*.swp
