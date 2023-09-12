@@ -52,7 +52,7 @@ IMAGE_INSTALL += " \
     opentrons-jupyter-notebook opentrons-usb-bridge \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
-    opentrons-systemd-units \
+    opentrons-systemd-units python3-pip \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
