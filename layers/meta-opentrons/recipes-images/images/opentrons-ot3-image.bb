@@ -48,11 +48,12 @@ IMAGE_INSTALL += " \
     weston-xwayland weston weston-init imx-gpu-viv \
     robot-app-wayland-launch opentrons-robot-app \
     opentrons-robot-server opentrons-update-server \
-    python3 python3-misc python3-modules python3-jupyter \
     opentrons-jupyter-notebook opentrons-usb-bridge \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
-    opentrons-systemd-units python3-pip \
+    opentrons-systemd-units opentrons-ssh-keys \
+    python3 python3-misc python3-modules python3-jupyter \
+    python3-pip \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
@@ -178,6 +179,7 @@ fakeroot do_create_filesystem() {
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/home ${USERFS_DIR}/
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
     mkdir -p ${USERFS_DIR}/data
+    mkdir -p ${USERFS_DIR}/media
     mkdir -p ${USERFS_DIR}${sysconfdir}
     rm -rf ${USERFS_DIR}/var/log
     mkdir -p ${USERFS_DIR}/var/log
