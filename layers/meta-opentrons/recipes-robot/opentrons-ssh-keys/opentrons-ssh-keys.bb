@@ -6,7 +6,10 @@ SRC_URI = "file://opentrons-flex.pub"
 
 do_install () {
     install -m 700 -d ${D}/home/root/.ssh
-    install -m 644 ${WORKDIR}/opentrons-flex.pub ${D}/home/root/.ssh/authorized_keys
+    if [[ "${OT_BUILD_TYPE}" =~ "develop" ]]; then
+        bbnote "Installing default ssh rsa key"
+        install -m 644 ${WORKDIR}/opentrons-flex.pub ${D}/home/root/.ssh/authorized_keys
+    fi
 }
 
 FILES_${PN} += "/home/root/.ssh/authorized_keys"
