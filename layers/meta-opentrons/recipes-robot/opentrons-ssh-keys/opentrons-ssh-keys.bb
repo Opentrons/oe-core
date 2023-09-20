@@ -9,6 +9,10 @@ do_install () {
     if [[ "${OT_BUILD_TYPE}" =~ "develop" ]]; then
         bbnote "Installing default ssh rsa key"
         install -m 644 ${WORKDIR}/opentrons-flex.pub ${D}/home/root/.ssh/authorized_keys
+    else
+        bbnote "Establishing empty authorized_keys"
+        touch ${WORKDIR}/authorized_keys
+        install -m 644 ${WORKDIR}/authorized_keys ${D}/home/root/.ssh/authorized_keys
     fi
 }
 
