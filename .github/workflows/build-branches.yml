@@ -14,7 +14,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - name: 'check jobs'
-        uses: octokit/requests-actions@v2.x
+        uses: octokit/request-action@v2.x
         id: get_queued_runs
         env:
           GITHUB_TOKEN: ${{ github.token }}
