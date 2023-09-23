@@ -9,23 +9,17 @@ on:
       - '*'
 
 jobs:
-  start-build:
-    name: 'starting a build for branch ${{ github.ref }}'
+  build-required:
+    name: 'Determine if build is already queued'
     runs-on: 'ubuntu-latest'
     steps:
-      - name: 'start build'
-        uses: octokit/request-action@v2.x
+      - name: 'check jobs'
+        uses: octokit/requests-actions@v2.x
+        id: get_queued_runs
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          route: POST /repos/{owner}/{repo}/actions/workflows/{workflow-id}/dispatches
+          route: GET /repos/{owner}/{repo}/actions/runs
           owner: opentrons
           repo: oe-core
-          workflow-id: build-ot3-actions.yml
-          ref: ${{github.ref}}
-          inputs: |
-            {
-              "oe-core-ref": "${{ github.ref }}",
-              "monorepo-ref": "-",
-              "infra-stage": "stage-prod"
-            }
+      - run: "echo queued runs: '${{ steps.get_queued_runs.outputs.data }}'"
