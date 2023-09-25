@@ -331,6 +331,6 @@ jobs:
         run: |
           rm -rf ./*
       - name: Remove poisoned cache
-        if: ${{ !success() }}
+        if: ${{ failure() }}
         run: |
           rm -rf ${LOCAL_CACHE:-./cache}/*
