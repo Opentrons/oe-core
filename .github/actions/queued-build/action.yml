@@ -1,0 +1,30 @@
+name: "Queue or bump similar builds"
+description: "Based on the in-progress and queued jobs, determine if this build should be queued."
+inputs:
+  token:
+    description: "gh token for api calls to resolve refs"
+    required: true
+  build-type:
+    description: "the type of build oe-core will create (develop, release)"
+    required: true
+  variant:
+    description: "internal-release or release"
+    required: true
+  monorepo:
+    description: "ref of the monorepo to use"
+    required: false
+    default: "-"
+  oe-core:
+    description: "ref of the oe-core to use"
+    required: false
+    default: "-"
+  ot3-firmware:
+    description: "ref of ot3-firmware to use"
+    required: false
+    default: "-"
+  outputs:
+  queue-build:
+    description: "whether this build should be queued or not."
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
