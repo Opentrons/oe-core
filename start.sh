@@ -37,9 +37,11 @@ export BITBAKEDIR=${THISDIR}/tools/bitbake
 # so for now lets manually create a symlink and set its download location to /volumes/cache
 mkdir -p /volumes/cache/electron
 mkdir -p /volumes/cache/yarn
+mkdir -p /volumes/cache/pip
 mkdir -p ~/.cache/
 ln -sf /volumes/cache/electron ~/.cache/electron
 ln -sf /volumes/cache/yarn ~/.cache/yarn
+ln -sf /volumes/cache/pip ~/.cache/pip
 
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
