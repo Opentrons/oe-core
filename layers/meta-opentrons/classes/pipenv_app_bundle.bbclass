@@ -155,16 +155,18 @@ do_compile () {
    mkdir -p ${B}/pip-downloads
 
    bbnote "Installing common build deps ahead of time"
-   ${PIP_ENVARGS} ${PYTHON} -m pip download \
+
+   ${PYTHON} -m pip download \
       --dest=${B}/pip-downloads \
       -- \
-      flit setuptools setuptools_scm[toml]
+      flit hatch setuptools setuptools_scm[toml]
 
    bbnote "Downloading pypi packages"
 
    ${PIP_ENVARGS} ${PYTHON} -m pip download \
       -r ${B}/pypi.txt \
       --no-deps \
+      --no-binary :all: \
       --dest=${B}/pip-downloads/ \
       -vvv
 
