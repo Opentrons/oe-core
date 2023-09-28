@@ -154,11 +154,16 @@ PIP_ARGS := "--no-compile \
 do_compile () {
    mkdir -p ${B}/pip-downloads
 
+   bbnote "Installing common build deps ahead of time"
+   ${PIP_ENVARGS} ${PYTHON} -m pip download \
+      --dest=${B}/pip-downloads \
+      -- \
+      flit setuptools setuptools_scm[toml]
+
    bbnote "Downloading pypi packages"
 
    ${PIP_ENVARGS} ${PYTHON} -m pip download \
       -r ${B}/pypi.txt \
-      ${PIP_ARGS} \
       --no-deps \
       --dest=${B}/pip-downloads/ \
       -vvv
@@ -167,7 +172,9 @@ do_compile () {
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       --no-index --find-links=${B}/pip-downloads/ \
+      ${PIP_ARGS} \
       -r ${B}/pypi.txt \
+      --no-deps \
       -vvv
 
    bbnote "Building and installing local packages"
