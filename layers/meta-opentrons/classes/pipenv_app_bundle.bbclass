@@ -154,26 +154,10 @@ PIP_ARGS := "--no-compile \
 do_compile () {
    mkdir -p ${B}/pip-downloads
 
-   bbnote "Installing common build deps ahead of time"
-
-   ${PYTHON} -m pip download \
-      --dest=${B}/pip-downloads \
-      -- \
-      flit flit-core hatchling setuptools setuptools_scm[toml]
-
-   bbnote "Downloading pypi packages"
-
-   ${PIP_ENVARGS} ${PYTHON} -m pip download \
-      -r ${B}/pypi.txt \
-      --no-deps \
-      --no-binary :all: \
-      --dest=${B}/pip-downloads/ \
-      -vvv
-
    bbnote "Installing pypi packages"
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
-      --no-index --find-links=${B}/pip-downloads/ \
+      --no-use-pep517 \
       ${PIP_ARGS} \
       -r ${B}/pypi.txt \
       --no-deps \
@@ -183,6 +167,7 @@ do_compile () {
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
+      --no-use-pep517 \
       ${PIP_ARGS} \
       --no-deps \
       --use-feature=in-tree-build \
@@ -192,6 +177,7 @@ do_compile () {
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
+      --no-use-pep517 \
       --use-feature=in-tree-build \
       --no-deps \
       ${PIP_ARGS} \
