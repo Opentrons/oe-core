@@ -154,7 +154,8 @@ PIP_ARGS := "--no-compile \
 do_compile () {
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       -r ${B}/pypi.txt \
-      ${PIP_ARGS}
+      ${PIP_ARGS} \
+      --no-deps
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
