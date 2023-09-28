@@ -152,22 +152,43 @@ PIP_ARGS := "--no-compile \
              -t ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
 
 do_compile () {
-   ${PIP_ENVARGS} ${PYTHON} -m pip install \
+   mkdir -p ${B}/pip-downloads
+
+   bbnote "Downloading pypi packages"
+
+   ${PIP_ENVARGS} ${PYTHON} -m pip download \
       -r ${B}/pypi.txt \
       ${PIP_ARGS} \
-      --no-deps
+      --no-deps \
+      --dest=${B}/pip-downloads/ \
+      -vvv
+
+   bbnote "Installing pypi packages"
+
+   ${PIP_ENVARGS} ${PYTHON} -m pip install \
+      --no-index --find-links=${B}/pip-downloads/ \
+      -r ${B}/pypi.txt \
+      -vvv
+
+   bbnote "Building and installing local packages"
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
       ${PIP_ARGS} \
       --no-deps \
-      --use-feature=in-tree-build
+      --use-feature=in-tree-build \
+      -vvv
+
+   bbnote "Building and installing true source packages"
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
       --use-feature=in-tree-build \
       --no-deps \
-      ${PIP_ARGS}
+      ${PIP_ARGS} \
+      -vvv
+
+   bbnote "Done installing python packages"
 }
 
 do_compile[vardeps] += "PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS"
