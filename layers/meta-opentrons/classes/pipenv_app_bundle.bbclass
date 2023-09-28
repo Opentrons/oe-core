@@ -159,7 +159,7 @@ do_compile () {
    ${PYTHON} -m pip download \
       --dest=${B}/pip-downloads \
       -- \
-      flit hatch setuptools setuptools_scm[toml]
+      flit flit-core hatchling setuptools setuptools_scm[toml]
 
    bbnote "Downloading pypi packages"
 
