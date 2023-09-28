@@ -3,7 +3,10 @@
 
 inherit distutils3-base
 
-DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native "
+DEPENDS += "\
+	python3 python3-native python3-pip-native \
+	python3-micropipenv-native python3-setuptools-native \
+	python3-setuptools-scm"
 RDEPENDS_${PN} += " python3 python3-modules"
 
 # directory for version file output
@@ -146,27 +149,29 @@ do_configure_prepend () {
 do_configure[vardeps] += "PIPENV_APP_BUNDLE_STRIP_HASHES PIPENV_APP_BUNDLE_PROJECT_ROOT"
 
 PIP_ARGS := "--no-compile \
-             --no-binary :all: \
-             --verbose \
-             --log /var/log/pip.log \
+             --no-deps \
+             --progress-bar off \
              -t ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
 
 do_compile () {
-   ${PIP_ENVARGS} ${PYTHON} -m pip install \
-      -r ${B}/pypi.txt \
-      ${PIP_ARGS}
+  bbnote "Installing pypi packages"
+  ${PIP_ENVARGS} ${PYTHON} -m pip install \
+    -r ${B}/pypi.txt \
+    --no-use-pep517 \
+    ${PIP_ARGS}
 
-  # ${PIP_ENVARGS} ${PYTHON} -m pip install \
-  #    -r ${B}/local.txt \
-  #    ${PIP_ARGS} \
-  #    --no-deps \
-  #    --use-feature=in-tree-build
+  bbnote "Installing local packages"
+  ${PIP_ENVARGS} ${PYTHON} -m pip install \
+     -r ${B}/local.txt \
+     ${PIP_ARGS} \
+     --no-binary :all: \
+     --use-feature=in-tree-build
 
-  # ${PIP_ENVARGS} ${PYTHON} -m pip install \
-  #    ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
-  #    --use-feature=in-tree-build \
-  #    --no-deps \
-  #    ${PIP_ARGS}
+  bbnote "Installing packages to root project"
+  ${PIP_ENVARGS} ${PYTHON} -m pip install \
+     ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
+     --use-feature=in-tree-build \
+     ${PIP_ARGS}
 }
 
 do_compile[vardeps] += "PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS"
