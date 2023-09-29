@@ -149,19 +149,24 @@ PIP_ARGS := "--no-compile \
              --no-binary :all: \
              --progress-bar off \
              --force-reinstall \
+             --no-deps \
              -t ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
 
 do_compile () {
-   mkdir -p ${B}/pip-downloads
+   mkdir -p ${B}/pip-buildenv
 
    bbnote "Installing pypi packages"
 
-   ${PIP_ENVARGS} ${PYTHON} -m pip install \
-      --no-use-pep517 \
+   ${PYTHON} -m pip install \
+      -t ${B}/pip-buildenv \
+      hatchling flit flit-core setuptools setuptools-scm[toml] \
+
+
+   ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       ${PIP_ARGS} \
+      --no-build-isolation \
       -r ${B}/pypi.txt \
-      --no-deps \
-      -vvv
+
 
    bbnote "Building and installing local packages"
 
@@ -169,9 +174,8 @@ do_compile () {
       -r ${B}/local.txt \
       --no-use-pep517 \
       ${PIP_ARGS} \
-      --no-deps \
       --use-feature=in-tree-build \
-      -vvv
+
 
    bbnote "Building and installing true source packages"
 
@@ -179,9 +183,8 @@ do_compile () {
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
       --no-use-pep517 \
       --use-feature=in-tree-build \
-      --no-deps \
       ${PIP_ARGS} \
-      -vvv
+
 
    bbnote "Done installing python packages"
 }
