@@ -159,7 +159,7 @@ do_compile () {
 
    ${PYTHON} -m pip install \
       -t ${B}/pip-buildenv \
-      hatchling flit flit-core setuptools setuptools-scm[toml] wheel \
+      hatchling flit flit-core setuptools setuptools-scm[toml] wheel distutils\
 
 
    ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
