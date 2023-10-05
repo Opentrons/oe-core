@@ -1,4 +1,9 @@
-SRC_URI += " syslog-ng.conf.opentrons level-filter-plugin.conf level-filter-create.sh opentrons-sources add-dirs-to-unit.conf"
+SRC_URI += " file://syslog-ng.conf.opentrons \
+             file://level-filter-plugin.conf \
+             file://level-filter-create.sh \
+             file://opentrons-sources \
+             file://add-dirs-to-unit.conf \
+             "
 
 do_install_append() {
     install -m 644 ${WORKDIR}/syslog-ng.conf.opentrons ${D}${sysconfdir}/${BPN}/${BPN}.conf
