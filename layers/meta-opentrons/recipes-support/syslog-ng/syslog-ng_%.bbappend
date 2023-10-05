@@ -9,8 +9,8 @@ SRC_URI_append = "\
 do_install_append() {
     install -m 644 ${WORKDIR}/syslog-ng.conf.opentrons ${D}${sysconfdir}/${BPN}/${BPN}.conf
     install -d ${D}${sysconfdir}/${BPN}/level-filter
-    install -m 644 ${WORKDIR}/level-filter-plugin.conf ${sysconfdir}/${BPN}/level-filter/plugin.conf
-    install -m 744 ${WORKDIR}/level-filter-create.sh ${sysconfdir}/${BPN}/level-filter/create-level-filter.conf
+    install -m 644 ${WORKDIR}/level-filter-plugin.conf ${D}${sysconfdir}/${BPN}/level-filter/plugin.conf
+    install -m 744 ${WORKDIR}/level-filter-create.sh ${D}${sysconfdir}/${BPN}/level-filter/create-level-filter.conf
     sed -i -e 's,@CONFDIR@,${sysconfdir},g' ${D}${sysconfdir}/${BPN}/${BPN}.conf ${D}${sysconfdir}/${BPN}/level-filter/plugin.conf
     sed -i -e 's,@STATEDIR@,${localstatedir}' ${D}${sysconfdir}/${BPN}/level-filter/create-level-filter.sh
 
