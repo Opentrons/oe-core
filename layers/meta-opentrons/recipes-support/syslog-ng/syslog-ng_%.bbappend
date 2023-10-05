@@ -1,3 +1,4 @@
+FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
 SRC_URI += " file://syslog-ng.conf.opentrons \
              file://level-filter-plugin.conf \
              file://level-filter-create.sh \
