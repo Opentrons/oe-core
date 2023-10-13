@@ -71,8 +71,10 @@ MACHINE_NAME ?= "${MACHINE}"
 IMAGE_NAME = "${MACHINE_NAME}_${IMAGE_BASENAME}"
 USERFS_DIR = "${WORKDIR}/userfs"
 USERFS_OUTPUT = "${DEPLOY_DIR_IMAGE}/userfs.ext4"
-# max rootfs partition size in mb
-MAX_SYSTEMFS_SIZE = "2048"
+# the rootfs partition size (2GB) in Kb
+IMAGE_ROOTFS_SIZE = "2097152"
+IMAGE_OVERHEAD_FACTOR = "1"
+IMAGE_ROOTFS_EXTRA_SPACE = "0"
 
 # create the opentrons ot3 manifest (VERSION.json) file
 python do_create_opentrons_manifest() {
@@ -165,16 +167,6 @@ do_make_rootfs_changes() {
 ROOTFS_POSTPROCESS_COMMAND += "do_make_rootfs_changes; "
 
 fakeroot do_create_filesystem() {
-    # check that the size of the rootfs is not greater than the max systemfs partition
-    systemfs=${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.ext4.xz
-    systemfs_size_raw=$(xz -l ${systemfs} | awk 'FNR == 2 {print $5}' | tr -d ',')
-    systemfs_size_mb=${systemfs_size_raw%.*}
-    rootfs_overflow=`expr ${systemfs_size_mb} \> ${MAX_SYSTEMFS_SIZE}` || echo 0
-    if [ ${rootfs_overflow} = 1 ]; then
-        bberror "CRITICAL: Rootfs size ${systemfs_size_mb} is greater than max allowed ${MAX_SYSTEMFS_SIZE}!."
-        exit 1
-    fi
-
     # create the userfs tree
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/home ${USERFS_DIR}/
     rsync -aH --chown=root:root ${IMAGE_ROOTFS}/var ${USERFS_DIR}/
@@ -218,6 +210,7 @@ python do_create_tezi_manifest(){
     tezi_manifest = {}
 
     # define the ot3  partitions
+    systemfs_size_mb = int(d.getVar('IMAGE_ROOTFS_SIZE')) // 1024
     ot3_partitions = [{
                     "partition_size_nominal": 48,
                     "want_maximised": False,
@@ -230,23 +223,25 @@ python do_create_tezi_manifest(){
                     }
                 },
                 {
-                    "partition_size_nominal": int(d.getVar("MAX_SYSTEMFS_SIZE")),
+                    "partition_size_nominal": systemfs_size_mb,
                     "want_maximised": False,
                     "content": {
                         "label": "RFS",
                         "filesystem_type": "ext4",
                         "mkfs_options": "-E nodiscard",
                         "filename": "%s.tar.xz" % (d.getVar('IMAGE_LINK_NAME')),
+                        "uncompressed_size": systemfs_size_mb
                     }
                 },
                 {
-                    "partition_size_nominal": int(d.getVar('MAX_SYSTEMFS_SIZE')),
+                    "partition_size_nominal": systemfs_size_mb,
                     "want_maximised": False,
                     "content": {
                         "label": "RFS2",
                         "filesystem_type": "ext4",
                         "mkfs_options": "-E nodiscard",
                         "filename": "%s.tar.xz" % (d.getVar('IMAGE_LINK_NAME')),
+                        "uncompressed_size": systemfs_size_mb,
                     }
                 },
                 {
