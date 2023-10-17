@@ -9,4 +9,4 @@ S = "${WORKDIR}/toml-${PV}"
 
 DEPENDS = "python3-native "
 
-inherit native setuptools3 pypi
+inherit setuptools3 pypi native
