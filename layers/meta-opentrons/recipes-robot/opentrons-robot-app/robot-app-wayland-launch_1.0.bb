@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/Apache-2.0;md5=89aea4e17d99a7ca
 
 inherit allarch systemd
 
-RDEPENDS_${PN}_append = "weston-init opentrons-robot-app systemd-extra-utils gstd"
+RDEPENDS:${PN}:append = "weston-init opentrons-robot-app systemd-extra-utils gstd"
 
 S = "${WORKDIR}"
 
@@ -21,7 +21,7 @@ SRC_URI = " \
     file://loading.mp4 \
 "
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 APPLICATION_ENVIRONMENT := '\"DISPLAY=\:0\:0\" \"XDG_SESSION_TYPE=wayland\" \"XDG_SESSION_DESKTOP=kiosk\" \"PYTHONPATH=/opt/opentrons-robot-server\"'
 
@@ -50,8 +50,8 @@ do_install () {
     install -m 0644 ${S}/loading.mp4 ${D}/${datadir}/opentrons/loading.mp4
 }
 
-FILES_${PN}_append := " ${datadir}/opentrons/loading.mp4 "
+FILES:${PN}:append := " ${datadir}/opentrons/loading.mp4 "
 
 
 SYSTEMD_PACKAGES = "${PN}"
-SYSTEMD_SERVICE_${PN} = "opentrons-robot-app.service configure-screen-power.service opentrons-loading.service opentrons-robot-app-devtools.service opentrons-robot-app-devtools.socket"
+SYSTEMD_SERVICE:${PN} = "opentrons-robot-app.service configure-screen-power.service opentrons-loading.service opentrons-robot-app-devtools.service opentrons-robot-app-devtools.socket"

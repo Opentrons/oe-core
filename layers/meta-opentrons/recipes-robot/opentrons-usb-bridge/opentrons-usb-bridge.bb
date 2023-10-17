@@ -6,14 +6,14 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 
-RDEPENDS_${PN} += " nginx python3-pyudev python3-pyserial"
+RDEPENDS:${PN} += " nginx python3-pyudev python3-pyserial"
 
 inherit insane systemd
 
 SYSTEMD_AUTO_ENABLE = "enable"
-SYSTEMD_SERVICE_${PN} = "opentrons-usb-bridge.service"
-FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
-SRC_URI_append = " file://opentrons-usb-bridge.service"
+SYSTEMD_SERVICE:${PN} = "opentrons-usb-bridge.service"
+FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
+SRC_URI:append = " file://opentrons-usb-bridge.service"
 
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
@@ -25,7 +25,7 @@ PIPENV_APP_BUNDLE_EXTRAS = ""
 PIPENV_APP_BUNDLE_USE_GLOBAL = "pyudev pyserial"
 PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
 
-do_install_append() {
+do_install:append() {
   # create json file to be used in VERSION.json
   install -d ${D}/opentrons_versions
   python3 ${S}/scripts/python_build_utils.py usb-bridge ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-usb-bridge-version.json

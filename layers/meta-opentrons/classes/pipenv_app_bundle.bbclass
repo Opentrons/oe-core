@@ -4,7 +4,7 @@
 inherit distutils3-base
 
 DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native "
-RDEPENDS_${PN} += " python3 python3-modules"
+RDEPENDS:${PN} += " python3 python3-modules"
 
 # directory for version file output
 SYSROOT_DIRS += "/opentrons_versions"
@@ -132,7 +132,7 @@ do_rewrite_requirements[vardeps] += " PIPENV_APP_BUNDLE_USE_GLOBAL PIPENV_APP_BU
 
 addtask do_rewrite_requirements after do_configure before do_compile
 
-do_configure_prepend () {
+do_configure:prepend () {
    cd ${PIPENV_APP_BUNDLE_PROJECT_ROOT}
    bbplain "Running micropipenv in ${PIPENV_APP_BUNDLE_PROJECT_ROOT}"
    if [[ "${PIPENV_APP_BUNDLE_STRIP_HASHES}" = "no" ]] ; then
@@ -202,4 +202,4 @@ do_install () {
 }
 
 
-FILES_${PN} = "${PIPENV_APP_BUNDLE_DIR} opentrons_versions"
+FILES:${PN} = "${PIPENV_APP_BUNDLE_DIR} opentrons_versions"

@@ -16,4 +16,4 @@ do_install () {
     fi
 }
 
-FILES_${PN} += "/home/root/.ssh/authorized_keys"
+FILES:${PN} += "/home/root/.ssh/authorized_keys"
