@@ -1,4 +1,4 @@
-SRC_URI_append = "\
+SRC_URI:append = "\
   file://verdin-imx8mm_sn65dsi84-atm0700l61_overlay.dts \
   file://verdin-imx8mm_gt911_overlay.dts \
   file://verdin-imx8mm_MCP2518_overlay.dts \
@@ -7,7 +7,7 @@ SRC_URI_append = "\
   file://verdin-imx8mm_M24128-eeprom_overlay.dts \
   "
 
-FILESEXTRAPATHS_append := ":${THISDIR}/overlays"
+FILESEXTRAPATHS:append := ":${THISDIR}/overlays"
 
 do_prep_opentrons_overlays () {
     cp ${WORKDIR}/*.dts ${WORKDIR}/git/overlays/

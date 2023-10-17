@@ -9,8 +9,8 @@ SRC_URI += "file://OEToolchainConfig.cmake \
             file://0005-Disable-use-of-ext2fs-ext2_fs.h-by-cmake-s-internal-.patch \
             "
 
-LICENSE_append = " & BSD-1-Clause & MIT & BSD-2-Clause"
-LIC_FILES_CHKSUM_append = " \
+LICENSE:append = " & BSD-1-Clause & MIT & BSD-2-Clause"
+LIC_FILES_CHKSUM:append = " \
     file://Utilities/cmjsoncpp/LICENSE;md5=fa2a23dd1dc6c139f35105379d76df2b \
     file://Utilities/cmlibarchive/COPYING;md5=d499814247adaee08d88080841cb5665 \
     file://Utilities/cmexpat/COPYING;md5=9e2ce3b3c4c0f2670883a23bbd7c37a9 \

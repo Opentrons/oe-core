@@ -6,14 +6,14 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 
-RDEPENDS_${PN} += " bmap-tools libubootenv nginx python3-dbus python3-aiohttp python3-systemd"
+RDEPENDS:${PN} += " bmap-tools libubootenv nginx python3-dbus python3-aiohttp python3-systemd"
 
 
 inherit insane systemd
 
 SYSTEMD_AUTO_ENABLE = "enable"
-SYSTEMD_SERVICE_${PN} = "opentrons-update-server.service"
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+SYSTEMD_SERVICE:${PN} = "opentrons-update-server.service"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SRC_URI += "\
            file://opentrons-update-server.service \
            file://opentrons-robot-signing-key.crt \
@@ -28,7 +28,7 @@ PIPENV_APP_BUNDLE_EXTRAS = ""
 PIPENV_APP_BUNDLE_USE_GLOBAL = "python3-aiohttp systemd-python"
 PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
 
-do_install_append() {
+do_install:append() {
   # create json file to be used in VERSION.json
   install -d ${D}/opentrons_versions
   python3 ${S}/scripts/python_build_utils.py update-server ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-update-server-version.json

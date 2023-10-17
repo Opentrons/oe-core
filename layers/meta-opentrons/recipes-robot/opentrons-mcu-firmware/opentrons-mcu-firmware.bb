@@ -61,13 +61,13 @@ do_install(){
 
 # since we are compiling binaries for the subsystem which has a different arch to linux we need
 # to ignore the architecture.
-INSANE_SKIP_${PN} += "arch"
+INSANE_SKIP:${PN} += "arch"
 
 SYSROOT_DIRS += "\
                 /opentrons_versions\
                 "
 
-FILES_${PN} += "${libdir}/firmware/head-*.hex \
+FILES:${PN} += "${libdir}/firmware/head-*.hex \
                 ${libdir}/firmware/gantry-*.hex \
                 ${libdir}/firmware/gripper-*.hex \
                 ${libdir}/firmware/pipettes-*.hex \

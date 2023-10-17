@@ -26,4 +26,4 @@ do_install() {
 addtask do_get_oe_version after do_compile before do_install
 do_install[prefuncs] += "do_get_oe_version"
 
-FILES_${PN} += "${sysconfdir}/profile.d/ot-environ.sh"
+FILES:${PN} += "${sysconfdir}/profile.d/ot-environ.sh"

@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI += " \
         file://touchscreen-goodix.cfg \
         file://SPI-CAN.cfg \
@@ -6,7 +6,7 @@ SRC_URI += " \
         file://logo_custom_clut224.ppm \
         "
 
-do_unpack_append(){
+do_unpack:append(){
     bb.build.exec_func('add_logo', d)
 }
 

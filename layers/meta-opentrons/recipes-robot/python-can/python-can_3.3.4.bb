@@ -12,6 +12,6 @@ SRC_URI[sha512sum] = "cc4084c0348e1e0ef2372ebd863f2dfc85cae7315beb15d68f6e7d9531
 
 inherit setuptools3
 
-RDEPENDS_${PN} += "python3-aenum python3-wrapt"
+RDEPENDS:${PN} += "python3-aenum python3-wrapt"
 
-RDEPENDS_${PN} += "python3-asyncio python3-core python3-ctypes python3-curses python3-datetime python3-io python3-logging python3-math python3-multiprocessing python3-netclient python3-pickle python3-pkg-resources python3-pyserial python3-six python3-sqlite3 python3-stringold python3-threading python3-typing "
+RDEPENDS:${PN} += "python3-asyncio python3-core python3-ctypes python3-curses python3-datetime python3-io python3-logging python3-math python3-multiprocessing python3-netclient python3-pickle python3-pkg-resources python3-pyserial python3-six python3-sqlite3 python3-stringold python3-threading python3-typing "

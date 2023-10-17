@@ -4,7 +4,7 @@ LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/Apache-2.0;md5=89aea4e17d99a7ca
 
 inherit systemd
 
-FILESEXTRAPATHS_prepend = "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
 SRC_URI += "\
       file://var-log-journal.service \
       file://opentrons-commit-machine-id.service \
@@ -12,11 +12,11 @@ SRC_URI += "\
       "
 
 SYSTEMD_AUTO_ENABLE = "enable"
-SYSTEMD_SERVICE_${PN} += "var-log-journal.service"
-SYSTEMD_SERVICE_${PN} += "opentrons-commit-machine-id.service"
+SYSTEMD_SERVICE:${PN} += "var-log-journal.service"
+SYSTEMD_SERVICE:${PN} += "opentrons-commit-machine-id.service"
 SYSTEMD_PACKAGES = "${PN}"
 
-FILES_${PN} += "\
+FILES:${PN} += "\
       ${systemd_system_unitdir}/var-log-journal.service \
       ${systemd_system_unitdir}/opentrons-commit-machine-id.service \
       ${bindir}/ot-commit-machine-id \

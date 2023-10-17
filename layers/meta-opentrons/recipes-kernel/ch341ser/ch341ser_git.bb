@@ -11,5 +11,5 @@ S = "${WORKDIR}/git"
 
 inherit module
 
-EXTRA_OEMAKE_append_task-install = " -C ${STAGING_KERNEL_DIR} M=${S}"
+EXTRA_OEMAKE:append:task-install = " -C ${STAGING_KERNEL_DIR} M=${S}"
 EXTRA_OEMAKE += "KERNELDIR=${STAGING_KERNEL_DIR}"

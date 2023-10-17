@@ -1,9 +1,9 @@
-FILESEXTRAPATHS_append := ":${THISDIR}/${PN}"
+FILESEXTRAPATHS:append := ":${THISDIR}/${PN}"
 
-SRC_URI_append := " \
+SRC_URI:append := " \
     file://opentrons-journald.conf \
 "
 
-do_install_append() {
+do_install:append() {
    install -D -m0644 ${WORKDIR}/opentrons-journald.conf ${D}${systemd_unitdir}/journald.conf.d/01-storage.conf
 }
