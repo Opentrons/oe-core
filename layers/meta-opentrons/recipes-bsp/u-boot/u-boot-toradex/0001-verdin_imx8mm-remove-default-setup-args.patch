@@ -1,6 +1,6 @@
-From c52a1c4f09148a9ee3c66fb75dcccfbbfefb3788 Mon Sep 17 00:00:00 2001
+From 58618bd340d27d231034d96e924c5913a20ad8bc Mon Sep 17 00:00:00 2001
 From: Seth Foster <seth@opentrons.com>
-Date: Mon, 13 Mar 2023 15:37:59 +0000
+Date: Wed, 18 Oct 2023 15:53:11 +0000
 Subject: [PATCH] verdin_imx8mm: remove default setup args
 
 The default setup arguments compiled into u-boot hardcoded
@@ -8,19 +8,20 @@ a video console. We want that to be a splash screen, and we
 don't want to deal with the defaults being wrong, so remove
 the default setting and we'll set it in the boot script.
 ---
- include/configs/verdin-imx8mm.h | 1 -
- 1 file changed, 1 deletion(-)
+ include/configs/verdin-imx8mm.h | 2 --
+ 1 file changed, 2 deletions(-)
 
 diff --git a/include/configs/verdin-imx8mm.h b/include/configs/verdin-imx8mm.h
-index 87e73c26a7..83ab2cf43b 100644
+index 0d77657978..65650d0b40 100644
 --- a/include/configs/verdin-imx8mm.h
 +++ b/include/configs/verdin-imx8mm.h
-@@ -120,7 +120,6 @@
- 	"boot_scripts=" BOOT_SCRIPT "\0" \
- 	"boot_script_dhcp=" BOOT_SCRIPT "\0" \
- 	"boot_file=Image\0" \
--	"setup=setenv setupargs console=tty1 console=${console},${baudrate} consoleblank=0 earlycon\0" \
- 	"update_uboot=askenv confirm Did you load imx-boot (y/N)?; " \
+@@ -60,8 +60,6 @@
+ 	"fdt_board=dev\0" \
+ 	"initrd_addr=0x43800000\0" \
+ 	"initrd_high=0xffffffffffffffff\0" \
+-	"setup=setenv setupargs console=tty1 console=${console},${baudrate} " \
+-		"consoleblank=0 earlycon\0" \
+ 	"update_uboot=askenv confirm Did you load flash.bin (y/N)?; " \
  		"if test \"$confirm\" = \"y\"; then " \
  		"setexpr blkcnt ${filesize} + 0x1ff && setexpr blkcnt " \
 -- 
