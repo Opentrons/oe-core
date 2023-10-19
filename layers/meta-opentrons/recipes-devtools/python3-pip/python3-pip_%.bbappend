@@ -12,7 +12,7 @@ do_install:append() {
 
 	# install pth file so python knows where to find user installed packages
         install -d ${D}/${libdir}
-	install -m 644 ${WORKDIR}/user-packages.pth ${D}/${libdir}/python3.8/site-packages/
+	install -m 644 ${WORKDIR}/user-packages.pth ${D}/${libdir}/python3.10/site-packages/
 }
 
 FILES:${PN} += "\
