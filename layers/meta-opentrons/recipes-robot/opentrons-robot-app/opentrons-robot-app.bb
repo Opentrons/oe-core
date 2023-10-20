@@ -28,8 +28,10 @@ do_configure(){
 }
 
 do_compile(){
-    export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
     cd ${S}
+    export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
+    export NODE_OPTIONS=--openssl-legacy-provider
+    export OPENSSL_MODULES=${STAGING_LIBDIR_NATIVE}/ossl-modules
     OT_APP_MIXPANEL_ID=${MIXPANEL_ID} OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app dist
     OT_APP_MIXPANEL_ID=${MIXPANEL_ID} OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app-shell-odd lib
     cd ${S}/app-shell-odd
@@ -73,4 +75,4 @@ RDEPENDS:${PN} = "udev \
                   libxtst libxcursor libxrandr libxscrnsaver \
                   atk at-spi2-atk\
                   cups"
-DEPENDS = " nodejs-native udev"
+DEPENDS = " nodejs-native udev openssl-native "
