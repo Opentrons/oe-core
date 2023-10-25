@@ -84,3 +84,7 @@
 &pwm1 {
 	status = "okay";
 };
+
+&gpu {
+    status = "okay";
+};
