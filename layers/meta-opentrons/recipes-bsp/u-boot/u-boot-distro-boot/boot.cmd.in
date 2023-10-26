@@ -85,7 +85,13 @@ fi
 
 if test ${kernel_image} = "Image.gz"
 then
-    env set kernel_addr_load ${loadaddr}
+    # The default value where this used to get loaded is not suitable because it also gets
+    # used in u-boot/include/configs/verdin-imx8mm.h to initialize kernel_addr_r. This is
+    # where we load a gzip'd kernel, and kernel_addr_r is where we unzip a gzip'd kernel,
+    # so we'll step on our own toes if we try that. Since this is in an else/if with the
+    # only place we use a ramdisk, we can't overlap with using a ramdisk, and the ramdisk
+    # load address is a safe place to use as scratch space for loading a kernel.
+    env set kernel_addr_load ${ramdisk_addr_r}
     env set bootcmd_unzip 'unzip ${kernel_addr_load} ${kernel_addr_r}'
 else
     env set bootcmd_unzip ';'
