@@ -20,7 +20,7 @@ do_install_append() {
         install -m 644 ${WORKDIR}/jupyter-notebook.service ${D}/${sysconfdir}/systemd/system/jupyter-notebook.service
 
 	# set the system version env variable
-	sed -i 's/OT_SYSTEM_VERSION=/OT_SYSTEM_VERSION=${OT_SYSTEM_VERSION}/' ${D}/${sysconfdir}/systemd/system/jupyter-notebook.service
+	sed -i 's/##OT_SYSTEM_VERSION##/${OT_SYSTEM_VERSION}/' ${D}/${sysconfdir}/systemd/system/jupyter-notebook.service
 }
 
 FILES_${PN} += "${sysconfdir}/jupyter/jupyter_notebook_config.py \
