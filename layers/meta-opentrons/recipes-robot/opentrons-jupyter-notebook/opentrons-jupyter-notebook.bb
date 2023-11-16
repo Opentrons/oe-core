@@ -1,4 +1,4 @@
-inherit systemd
+inherit systemd get_ot_system_version
 
 DESCRIPTION = "Jupyter Notebook service for Opentrons."
 LICENSE = "Apache-2.0"
@@ -18,6 +18,9 @@ do_install_append() {
         install -d ${D}/${sysconfdir}/systemd/system
         install -m 644 ${WORKDIR}/jupyter_notebook_config.py ${D}/${sysconfdir}/jupyter/jupyter_notebook_config.py
         install -m 644 ${WORKDIR}/jupyter-notebook.service ${D}/${sysconfdir}/systemd/system/jupyter-notebook.service
+
+	# set the system version env variable
+	sed -i 's/##OT_SYSTEM_VERSION##/${OT_SYSTEM_VERSION}/' ${D}/${sysconfdir}/systemd/system/jupyter-notebook.service
 }
 
 FILES_${PN} += "${sysconfdir}/jupyter/jupyter_notebook_config.py \
