@@ -23,6 +23,8 @@ do_install_append() {
     install -d ${D}/usr/share/default-connections
     install -m 600 ${WORKDIR}/wired-linklocal.nmconnection ${D}/usr/share/default-connections/wired-linklocal.nmconnection
     install -m 600 ${WORKDIR}/wired.nmconnection ${D}/usr/share/default-connections/wired.nmconnection
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/opentrons-init-systemconnections.service ${D}${systemd_system_unitdir}/opentrons-init-systemconnections.service
 
 }
 
