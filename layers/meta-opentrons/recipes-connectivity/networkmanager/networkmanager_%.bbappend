@@ -11,8 +11,8 @@ SRC_URI += "file://system-connections-location.conf \
 FILES_${PN} += "/etc/NetworkManager/conf.d/system-connections-location.conf \
                 /etc/NetworkManager/conf.d/disable-uap0.conf \
                 ${systemd_system_unitdir}/opentrons-init-systemconnections.service \
-                /usr/share/system-connections/wired-linklocal.nmconnection \
-                /usr/share/system-connections/wired.nmconnection \
+                /usr/share/default-connections/wired-linklocal.nmconnection \
+                /usr/share/default-connections/wired.nmconnection \
 "
 
 do_install_append() {
@@ -20,9 +20,9 @@ do_install_append() {
 	install -d ${D}/etc/NetworkManager/conf.d
 	install -m 644 ${WORKDIR}/system-connections-location.conf ${D}/etc/NetworkManager/conf.d/
 	install -m 644 ${WORKDIR}/disable-uap0.conf ${D}/etc/NetworkManager/conf.d/
-    install -d ${D}/usr/share/system-connections
-    install -m 600 ${WORKDIR}/wired-linklocal.nmconnection ${D}/usr/share/system-connections/wired-linklocal.nmconnection
-    install -m 600 ${WORKDIR}/wired.nmconnection ${D}/usr/share/system-connections/wired.nmconnection
+    install -d ${D}/usr/share/default-connections
+    install -m 600 ${WORKDIR}/wired-linklocal.nmconnection ${D}/usr/share/default-connections/wired-linklocal.nmconnection
+    install -m 600 ${WORKDIR}/wired.nmconnection ${D}/usr/share/default-connections/wired.nmconnection
 
 }
 
