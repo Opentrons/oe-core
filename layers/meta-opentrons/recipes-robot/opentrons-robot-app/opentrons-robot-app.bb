@@ -24,7 +24,9 @@ do_configure(){
     cd ${S}/app-shell-odd
     yarn electron-rebuild --arch=arm64
     cd ${S}
-    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C shared-data setup-js
+    # we removed setup-js from shared-data recently so let's allow it to fail so we
+    # can handle both the is-there and the is-not-there case
+    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C shared-data setup-js || true
 }
 
 do_compile(){
