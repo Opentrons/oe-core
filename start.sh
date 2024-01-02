@@ -38,10 +38,12 @@ export BITBAKEDIR=${THISDIR}/tools/bitbake
 mkdir -p /volumes/cache/electron
 mkdir -p /volumes/cache/yarn
 mkdir -p /volumes/cache/pip
+mkdir -p /volumes/cache/Cypress
 mkdir -p ~/.cache/
 ln -sf /volumes/cache/electron ~/.cache/electron
 ln -sf /volumes/cache/yarn ~/.cache/yarn
 ln -sf /volumes/cache/pip ~/.cache/pip
+ln -sf /volumes/cache/Cypress ~/.cache/Cypress
 
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
