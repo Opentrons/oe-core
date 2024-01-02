@@ -9787,9 +9787,9 @@ function latestTagPrefixFor(repo, variant) {
         if (repo === 'monorepo')
             return ['refs/tags/internal@', 'refs/tags/ot3@v'];
         if (repo === 'oe-core')
-            return ['refs/tags/internal@', 'refs/tags/v'];
+            return ['refs/tags/internal@'];
         if (repo === 'ot3-firmware')
-            return ['refs/tags/internal@', 'refs/tags/v'];
+            return ['refs/tags/internal@'];
         throw new Error(`Unknown repo ${repo}`);
     }
     throw new Error(`Unknown variant ${variant}`);
