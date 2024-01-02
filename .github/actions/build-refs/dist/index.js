@@ -9862,7 +9862,9 @@ function resolveRefs(toAttempt, variant) {
                     if (response.status != 200) {
                         throw new Error(`Bad response from github api for ${repoName} get tags: ${response.status}`);
                     }
-                    return latestTag(response.data);
+                    const latest = latestTag(response.data);
+                    _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`latest tag for ${repoName} variant ${variant} is ${latest}`);
+                    return latest;
                 }))).then(results => results.reduce((prev, current) => prev !== null && prev !== void 0 ? prev : current, null));
             });
             // this is a big function to be inline and untestable, but tookit doesn't export

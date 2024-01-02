@@ -177,7 +177,11 @@ async function resolveRefs(
                   `Bad response from github api for ${repoName} get tags: ${response.status}`
                 )
               }
-              return latestTag(response.data)
+              const latest = latestTag(response.data)
+              core.debug(
+                `latest tag for ${repoName} variant ${variant} is ${latest}`
+              )
+              return latest
             })
         )
       ).then(results =>
