@@ -6,6 +6,11 @@ export type BuildType = 'develop' | 'release'
 export type Variant = 'internal-release' | 'release'
 const orderedRepos: Repo[] = ['monorepo', 'oe-core', 'ot3-firmware']
 
+export interface BuildDetails {
+  buildType: BuildType
+  buildVariant: Variant
+}
+
 export type Branch = string
 export type Tag = string
 export type Ref = Branch | Tag
@@ -35,7 +40,7 @@ export interface GitHubApiTag {
   ref: Tag
 }
 
-export function variantForRef(ref: Ref): Variant {
+export function resolveBuildVariant(ref: Ref): Variant {
   if (ref.startsWith('refs/heads')) {
     if (ref.includes('internal-release')) {
       return 'internal-release'
@@ -43,7 +48,7 @@ export function variantForRef(ref: Ref): Variant {
       return 'release'
     }
   } else if (ref.startsWith('refs/tags')) {
-    if (ref.includes('ot3@')) {
+    if (ref.includes('ot3@') || ref.includes('internal@')) {
       return 'internal-release'
     } else if (ref.startsWith('refs/tags/v')) {
       return 'release'
@@ -51,11 +56,18 @@ export function variantForRef(ref: Ref): Variant {
   }
   return 'internal-release'
 }
-function latestTagPrefixFor(repo: Repo): string {
-  if (repo === 'monorepo') return 'refs/tags/v'
-  if (repo === 'oe-core') return 'refs/tags/v'
-  if (repo === 'ot3-firmware') return 'refs/tags/v'
-  throw new Error(`Unknown repo ${repo}`)
+
+function latestTagPrefixFor(repo: Repo, variant: Variant): string[] {
+  if (variant === 'release') {
+    return ['refs/tags/v']
+  }
+  if (variant === 'internal-release') {
+    if (repo === 'monorepo') return ['refs/tags/internal@', 'refs/tags/ot3@v']
+    if (repo === 'oe-core') return ['refs/tags/internal@', 'refs/tags/v']
+    if (repo === 'ot3-firmware') return ['refs/tags/internal@', 'refs/tags/v']
+    throw new Error(`Unknown repo ${repo}`)
+  }
+  throw new Error(`Unknown variant ${variant}`)
 }
 
 export function latestTag(tagRefs: GitHubApiTag[]): Tag | null {
@@ -141,7 +153,10 @@ export function refsToAttempt(
   )
 }
 
-async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
+async function resolveRefs(
+  toAttempt: AttemptableRefs,
+  variant: Variant
+): Promise<OutputRefs> {
   const token = core.getInput('token')
   let resolved = new Map()
   for (const [repo, refList] of toAttempt) {
@@ -149,19 +164,25 @@ async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
 
     const fetchTags = async (repoName: Repo): Promise<Ref | null> => {
       core.info(`finding latest tag for ${repoName}`)
-      return octokit.rest.git
-        .listMatchingRefs({
-          ...restDetailsFor(repoName),
-          ref: restAPICompliantRef(latestTagPrefixFor(repoName)),
-        })
-        .then(response => {
-          if (response.status != 200) {
-            throw new Error(
-              `Bad response from github api for ${repoName} get tags: ${response.status}`
-            )
-          }
-          return latestTag(response.data)
-        })
+      return Promise.all(
+        latestTagPrefixFor(repoName, variant).map(prefix =>
+          octokit.rest.git
+            .listMatchingRefs({
+              ...restDetailsFor(repoName),
+              ref: restAPICompliantRef(prefix),
+            })
+            .then(response => {
+              if (response.status != 200) {
+                throw new Error(
+                  `Bad response from github api for ${repoName} get tags: ${response.status}`
+                )
+              }
+              return latestTag(response.data)
+            })
+        )
+      ).then(results =>
+        results.reduce((prev, current) => prev ?? current, null)
+      )
     }
 
     // this is a big function to be inline and untestable, but tookit doesn't export
@@ -215,6 +236,11 @@ async function run() {
   })
   const [authoritative, isMain] = authoritativeRef(inputs)
   core.debug(`authoritative ref is ${authoritative} (main: ${isMain})`)
+  const buildType = resolveBuildType(authoritative)
+  const buildVariant = resolveBuildVariant(authoritative)
+  core.info(`Resolved build type to ${buildType}`)
+  core.info(`Resolved build variant to ${buildVariant}`)
+
   const attemptable = Array.from(inputs.entries()).reduce(
     (prev: AttemptableRefs, [repoName, inputRef]): AttemptableRefs => {
       return prev.set(
@@ -229,8 +255,10 @@ async function run() {
   attemptable.forEach((refs, repo) => {
     core.debug(`found attemptable refs for ${repo}: ${refs.join(', ')}`)
   })
+  core.setOutput('build-type', buildType)
+  core.setOutput('variant', buildVariant)
 
-  const resolved = await resolveRefs(attemptable)
+  const resolved = await resolveRefs(attemptable, buildVariant)
   resolved.forEach((ref, repo) => {
     if (!ref) {
       throw new Error(
@@ -239,16 +267,6 @@ async function run() {
     }
     core.info(`Resolved ${repo} to ${ref}`)
     core.setOutput(repo, ref)
-
-    // Determine the build-type based on the monorepo ref
-    if (repo === 'monorepo') {
-      const buildType = resolveBuildType(ref)
-      const variant = variantForRef(ref)
-      core.info(`Resolved oe-core build-type to ${buildType}`)
-      core.setOutput('build-type', buildType)
-      core.setOutput('variant', variant)
-      core.info(`Resolved oe-core variant to ${variant}`)
-    }
   })
 }
 

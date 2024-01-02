@@ -9728,7 +9728,7 @@ var __webpack_exports__ = {};
 __nccwpck_require__.r(__webpack_exports__);
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   "restAPICompliantRef": () => (/* binding */ restAPICompliantRef),
-/* harmony export */   "variantForRef": () => (/* binding */ variantForRef),
+/* harmony export */   "resolveBuildVariant": () => (/* binding */ resolveBuildVariant),
 /* harmony export */   "latestTag": () => (/* binding */ latestTag),
 /* harmony export */   "authoritativeRef": () => (/* binding */ authoritativeRef),
 /* harmony export */   "refsToAttempt": () => (/* binding */ refsToAttempt),
@@ -9760,7 +9760,7 @@ function mainRefFor(input) {
 function restAPICompliantRef(input) {
     return input.replace('refs/', '');
 }
-function variantForRef(ref) {
+function resolveBuildVariant(ref) {
     if (ref.startsWith('refs/heads')) {
         if (ref.includes('internal-release')) {
             return 'internal-release';
@@ -9770,7 +9770,7 @@ function variantForRef(ref) {
         }
     }
     else if (ref.startsWith('refs/tags')) {
-        if (ref.includes('ot3@')) {
+        if (ref.includes('ot3@') || ref.includes('internal@')) {
             return 'internal-release';
         }
         else if (ref.startsWith('refs/tags/v')) {
@@ -9779,14 +9779,20 @@ function variantForRef(ref) {
     }
     return 'internal-release';
 }
-function latestTagPrefixFor(repo) {
-    if (repo === 'monorepo')
-        return 'refs/tags/v';
-    if (repo === 'oe-core')
-        return 'refs/tags/v';
-    if (repo === 'ot3-firmware')
-        return 'refs/tags/v';
-    throw new Error(`Unknown repo ${repo}`);
+function latestTagPrefixFor(repo, variant) {
+    if (variant === 'release') {
+        return ['refs/tags/v'];
+    }
+    if (variant === 'internal-release') {
+        if (repo === 'monorepo')
+            return ['refs/tags/internal@', 'refs/tags/ot3@v'];
+        if (repo === 'oe-core')
+            return ['refs/tags/internal@', 'refs/tags/v'];
+        if (repo === 'ot3-firmware')
+            return ['refs/tags/internal@', 'refs/tags/v'];
+        throw new Error(`Unknown repo ${repo}`);
+    }
+    throw new Error(`Unknown variant ${variant}`);
 }
 function latestTag(tagRefs) {
     var _a, _b;
@@ -9842,7 +9848,7 @@ function refsToAttempt(requesterRef, requesterIsMain, requestedMain) {
     // try.
     return visitRefsByType(requesterRef, requesterBranch => branchesToAttempt(requesterBranch, requesterIsMain, requestedMain), requesterTag => tagsToAttempt(requesterTag, requestedMain));
 }
-function resolveRefs(toAttempt) {
+function resolveRefs(toAttempt, variant) {
     return __awaiter(this, void 0, void 0, function* () {
         const token = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('token');
         let resolved = new Map();
@@ -9850,14 +9856,14 @@ function resolveRefs(toAttempt) {
             const octokit = (0,_actions_github__WEBPACK_IMPORTED_MODULE_0__.getOctokit)(token);
             const fetchTags = (repoName) => __awaiter(this, void 0, void 0, function* () {
                 _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`finding latest tag for ${repoName}`);
-                return octokit.rest.git
-                    .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: restAPICompliantRef(latestTagPrefixFor(repoName)) }))
+                return Promise.all(latestTagPrefixFor(repoName, variant).map(prefix => octokit.rest.git
+                    .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: restAPICompliantRef(prefix) }))
                     .then(response => {
                     if (response.status != 200) {
                         throw new Error(`Bad response from github api for ${repoName} get tags: ${response.status}`);
                     }
                     return latestTag(response.data);
-                });
+                }))).then(results => results.reduce((prev, current) => prev !== null && prev !== void 0 ? prev : current, null));
             });
             // this is a big function to be inline and untestable, but tookit doesn't export
             // the type for the octokit object above so what are you gonna do
@@ -9895,6 +9901,10 @@ function run() {
         });
         const [authoritative, isMain] = authoritativeRef(inputs);
         _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`authoritative ref is ${authoritative} (main: ${isMain})`);
+        const buildType = resolveBuildType(authoritative);
+        const buildVariant = resolveBuildVariant(authoritative);
+        _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved build type to ${buildType}`);
+        _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved build variant to ${buildVariant}`);
         const attemptable = Array.from(inputs.entries()).reduce((prev, [repoName, inputRef]) => {
             return prev.set(repoName, inputRef
                 ? [inputRef]
@@ -9903,22 +9913,15 @@ function run() {
         attemptable.forEach((refs, repo) => {
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found attemptable refs for ${repo}: ${refs.join(', ')}`);
         });
-        const resolved = yield resolveRefs(attemptable);
+        _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('build-type', buildType);
+        _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('variant', buildVariant);
+        const resolved = yield resolveRefs(attemptable, buildVariant);
         resolved.forEach((ref, repo) => {
             if (!ref) {
                 throw new Error(`Could not resolve ${repo} input reference ${inputs.get(repo)}`);
             }
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved ${repo} to ${ref}`);
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput(repo, ref);
-            // Determine the build-type based on the monorepo ref
-            if (repo === 'monorepo') {
-                const buildType = resolveBuildType(ref);
-                const variant = variantForRef(ref);
-                _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved oe-core build-type to ${buildType}`);
-                _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('build-type', buildType);
-                _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('variant', variant);
-                _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved oe-core variant to ${variant}`);
-            }
         });
     });
 }

@@ -198,7 +198,7 @@ const VARIANT_TEST_SPECS: Array<[string, Ref, Variant]> = [
 VARIANT_TEST_SPECS.forEach(
   ([testNameFragment, testMonorepoRef, testExpectedResult]) => {
     test(`variant ${testNameFragment}`, () => {
-      expect(action.variantForRef(testMonorepoRef)).toStrictEqual(
+      expect(action.resolveBuildVariant(testMonorepoRef)).toStrictEqual(
         testExpectedResult
       )
     })
