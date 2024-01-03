@@ -33,15 +33,12 @@ patch -f ./layers/meta-jupyter/conf/layer.conf ./meta-jupyter-backport.patch
 export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
-# electron is ignoring the cache download set by the electron_config_cache env var
-# so for now lets manually create a symlink and set its download location to /volumes/cache
-mkdir -p /volumes/cache/electron
-mkdir -p /volumes/cache/yarn
-mkdir -p /volumes/cache/pip
+# Download locations are being ignored and we are running out of space, so
+# for now just create a symlink from /volumes/cache to ~/.cache which is
+# externally mounted to S3.
+mkdir -p /volumes/cache/
 mkdir -p ~/.cache/
-ln -sf /volumes/cache/electron ~/.cache/electron
-ln -sf /volumes/cache/yarn ~/.cache/yarn
-ln -sf /volumes/cache/pip ~/.cache/pip
+ln -sf /volumes/cache ~/.cache
 
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
