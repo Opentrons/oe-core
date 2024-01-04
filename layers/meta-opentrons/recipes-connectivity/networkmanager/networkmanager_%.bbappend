@@ -29,4 +29,4 @@ do_install:append() {
 }
 
 SYSTEMD_AUTO_ENABLE = "enable"
-SYSTEMD_SERVICE_${PN}_append = " opentrons-init-systemconnections.service"
+SYSTEMD_SERVICE:${PN}:append = " opentrons-init-systemconnections.service"
