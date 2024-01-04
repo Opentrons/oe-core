@@ -1,4 +1,4 @@
-FILESEXTRAPATHS_prepend := "${THISDIR}/u-boot-distro-boot:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/u-boot-distro-boot:"
 
-SRC_URI_append = " file://boot.cmd.in"
+SRC_URI:append = " file://boot.cmd.in"
 

@@ -32,6 +32,6 @@ do_install(){
     install ${S}/${HEATER-SHAKER_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
 }
 
-FILES_${PN} += "${libdir}/firmware/${TEMPERATURE_MODULE_SOURCE} \
+FILES:${PN} += "${libdir}/firmware/${TEMPERATURE_MODULE_SOURCE} \
                 ${libdir}/firmware/${THERMOCYCLER-GEN2_MODULE_SOURCE} \
                 ${libdir}/firmware/${HEATER-SHAKER_MODULE_SOURCE} \"

@@ -4,7 +4,7 @@
 tmp/
 
 build/
--build/conf
+-build/conf/
 downloads/
 sstate-cache/
 

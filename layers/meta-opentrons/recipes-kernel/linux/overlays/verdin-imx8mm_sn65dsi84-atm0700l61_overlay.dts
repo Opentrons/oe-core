@@ -13,28 +13,78 @@
     compatible = "toradex,verdin-imx8mm";
 };
 
-&lvds_ti_sn65dsi83 {
-    ti,dsi-lanes = <4>;
-    ti,height-mm = <86>;
-    ti,lvds-bpp = <24>;
-    ti,lvds-format = <2>;
-    ti,width-mm = <154>;
+#include "verdin-imx8_mipi-dsi-to-sn65dsi84.dtsi"
 
-    display-timings {
-        native-mode = <&lvds_timing0>;
+&lvds_ti_sn65dsi84 {
+	status = "okay";
 
-        lvds_timing0: atm0700l61_2whc {
-            clock-frequency = <51200000>;
-            hactive = <1024 1024 1024>;
-            hfront-porch = <16 160 216>;
-            hback-porch = <160 160 160>;
-            hsync-len = <1 70 140>;
-            vactive = <600 600 600>;
-            vfront-porch = <1 12 127>;
-            vback-porch = <23 23 23>;
-            vsync-len = <1 10 20>;
-            de-active = <1>;
-            pixelclk-active = <0>;
-        };
-    };
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@2 {
+			reg = <2>;
+
+			lvds_out_panel: endpoint {
+				remote-endpoint = <&panel_in_lvds>;
+			};
+		};
+	};
+};
+
+&panel_lvds {
+	compatible = "panel-lvds";
+	backlight = <&backlight>;
+	data-mapping = "vesa-24";
+	height-mm = <86>;
+	power-supply = <&reg_3p3v>;
+	width-mm = <154>;
+	status = "okay";
+
+	panel-timing {
+        clock-frequency = <51200000>;
+        hactive = <1024 1024 1024>;
+        hfront-porch = <16 160 216>;
+        hback-porch = <160 160 160>;
+        hsync-len = <1 70 140>;
+        vactive = <600 600 600>;
+        vfront-porch = <1 12 127>;
+        vback-porch = <23 23 23>;
+        vsync-len = <1 10 20>;
+        de-active = <1>;
+        pixelclk-active = <0>;
+	};
+
+	port {
+		panel_in_lvds: endpoint {
+			remote-endpoint = <&lvds_out_panel>;
+		};
+	};
+};
+
+&backlight {
+	status = "okay";
+};
+
+/* Verdin I2C_2_DSI */
+&i2c2 {
+	status = "okay";
+};
+
+/* Verdin I2C_1 */
+&i2c4 {
+	status = "okay";
+};
+
+&lcdif {
+	status = "okay";
+};
+
+/* Verdin PWM_3_DSI */
+&pwm1 {
+	status = "okay";
+};
+
+&gpu {
+    status = "okay";
 };

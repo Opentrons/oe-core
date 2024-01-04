@@ -16,4 +16,7 @@ do_install() {
 	echo "export OT_SYSTEM_VERSION=${OT_SYSTEM_VERSION}" >> ${D}/${sysconfdir}/profile.d/ot-environ.sh
 }
 
-FILES_${PN} += "${sysconfdir}/profile.d/ot-environ.sh"
+addtask do_get_oe_version after do_compile before do_install
+do_install[prefuncs] += "do_get_oe_version"
+
+FILES:${PN} += "${sysconfdir}/profile.d/ot-environ.sh"

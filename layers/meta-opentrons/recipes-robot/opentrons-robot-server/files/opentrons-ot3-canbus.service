@@ -17,11 +17,6 @@ Environment=TIME_QUANTUM_NS=100\
 
 ExecStartPre=modprobe can
 ExecStartPre=modprobe can-raw
-# The MCP2518 requires prefetches be word-aligned, and the linux driver
-# doesn't respect that on its own (see
-# https://community.toradex.com/t/can-problem-on-verdin-i-mx8m-mini/12567/24 )
-# so force the prefetch to be 4 (8, 12, etc would also work)
-ExecStartPre=/bin/sh -c "echo 4 > /sys/module/mcp25xxfd/parameters/rx_prefetch_bytes"
 ExecStart=ip link set can0 up\
     type can\
     restart-ms 100\
