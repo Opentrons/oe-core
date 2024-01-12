@@ -97,19 +97,19 @@ python do_rewrite_requirements() {
         bb.debug(1, 'Checking ' + plainname)
 
         if line.startswith('--index-url'): pypi.append(line)
-        elif line.startswith('--editable') or line.startswith('./'):
+        elif line.startswith('--editable') or (line.startswith('./') or line.startswith('../')):
             # an editable probably-local package
             if line.startswith('--editable'):
                 working = line.split('--editable')[-1].strip()
             else:
                 working = line.strip()
-            if not working.startswith('./'):
+            if not (working.startswith('./') or working.startswith('../')):
                 bb.debug(1, 'Skipping {}'.format(line))
                 continue
             working = d.getVar('PIPENV_APP_BUNDLE_PROJECT_ROOT') + '/' + working
             local.append(working)
             bb.debug(1, 'Rewrote local path to ' + working)
-        elif not line.startswith('.') and not '://' in line:
+        elif not (line.startswith('.') or line.startswith('../')) and not '://' in line:
             # This is a package from pypi; check if it's global
             first_nonalpha = [c for c in line if c in '=~^<>']
             pkgname = line.split(first_nonalpha[0])[0] if first_nonalpha else line
@@ -159,7 +159,7 @@ do_compile () {
 
    ${PYTHON} -m pip install \
       -t ${B}/pip-buildenv \
-      hatchling flit flit-core setuptools==65.6.3 setuptools-scm[toml]==7.1.0 wheel==0.38.4 \
+      hatchling hatch-vcs flit flit-core setuptools==65.6.3 setuptools-scm[toml]==7.1.0 wheel==0.38.4 hatch-fancy-pypi-readme expandvars cython \
 
 
    ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
