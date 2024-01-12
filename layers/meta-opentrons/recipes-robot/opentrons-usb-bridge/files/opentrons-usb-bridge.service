@@ -7,7 +7,7 @@ After=nginx.service
 Type=simple
 ExecStart=python3 -m ot3usb
 StateDirectory=opentrons-usb-bridge
-Environment=PYTHONPATH=/opt/ot3usb:/usr/lib/python3.8/site-packages
+Environment=PYTHONPATH=/opt/ot3usb:/usr/lib/python3.10/site-packages
 Restart=on-failure
 TimeoutStartSec=3min
 
