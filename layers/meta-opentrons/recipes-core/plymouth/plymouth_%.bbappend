@@ -11,7 +11,7 @@ EXTRA_OECONF += "--with-udev --with-runtimedir=/run"
 
 do_install:append () {
     install -d 0644 ${D}${datadir}/plymouth/themes/logo-splash
-    install -m 0644 ${WORKDIR}/torizonlogo-white.png ${D}${datadir}/plymouth/themes/logo-splash/logo-splash.png
+    install -m 0644 ${WORKDIR}/logo-splash.png ${D}${datadir}/plymouth/themes/logo-splash/logo-splash.png
     install -m 0644 ${WORKDIR}/logo-splash.plymouth ${D}${datadir}/plymouth/themes/logo-splash/logo-splash.plymouth
 }
 
