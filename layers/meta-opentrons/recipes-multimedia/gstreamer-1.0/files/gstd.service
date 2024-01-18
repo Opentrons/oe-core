@@ -1,7 +1,7 @@
 [Unit]
 Description=gstd
-After=weston@root.service
-Requires=weston@root.service
+After=weston.service
+Requires=weston.service
 Before=multi-user.target
 
 [Service]
