@@ -10,7 +10,7 @@
 id=wired
 type=ethernet
 autoconnect-priority=1
-autoconnect-retries=1
+autoconnect-retries=2
 interface-name=eth0
 permissions=
 
