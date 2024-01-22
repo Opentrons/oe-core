@@ -54,6 +54,7 @@ IMAGE_INSTALL += " \
     opentrons-systemd-units opentrons-ssh-keys \
     python3 python3-misc python3-modules python3-jupyter \
     python3-pip \
+    plymouth \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
