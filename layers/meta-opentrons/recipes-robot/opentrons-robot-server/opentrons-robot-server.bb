@@ -17,7 +17,7 @@ SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-ca
 
 PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
-PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq "
+PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq mosquitto"
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
 
@@ -58,6 +58,6 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d
                        ${sysconfdir}/release-notes.md \
                        "
 
-RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify"
+RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto"
 
 inherit pipenv_app_bundle
