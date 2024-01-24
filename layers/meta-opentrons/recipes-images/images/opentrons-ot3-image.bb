@@ -55,6 +55,7 @@ IMAGE_INSTALL += " \
     python3 python3-misc python3-modules python3-jupyter \
     python3-pip \
     plymouth \
+    mosquitto \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
