@@ -3,15 +3,13 @@ HOMEPAGE = "http://zeromq.org/bindings:python"
 LICENSE = "BSD & LGPL-3.0"
 LIC_FILES_CHKSUM = "file://COPYING.BSD;md5=11c65680f637c3df7f58bbc8d133e96e \
                     file://COPYING.LESSER;md5=12c592fa0bcfff3fb0977b066e9cb69e"
-DEPENDS += "\
-    zeromq \
-    ${PYTHON_PN}-packaging"
+DEPENDS = "zeromq"
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/python-pyzmq:"
 
 SRC_URI += "file://club-rpath-out.patch"
-SRC_URI[md5sum] = "f10b7c3dee2c03557e2c5d00b73dfc7f"
-SRC_URI[sha256sum] = "216f5d7dbb67166759e59b0479bca82b8acf9bed6015b526b8eb10143fb08e77"
+SRC_URI[md5sum] = "200abc1a75bdcfff7adf61304f46f55e"
+SRC_URI[sha256sum] = "296540a065c8c21b26d63e3cea2d1d57902373b16e4256afe46422691903a438"
 
 inherit pypi pkgconfig setuptools3
 

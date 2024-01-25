@@ -1,13 +1,13 @@
 diff --git a/setup.py b/setup.py
-index c9ddcdd7..599b6721 100755
+index d243eaa..98099bc 100755
 --- a/setup.py
 +++ b/setup.py
-@@ -214,8 +214,6 @@ def _add_rpath(settings, path):
+@@ -211,8 +211,6 @@ def _add_rpath(settings, path):
      """
      if sys.platform == 'darwin':
-         settings['extra_link_args'].extend(['-Wl,-rpath', '-Wl,%s' % path])
+         settings['extra_link_args'].extend(['-Wl,-rpath','-Wl,%s' % path])
 -    else:
 -        settings['runtime_library_dirs'].append(path)
  
- 
- def settings_from_prefix(prefix=None):
+ def settings_from_prefix(prefix=None, bundle_libzmq_dylib=False):
+     """load appropriate library/include settings from ZMQ prefix"""
