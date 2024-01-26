@@ -40,6 +40,7 @@ IMAGE_INSTALL += " \
     packagegroup-wifi-fw-tdx-cli \
     packagegroup-tdx-graphical \
     packagegroup-fsl-isp \
+    packagegroup-python3-jupyter \
     udev-extraconf \
     v4l-utils dfu-util \
     bash coreutils makedevs mime-support util-linux \
