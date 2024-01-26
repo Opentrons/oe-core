@@ -1,7 +1,7 @@
 [Unit]
 Description=Start the Opentrons Robot App
-After=weston@root.service
-Requires=weston@root.service
+After=weston.service
+Requires=weston.service
 
 [Service]
 Type=notify
