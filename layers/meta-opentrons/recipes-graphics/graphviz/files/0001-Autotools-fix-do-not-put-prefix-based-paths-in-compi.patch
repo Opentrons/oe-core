@@ -16,24 +16,9 @@ Suggested-by: Daniel Klauer
 Upstream-Status: Backport [https://gitlab.com/graphviz/graphviz/-/commit/012d250a903e13114bce3ba40995fb957fed7848]
 Signed-off-by: Daniel Klauer <daniel.klauer@gin.de>
 ---
- CHANGELOG.md | 3 +++
  configure.ac | 8 --------
- 2 files changed, 3 insertions(+), 8 deletions(-)
+ 1 files changed, 0 insertions(+), 8 deletions(-)
 
-diff --git a/CHANGELOG.md b/CHANGELOG.md
-index b9b7e8e08..3a15fd256 100644
---- a/CHANGELOG.md
-+++ b/CHANGELOG.md
-@@ -39,6 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
-   longer fails due to missing PHP files. #2388
- - Syntax for a loop in `gvmap.sh` has been corrected. This was a regression in
-   Graphviz 2.50.0. #2404
-+- The Autotools build system no longer uses headers and libraries from the
-+  `--prefix` path given on the command line. This previously caused
-+  cross-compilation to incorrectly pick up host headers and libraries. #2442
- 
- ## [8.0.5] – 2023-04-30
- 
 diff --git a/configure.ac b/configure.ac
 index 573a3ee5d..7d53346de 100644
 --- a/configure.ac
