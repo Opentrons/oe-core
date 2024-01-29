@@ -40,7 +40,6 @@ IMAGE_INSTALL += " \
     packagegroup-wifi-fw-tdx-cli \
     packagegroup-tdx-graphical \
     packagegroup-fsl-isp \
-    packagegroup-python3-jupyter \
     udev-extraconf \
     v4l-utils dfu-util \
     bash coreutils makedevs mime-support util-linux \
@@ -57,6 +56,8 @@ IMAGE_INSTALL += " \
     python3-pip \
     plymouth \
     mosquitto \
+    python3-jupyter \
+    python3-nest-asyncio \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
