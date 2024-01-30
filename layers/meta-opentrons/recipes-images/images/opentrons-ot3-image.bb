@@ -52,11 +52,11 @@ IMAGE_INSTALL += " \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
     opentrons-systemd-units opentrons-ssh-keys \
-    python3 python3-misc python3-modules python3-jupyter \
+    python3 python3-misc python3-modules \
     python3-pip \
     plymouth \
     mosquitto \
-    packagegroup-python3-jupyter-opentrons \
+    opentrons-jupyter-notebook python3-nest-asyncio \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
