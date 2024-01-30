@@ -27,4 +27,4 @@ FILES:${PN} += "${sysconfdir}/jupyter/jupyter_notebook_config.py \
                 ${sysconfdir}/systemd/system/jupyter-notebook.service \
 "
 
-RDEPENDS:${PN} += "python3-jupyter"
+RDEPENDS:${PN} += "python3-jupyter python3-nbclient"
