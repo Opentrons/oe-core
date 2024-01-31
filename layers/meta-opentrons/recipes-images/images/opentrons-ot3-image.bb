@@ -56,7 +56,7 @@ IMAGE_INSTALL += " \
     python3-pip \
     plymouth \
     mosquitto \
-    opentrons-jupyter-notebook python3-nest-asyncio \
+    opentrons-jupyter-notebook \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
