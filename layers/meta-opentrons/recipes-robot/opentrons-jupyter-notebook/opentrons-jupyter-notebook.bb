@@ -27,4 +27,4 @@ FILES:${PN} += "${sysconfdir}/jupyter/jupyter_notebook_config.py \
                 ${sysconfdir}/systemd/system/jupyter-notebook.service \
 "
 
-RDEPENDS:${PN} += " python3-jupyter python3-nbclient python3-jupyterlab-pygments "
+RDEPENDS:${PN} += " python3-jupyter python3-nbclient python3-jupyterlab-pygments python3-psutil "
