@@ -48,14 +48,15 @@ IMAGE_INSTALL += " \
     weston-xwayland weston weston-init imx-gpu-viv \
     robot-app-wayland-launch opentrons-robot-app \
     opentrons-robot-server opentrons-update-server \
-    opentrons-jupyter-notebook opentrons-usb-bridge \
+    opentrons-usb-bridge \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
     opentrons-systemd-units opentrons-ssh-keys \
-    python3 python3-misc python3-modules python3-jupyter \
+    python3 python3-misc python3-modules \
     python3-pip \
     plymouth \
     mosquitto \
+    opentrons-jupyter-notebook \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
