@@ -1,0 +1,12 @@
+[Unit]
+Description=Opentrons: Run user-supplied boot scripts
+Requires=basic.target
+After=basic.target
+
+[Service]
+Type=oneshot
+StandardOutput=journal
+ExecStart=/bin/run-parts /var/user-packages/etc/boot.d/
+
+[Install]
+WantedBy=multi-user.target
