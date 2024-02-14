@@ -12,6 +12,7 @@ ExecStopPost=/bin/systemctl start opentrons-loading.service
 TimeoutStartSec=30
 ExitType=cgroup
 NotifyAccess=all
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
