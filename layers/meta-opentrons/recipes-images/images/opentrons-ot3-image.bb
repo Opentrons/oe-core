@@ -59,6 +59,9 @@ IMAGE_INSTALL += " \
     opentrons-jupyter-notebook \
  "
 
+# gpsd is installed by packagegroup-tdx-cli for some reason and it breaks some integrations
+IMAGE_INSTALL -= " gpsd "
+
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
 # port. Luckily, they are only recommended so it is easy to filter them out.
 PACKAGE_EXCLUDE = "libusbgx libusbgx-examples"
