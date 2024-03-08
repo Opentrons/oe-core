@@ -23,7 +23,7 @@ SRC_URI = " \
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-APPLICATION_ENVIRONMENT := '\"DISPLAY=\:0\:0\" \"XDG_SESSION_TYPE=wayland\" \"XDG_SESSION_DESKTOP=kiosk\" \"PYTHONPATH=/opt/opentrons-robot-server\"'
+APPLICATION_ENVIRONMENT := '\"WAYLAND_DISPLAY=wayland-0\" \"XDG_RUNTIME_DIR=/run/user/0\"  \"DISPLAY=\:0\:0\" \"XDG_SESSION_TYPE=wayland\" \"XDG_SESSION_DESKTOP=kiosk\" \"PYTHONPATH=/opt/opentrons-robot-server\"'
 
 WAYLAND_APPLICATION := "/opt/opentrons-app/opentrons --disable-gpu --remote-debugging-port=9222 --discovery.candidates=localhost --discovery.ipFilter=\"127.0.0.1\" --isOnDevice=1 --no-sandbox --enable-features=UseOzonePlatform --ozone-platform=wayland --in-process-gpu --python.pathToPythonOverride=/usr/bin/python3"
 
