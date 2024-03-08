@@ -76,5 +76,7 @@ RDEPENDS:${PN} = "udev \
                   libxcomposite libx11 libxrender libxext libx11-xcb libxi \
                   libxtst libxcursor libxrandr libxscrnsaver \
                   atk at-spi2-atk\
-                  cups"
+                  cups \
+                  vulkan-loader vulkan-tools \
+                  "
 DEPENDS = " nodejs-native udev openssl-native "
