@@ -58,7 +58,11 @@ fakeroot do_install(){
     # really system utilities and (in the case of wayland) actually can break
     # communication with the system because it uses a weird RPC thing and
     # really needs to get the system version. So we remove the local versions.
-    rm ${DESTDIR}/libEGL.so ${DESTDIR}/libGLESv2.so ${DESTDIR}/libvulkan.so.1
+    # however, chrome for some reason opens these libraries via direct calls
+    # or has a strict rpath or something so we need to symlink them explicitly
+    ln -s /usr/lib/libEGL.so ${DESTDIR}/libEGL.so
+    ln -s /usr/lib/libGLESv2.so ${DESTDIR}/libGLESv2.so
+    ln -s /usr/lib/libvulkan.so.1 ${DESTDIR}/libvulkan.so.1
 
 }
 
