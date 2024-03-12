@@ -9,6 +9,8 @@ inherit features_check
 
 inherit insane
 
+INSANE_SKIP:${PN} += "dev-so"
+
 do_configure(){
     npm install -g yarn
     cd ${S}
