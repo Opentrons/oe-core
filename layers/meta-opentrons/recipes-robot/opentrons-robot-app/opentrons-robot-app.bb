@@ -60,6 +60,7 @@ fakeroot do_install(){
     # really needs to get the system version. So we remove the local versions.
     # however, chrome for some reason opens these libraries via direct calls
     # or has a strict rpath or something so we need to symlink them explicitly
+    rm ${DESTDIR}/libEGL.so ${DESTDIR}/libGLESv2.so ${DESTDIR}/libvulkan.so.1
     ln -s /usr/lib/libEGL.so ${DESTDIR}/libEGL.so
     ln -s /usr/lib/libGLESv2.so ${DESTDIR}/libGLESv2.so
     ln -s /usr/lib/libvulkan.so.1 ${DESTDIR}/libvulkan.so.1
