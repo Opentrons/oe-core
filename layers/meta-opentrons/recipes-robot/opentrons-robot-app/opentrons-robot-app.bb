@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 inherit features_check
 
-INSANE_SKIP:${PN} += " dev-so "
+inherit insane
 
 do_configure(){
     npm install -g yarn
@@ -70,7 +70,7 @@ fakeroot do_install(){
 REQUIRED_DISTRO_FEATURES = "x11"
 
 do_install[depends] += "virtual/fakeroot-native:do_populate_sysroot"
-INSANE_SKIP:${PN} = " already-stripped file-rdeps"
+INSANE_SKIP:${PN} = " already-stripped file-rdeps dev-so "
 FILES:${PN} = "/opt/opentrons-app/* /opt/opentrons-app/**/*"
 # todo figure out how to not need cups
 RDEPENDS:${PN} = "udev \
