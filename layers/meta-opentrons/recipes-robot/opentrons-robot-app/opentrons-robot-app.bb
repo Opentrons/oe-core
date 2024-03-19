@@ -58,14 +58,19 @@ fakeroot do_install(){
     # really system utilities and (in the case of wayland) actually can break
     # communication with the system because it uses a weird RPC thing and
     # really needs to get the system version. So we remove the local versions.
+    # however, chrome for some reason opens these libraries via direct calls
+    # or has a strict rpath or something so we need to symlink them explicitly
     rm ${DESTDIR}/libEGL.so ${DESTDIR}/libGLESv2.so ${DESTDIR}/libvulkan.so.1
+    ln -s /usr/lib/libEGL.so ${DESTDIR}/libEGL.so
+    ln -s /usr/lib/libGLESv2.so ${DESTDIR}/libGLESv2.so
+    ln -s /usr/lib/libvulkan.so.1 ${DESTDIR}/libvulkan.so.1
 
 }
 
 REQUIRED_DISTRO_FEATURES = "x11"
 
 do_install[depends] += "virtual/fakeroot-native:do_populate_sysroot"
-INSANE_SKIP:${PN} = " already-stripped file-rdeps"
+INSANE_SKIP:${PN} = " already-stripped file-rdeps dev-so "
 FILES:${PN} = "/opt/opentrons-app/* /opt/opentrons-app/**/*"
 # todo figure out how to not need cups
 RDEPENDS:${PN} = "udev \
@@ -76,5 +81,7 @@ RDEPENDS:${PN} = "udev \
                   libxcomposite libx11 libxrender libxext libx11-xcb libxi \
                   libxtst libxcursor libxrandr libxscrnsaver \
                   atk at-spi2-atk\
-                  cups"
+                  cups \
+                  vulkan-loader vulkan-tools \
+                  "
 DEPENDS = " nodejs-native udev openssl-native "
