@@ -57,7 +57,7 @@ IMAGE_INSTALL += " \
     plymouth \
     mosquitto \
     opentrons-jupyter-notebook \
-    gstreamer1.0-libav \
+    x264 \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
