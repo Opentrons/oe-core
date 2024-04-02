@@ -57,7 +57,7 @@ IMAGE_INSTALL += " \
     plymouth \
     mosquitto \
     opentrons-jupyter-notebook \
-    x264 \
+    libjpeg-turbo \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
