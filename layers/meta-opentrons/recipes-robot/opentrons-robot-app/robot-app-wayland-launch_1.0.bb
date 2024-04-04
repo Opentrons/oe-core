@@ -19,6 +19,7 @@ SRC_URI = " \
     file://opentrons-loading.service \
     file://opentrons-loading.sh \
     file://loading.mp4 \
+    file://oem_mode_default.png` \
 "
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
@@ -48,9 +49,13 @@ do_install () {
     install -d ${D}/${datadir}
     install -d ${D}/${datadir}/opentrons
     install -m 0644 ${S}/loading.mp4 ${D}/${datadir}/opentrons/loading.mp4
+    install -m 0644 ${S}/oem_mode_default.png ${D}/${datadir}/opentrons/oem_mode_default.png
 }
 
-FILES:${PN}:append := " ${datadir}/opentrons/loading.mp4 "
+FILES:${PN}:append := " \
+    ${datadir}/opentrons/loading.mp4 \
+    ${datadir}/opentrons/oem_mode_default.png \
+"
 
 
 SYSTEMD_PACKAGES = "${PN}"
