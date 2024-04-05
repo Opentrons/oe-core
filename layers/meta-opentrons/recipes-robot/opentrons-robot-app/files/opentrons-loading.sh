@@ -23,9 +23,10 @@ oem_mode_splash_custom=$OT_SYSTEM_SERVER_oem_mode_splash_custom
 oem_mode_splash_default="/usr/share/opentrons/oem_mode_default.png"
 opentrons_default_splash="/usr/share/opentrons/loading.mp4"
 splash_screen_path="${opentrons_default_splash}"
-if [[ $oem_mode_enabled == 1 ]]; then
+PATTERN='^(True|true|1)$'
+if [[ "${oem_mode_enabled}" =~ $PATTERN ]]; then
 	echo "OEM Mode is Enabled"
-	if [ -f $oem_mode_splash_custom ]; then
+	if [ -f "${oem_mode_splash_custom}" ]; then
 		echo "Custom OEM file is set: ${oem_mode_splash_custom}"
 		splash_screen_path=$oem_mode_splash_custom
 	else
@@ -35,7 +36,7 @@ if [[ $oem_mode_enabled == 1 ]]; then
 fi
 
 # Make sure the file exists
-if [ ! -f $splash_screen_path ]; then
+if [ ! -f "${splash_screen_path}" ]; then
 	echo "ERROR: Splash screen file not found: ${splash_screen_path}"
 	exit 0
 fi
