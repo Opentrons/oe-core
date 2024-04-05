@@ -24,10 +24,6 @@ SRC_URI = " \
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 
-do_compile () {
-    sed -e "s:@@wayland-application@@:${WAYLAND_APPLICATION}:" -e "s:@@initial-path@@:${INITIAL_PATH}:" opentrons-robot-app.sh.in > opentrons-robot-app.sh
-    sed -e "s:@@application-environment@@:${APPLICATION_ENVIRONMENT}:" opentrons-robot-app.service.in > opentrons-robot-app.service
-}
 
 do_install () {
     install -d ${D}/${bindir} ${D}${systemd_unitdir}/system/
