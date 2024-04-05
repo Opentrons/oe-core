@@ -19,7 +19,7 @@ SRC_URI = " \
     file://opentrons-loading.service \
     file://opentrons-loading.sh \
     file://loading.mp4 \
-    file://oem_mode_default.png` \
+    file://oem_mode_default.png \
 "
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"

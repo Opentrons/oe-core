@@ -37,7 +37,7 @@ fi
 # Make sure the file exists
 if [ ! -f $splash_screen_path ]; then
 	echo "ERROR: Splash screen file not found: ${splash_screen_path}"
-	exit 1
+	exit 0
 fi
 
 echo "Setting the splash screen to: ${splash_screen_path}"
