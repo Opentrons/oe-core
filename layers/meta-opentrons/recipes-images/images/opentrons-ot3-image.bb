@@ -61,7 +61,7 @@ IMAGE_INSTALL += " \
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
 # port. Luckily, they are only recommended so it is easy to filter them out.
-PACKAGE_EXCLUDE = "libusbgx libusbgx-examples"
+PACKAGE_EXCLUDE = "libusbgx libusbgx-examples gpsd"
 
 # exclude Toradex hostapd-example as this causes mDNS discovery issues when interface uap0 connects/disconnects.
 PACKAGE_EXCLUDE += " hostapd-example"
