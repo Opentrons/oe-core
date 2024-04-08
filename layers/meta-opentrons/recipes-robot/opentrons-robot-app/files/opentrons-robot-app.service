@@ -5,7 +5,12 @@ Requires=weston.service
 
 [Service]
 Type=notify
-Environment=@@application-environment@@
+Environment="WAYLAND_DISPLAY=wayland-0"
+Environment="XDG_RUNTIME_DIR=/run/user/0"
+Environment="DISPLAY=:0:0"
+Environment="XDG_SESSION_TYPE=wayland"
+Environment="XDG_SESSION_DESKTOP=kiosk"
+Environment="PYTHONPATH=/opt/opentrons-robot-server"
 ExecStart=/usr/bin/opentrons-robot-app.sh
 ExecStartPost=/bin/systemctl stop opentrons-loading.service
 ExecStopPost=/bin/systemctl start opentrons-loading.service
