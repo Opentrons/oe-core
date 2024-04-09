@@ -7,7 +7,7 @@ After=gstd.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/opentrons-loading.sh /usr/share/opentrons/loading.mp4
+ExecStart=/usr/bin/opentrons-loading.sh
 
 [Install]
 WantedBy=opentrons-robot-app.service
