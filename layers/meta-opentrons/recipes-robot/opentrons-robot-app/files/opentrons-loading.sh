@@ -43,7 +43,7 @@ fi
 
 echo "Setting the splash screen to: ${splash_screen_path}"
 # Render PNG if this is a custom splash, otherwise render opentrons loading video
-if [[ "$splash_screen_path" =~ "*.png" ]]; then
+if [[ "$splash_screen_path" = *.png ]]; then
 	echo "rendering PNG"
 	PIPELINE="filesrc location=$splash_screen_path ! pngdec ! imagefreeze ! glimagesink render-rectangle=\"<0,0,1024,600>\""
 else
