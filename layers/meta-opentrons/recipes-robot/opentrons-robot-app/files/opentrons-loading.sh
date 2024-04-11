@@ -15,7 +15,7 @@ trap "gstd-client pipeline_delete p; exit" SIGHUP SIGINT SIGTERM
 system_env_file="/var/lib/opentrons-system-server/system.env"
 if [ -f $system_env_file ]; then
 	echo "Found system environment file: ${system_env_file}"
-	export $(grep -v '^#' $system_env_file | xargs)
+	export $(grep -v '^#' $system_env_file | xargs | tr -d \'\")
 fi
 
 oem_mode_enabled=$OT_SYSTEM_SERVER_oem_mode_enabled
@@ -23,7 +23,7 @@ oem_mode_splash_custom=$OT_SYSTEM_SERVER_oem_mode_splash_custom
 oem_mode_splash_default="/usr/share/opentrons/oem_mode_default.png"
 opentrons_default_splash="/usr/share/opentrons/loading.mp4"
 splash_screen_path="${opentrons_default_splash}"
-PATTERN='^(True|true|1)$'
+PATTERN='(True|true|1)'
 if [[ "${oem_mode_enabled}" =~ $PATTERN ]]; then
 	echo "OEM Mode is Enabled"
 	if [ -f "${oem_mode_splash_custom}" ]; then
