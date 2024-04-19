@@ -226,6 +226,8 @@ jobs:
           find ${_oe_images} -name "VERSION.json" -exec cp {} ${_artifact_s3} \;
           find ${_oe_images} -name "release-notes.md" -exec cp {} ${_artifact_s3} \;
           tar czf ${_artifact_s3}/buildstats.tar.gz ${_oe_tmp}/buildstats
+          zip "${_oe_build}/licenses.zip" "${_oe_build}/licenses/**/*"
+          mv ${_oe_build}/licenses.zip ${_artifact_s3}/licenses.zip
 
           mkdir -p ${_artifact_versioned}
           _fulltag="${{needs.decide-refs.outputs.monorepo}}"
