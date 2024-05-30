@@ -31,6 +31,8 @@ do_install:append() {
         install -m 644 ${WORKDIR}/absorbance-96-v1.0.2.byoup ${D}${FIRMWARE_DIR}
 }
 
+RDEPENDS:${PN} += "hidapi"
+
 FILES:${PN} += "${libdir}/libbyony_device_library.so \
                 ${libdir}/firmware/Absorbance_96_Auto_2024-05-03-V1.0.0.byoup \
                 ${libdir}/firmware/Absorbance_96_Auto_2024-05-14-V1.0.2.byoup \
