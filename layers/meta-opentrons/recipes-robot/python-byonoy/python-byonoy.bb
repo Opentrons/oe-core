@@ -1,6 +1,5 @@
 DESCRIPTION = "installs Byonoy Python library and firmware files"
-LICENSE = "Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
+LICENSE = "CLOSED"
 
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
 SRC_URI += "file://pybyonoy_device_library.cpython-310-aarch64-linux-gnu.so \
