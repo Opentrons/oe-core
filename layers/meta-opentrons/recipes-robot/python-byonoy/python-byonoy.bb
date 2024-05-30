@@ -26,3 +26,4 @@ FILES:${PN} += "${libdir}/libbyony_device_library.so \
                 ${libdir}/firmware/Absorbance_96_Auto_2024-05-14-V1.0.2.byoup \
                 ${libdir}/python3.10/site-packages/pybyonoy_device_library.cpython-310-aarch64-linux-gnu.so \
 "
+INSANE_SKIP:${PN} = "already-stripped"
