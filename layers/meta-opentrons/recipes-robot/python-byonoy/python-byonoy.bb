@@ -15,7 +15,7 @@ COMPATIBLE_HOST = "aarch64.*-linux"
 
 # The following is needed for unversioned pre-built libraries
 # See https://docs.yoctoproject.org/dev-manual/prebuilt-libraries.html#non-versioned-libraries
-INSANE_SKIP:${PN} = "ldflags"
+INSANE_SKIP:${PN} = "ldflags already-stripped"
 INHIBIT_PACKAGE_STRIP = "1"
 INHIBIT_SYSROOT_STRIP = "1"
 SOLIBS = ".so"
