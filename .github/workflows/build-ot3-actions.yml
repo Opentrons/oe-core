@@ -38,6 +38,7 @@ jobs:
       ot3-firmware: ${{ steps.build-refs.outputs.ot3-firmware }}
       variant: ${{ steps.build-refs.outputs.variant }}
       build-type: ${{ steps.build-refs.outputs.build-type }}
+      asg-name: ${{ steps.determine-asg.outputs.asg-name }}
     name: 'deciding refs to build'
     steps:
       - name: Fetch initial sources for action
@@ -53,8 +54,51 @@ jobs:
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
           ot3-firmware: ${{ inputs.ot3-firmware-ref }}
-  run-build:
+      - name: Determine ASG Name
+        id: determine-asg
+        run: |
+          if [[ "${{ inputs.infra-stage }}" == *"prod"* ]]; then
+            if [[ "${{ steps.build-refs.outputs.build-type }}" == "release" ]]; then
+              echo "asg-name=gh_actions_asg_release_ci_prod_openembedded_asg" >> $GITHUB_OUTPUT
+            else
+              echo "asg-name=gh_actions_asg_ot3_ci_prod_openembedded_asg" >> $GITHUB_OUTPUT
+            fi
+          else
+            if [[ "${{ steps.build-refs.outputs.build-type }}" == "release" ]]; then
+              echo "asg-name=gh_actions_asg_release_ci_dev_openembedded_asg" >> $GITHUB_OUTPUT
+            else
+              echo "asg-name=gh_actions_asg_ot3_ci_dev_openembedded_asg" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+  start-builder:
+    timeout-minutes: 2
     needs: decide-refs
+    runs-on: ubuntu-latest
+    name: 'Start Builder'
+    steps:
+      - name: Fetch initial sources for action
+        uses: 'actions/checkout@v3'
+        with:
+          submodules: false
+          fetch-depth: 0
+          path: ./oe-core-for-workflow
+      - name: Configure AWS Credentials
+        uses: './oe-core-for-workflow/.github/actions/aws-credentials'
+        id: aws
+        with:
+          access_key_id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
+          secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
+          region: us-east-1 # ASGs are all in us-east-1
+          stage: ${{ inputs.infra-stage }}
+      - name: Increase ASG Desired Capacity to 1
+        run: |
+          aws --profile=${{ steps.aws.outputs.profile_name }} autoscaling update-auto-scaling-group --auto-scaling-group-name ${{ needs.decide-refs.outputs.asg-name }} --desired-capacity 1
+
+  run-build:
+    needs: 
+      - decide-refs
+      - start-builder
     strategy:
       matrix:
         build_env: [ '${{ inputs.infra-stage }}' ]
@@ -337,3 +381,31 @@ jobs:
         if: ${{ failure() }}
         run: |
           rm -rf ${LOCAL_CACHE:-./cache}/*
+
+  terminate-builder:
+      timeout-minutes: 2
+      needs:
+        - decide-refs
+        - start-builder
+        - run-build
+      runs-on: ubuntu-latest
+      name: 'Terminate Builder'
+      if: ${{ always() && needs.start-builder.result == 'success' && needs.decide-refs.result == 'success' }}
+      steps:
+        - name: Fetch initial sources for action
+          uses: 'actions/checkout@v3'
+          with:
+            submodules: false
+            fetch-depth: 0
+            path: ./oe-core-for-workflow
+        - name: Configure AWS Credentials
+          uses: './oe-core-for-workflow/.github/actions/aws-credentials'
+          id: aws
+          with:
+            access_key_id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
+            secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
+            region: us-east-1 # ASGs are all in us-east-1
+            stage: ${{ inputs.infra-stage }}
+        - name: Decrease ASG Desired Capacity to 0
+          run: |
+            aws --profile=${{ steps.aws.outputs.profile_name }} autoscaling update-auto-scaling-group --auto-scaling-group-name ${{ needs.decide-refs.outputs.asg-name }} --desired-capacity 0
