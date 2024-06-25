@@ -15,9 +15,10 @@ ExecStart=/usr/bin/opentrons-robot-app.sh
 ExecStartPost=/bin/systemctl stop opentrons-loading.service
 ExecStopPost=/bin/systemctl start opentrons-loading.service
 TimeoutStartSec=30
+TimeoutStopSec=10
 ExitType=cgroup
 NotifyAccess=all
-Restart=on-failure
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
