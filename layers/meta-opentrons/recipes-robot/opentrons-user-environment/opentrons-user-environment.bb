@@ -14,8 +14,8 @@ do_install() {
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-run-boot-scripts.service ${D}${systemd_system_unitdir}/opentrons-run-boot-scripts.service
     install -d ${D}/${bindir}
-    install -m 0666 ${WORKDIR}/opentrons_simulate ${D}${bindir}/opentrons_simulate
-    install -m 0666 ${WORKDIR}/opentrons_execute ${D}${bindir}/opentrons_execute
+    install -m 0555 ${WORKDIR}/opentrons_simulate ${D}${bindir}/opentrons_simulate
+    install -m 0555 ${WORKDIR}/opentrons_execute ${D}${bindir}/opentrons_execute
 	# add the openembedded version to ot-environ file
 	echo "export OT_SYSTEM_VERSION=${OT_SYSTEM_VERSION}" >> ${D}/${sysconfdir}/profile.d/ot-environ.sh
 }
