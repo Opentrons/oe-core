@@ -47,15 +47,14 @@ IMAGE_INSTALL += " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
     plymouth mosquitto hidapi \
-    python3 python3-misc python3-modules python3-pip \
+    python3 python3-misc python3-modules python3-pip python3-psutil\
     robot-app-wayland-launch opentrons-robot-app \
     opentrons-robot-server opentrons-update-server \
     opentrons-usb-bridge opentrons-jupyter-notebook \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
-    opentrons-systemd-units opentrons-ssh-keys \
+    opentrons-systemd-units opentrons-ssh-keys opentrons-system-resource-tracker \
     libjpeg-turbo \
-    python3-psutil \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
@@ -109,7 +108,9 @@ python do_create_opentrons_manifest() {
                                    "opentrons-system-server-version.json", \
                                    "opentrons-api-version.json", \
                                    "opentrons-usb-bridge-version.json", \
-                                   "opentrons-firmware-version.json"]
+                                   "opentrons-firmware-version.json", \
+                                   "opentrons-performance-metrics-version.json" \
+                                    ]
 
     opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')
     version_files_present = os.listdir(opentrons_versions_dir)
