@@ -55,6 +55,7 @@ IMAGE_INSTALL += " \
     opentrons-user-environment opentrons-module-firmware \
     opentrons-systemd-units opentrons-ssh-keys \
     libjpeg-turbo \
+    python3-psutil \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
