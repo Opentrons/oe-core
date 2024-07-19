@@ -2,9 +2,9 @@ DESCRIPTION = "psutil is a cross-platform library for retrieving information on 
 HOMEPAGE = "https://github.com/giampaolo/psutil"
 SECTION = "devel/python"
 LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=d2ac07f3999abbbb82c4c1a5397a2b27"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=a9c72113a843d0d732a0ac1c200d81b1"
 
-SRC_URI[sha256sum] = "9e4c75b17b7c4e40b0d3f6e3e44dc9f9a23e5468ae75c4c28f42d3717cfc2580"
+SRC_URI[sha256sum] = "187588c10ff4804b91e0c947d6b1a4006dbb633261c0f869865de518603c5d5e"
 SRC_URI = "https://github.com/giampaolo/psutil/archive/refs/tags/release-6.0.0.tar.gz"
 
 S = "${WORKDIR}/psutil-release-6.0.0"
