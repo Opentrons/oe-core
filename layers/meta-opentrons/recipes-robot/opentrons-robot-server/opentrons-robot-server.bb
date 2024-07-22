@@ -11,9 +11,9 @@ OT_PACKAGE = "robot-server"
 inherit insane systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
-SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service"
+SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service opentrons-system-resource-tracker.service"
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
-SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-modules.rules"
+SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-system-resource-tracker.service file://opentrons-ot3-canbus.service file://95-opentrons-modules.rules"
 
 PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
@@ -42,22 +42,27 @@ do_install:append () {
     install -d ${D}/opentrons_versions
     python3 ${S}/scripts/python_build_utils.py robot-server ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-robot-server-version.json
     python3 ${S}/scripts/python_build_utils.py api ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-api-version.json
+    python3 ${S}/scripts/python_build_utils.py performance-metrics ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/performance-metrics.json
 
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-robot-server.service ${D}${systemd_system_unitdir}/opentrons-robot-server.service
     install -d ${D}${systemd_system_unitdir}/opentrons-robot-server.service.d
     install -m 0644 ${B}/robot-server-version.conf ${D}${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf
     install -m 0644 ${WORKDIR}/opentrons-ot3-canbus.service ${D}${systemd_system_unitdir}/opentrons-ot3-canbus.service
+    install -m 0644 ${WORKDIR}/opentrons-system-resource-tracker.service ${D}/${systemd_system_unitdir}/opentrons-system-resource-tracker.service
+
     install -d ${D}${sysconfdir}/udev/rules.d/
     install -m 0644 ${WORKDIR}/95-opentrons-modules.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-modules.rules
+    
 }
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d \
                        ${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf \
+                       ${systemd_system_unitdir}/opentrons-system-resource-tracker.service.d/system-resource-tracker-version.conf \
                        ${sysconfdir}/udev/rules.d/95-opentrons-modules.rules \
                        ${sysconfdir}/release-notes.md \
                        "
 
-RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy"
+RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy python3-psutil"
 
 inherit pipenv_app_bundle

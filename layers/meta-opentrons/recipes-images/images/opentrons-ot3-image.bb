@@ -53,7 +53,7 @@ IMAGE_INSTALL += " \
     opentrons-usb-bridge opentrons-jupyter-notebook \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
-    opentrons-systemd-units opentrons-ssh-keys opentrons-system-resource-tracker \
+    opentrons-systemd-units opentrons-ssh-keys \
     libjpeg-turbo \
  "
 
