@@ -42,7 +42,7 @@ do_install:append () {
     install -d ${D}/opentrons_versions
     python3 ${S}/scripts/python_build_utils.py robot-server ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-robot-server-version.json
     python3 ${S}/scripts/python_build_utils.py api ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-api-version.json
-    python3 ${S}/scripts/python_build_utils.py performance-metrics ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/performance-metrics.json
+    python3 ${S}/scripts/python_build_utils.py performance-metrics ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-performance-metrics-version.json
 
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-robot-server.service ${D}${systemd_system_unitdir}/opentrons-robot-server.service
