@@ -1,4 +1,4 @@
-DESCRIPTION = "installs Byonoy Python library and firmware files"
+DESCRIPTION = "Installs Byonoy Python library and firmware files."
 LICENSE = "CLOSED"
 
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
@@ -23,8 +23,8 @@ FILES_SOLIBSDEV = ""
 
 do_install:append() {
         # install the python library to /usr/lib/python3.10/site-packages
-        install -m 644 ${WORKDIR}/pybyonoy_device_library.cpython-310-aarch64-linux-gnu.so ${D}${libdir}/python3.10/site-packages
-        install -m 644 ${WORKDIR}/libbyonoy_device_library.so ${D}${libdir}
+        install -m 755 ${WORKDIR}/pybyonoy_device_library.cpython-310-aarch64-linux-gnu.so ${D}${libdir}/python3.10/site-packages
+        install -m 755 ${WORKDIR}/libbyonoy_device_library.so ${D}${libdir}
         # install the firmware files to /usr/lib/firmware
         install -d ${D}${FIRMWARE_DIR}
         install -m 644 ${WORKDIR}/absorbance-96-v1.0.0.byoup ${D}${FIRMWARE_DIR}
