@@ -126,8 +126,8 @@ python do_rewrite_requirements() {
     formatted_pypi_file = '\n'.join(pypi) + '\n'
     formatted_local_file = '\n'.join(local) + '\n'
     
-    bb.debug(1, "pypi.txt content: \n {}".format(formatted_pypi_file))
-    bb.debug(1, "local.txt content: \n {}".format(formatted_local_file))
+    bb.verbnote("pypi.txt content: \n {}".format(formatted_pypi_file))
+    bb.verbnote("local.txt content: \n {}".format(formatted_local_file))
 
     with open(pypi_outfile, 'w') as pypi_outfile_obj:
          pypi_outfile_obj.write(formatted_pypi_file)
