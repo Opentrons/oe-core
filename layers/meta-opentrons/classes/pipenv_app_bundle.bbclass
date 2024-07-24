@@ -130,7 +130,7 @@ python do_rewrite_requirements() {
     bb.debug(1, "local.txt content: \n {}".format(formatted_local_file))
 
     with open(pypi_outfile, 'w') as pypi_outfile_obj:
-         pypi_outfile_obj.write()
+         pypi_outfile_obj.write(formatted_pypi_file)
     with open(local_outfile, 'w') as local_outfile_obj:
          local_outfile_obj.write(formatted_local_file)
 }
