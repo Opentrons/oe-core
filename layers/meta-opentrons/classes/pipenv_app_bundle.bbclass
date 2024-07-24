@@ -122,10 +122,17 @@ python do_rewrite_requirements() {
         else:
             bb.debug(1, 'Keeping ' + line)
             pypi.append(line)
+
+    formatted_pypi_file = '\n'.join(pypi) + '\n'
+    formatted_local_file = '\n'.join(local) + '\n'
+    
+    bb.debug(1, "pypi.txt content: \n {}".format(formatted_pypi_file))
+    bb.debug(1, "local.txt content: \n {}".format(formatted_local_file))
+
     with open(pypi_outfile, 'w') as pypi_outfile_obj:
-         pypi_outfile_obj.write('\n'.join(pypi) + '\n')
+         pypi_outfile_obj.write()
     with open(local_outfile, 'w') as local_outfile_obj:
-         local_outfile_obj.write('\n'.join(local) + '\n')
+         local_outfile_obj.write(formatted_local_file)
 }
 
 do_rewrite_requirements[vardeps] += " PIPENV_APP_BUNDLE_USE_GLOBAL PIPENV_APP_BUNDLE_EXTRAS "
