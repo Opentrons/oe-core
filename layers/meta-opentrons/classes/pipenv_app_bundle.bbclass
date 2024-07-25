@@ -66,6 +66,7 @@ python do_rewrite_requirements() {
         orig = reqsfile_obj.read().split('\n')
     condensed = []
     working = ''
+    bb.verbnote("original file: {}".format("\n".join(orig)))
     for line in orig:
         if not line.endswith('\\'):
             working += line.strip()
@@ -126,8 +127,8 @@ python do_rewrite_requirements() {
     formatted_pypi_file = '\n'.join(pypi) + '\n'
     formatted_local_file = '\n'.join(local) + '\n'
     
-    bb.verbnote("pypi.txt content: \n {}".format(formatted_pypi_file))
-    bb.verbnote("local.txt content: \n {}".format(formatted_local_file))
+    bb.verbnote("pypi.txt content:  {}".format(formatted_pypi_file))
+    bb.verbnote("local.txt content: {}".format(formatted_local_file))
 
     with open(pypi_outfile, 'w') as pypi_outfile_obj:
          pypi_outfile_obj.write(formatted_pypi_file)
