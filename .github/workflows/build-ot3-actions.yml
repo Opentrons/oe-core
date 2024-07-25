@@ -28,17 +28,6 @@ on:
           - 'stage-staging'
           - 'stage-dev'
         default: 'stage-prod'
-      bitbake-debug-level:
-        description: |
-          What debug level to use, if any. Can be 1, 2, 3, or 0 for no debug.
-        required: false
-        type: choice
-        options:
-          - '1'
-          - '2'
-          - '3'
-          - '0'
-        default: '0'
 
 jobs:
   decide-refs:
@@ -201,14 +190,8 @@ jobs:
           ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
           tmp_mount="type=tmpfs,dst=/tmp"
-          bb_debug_level=${{ inputs.bitbake-debug-level }}
-          if [ $bb_debug_level -ne 0 ]; then
-              env_option="--env BBDEBUG=$bb_debug_level"
-          else
-              env_option=""
-          fi
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount $env_option ot3-image:latest opentrons-ot3-image"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount $env_option ot3-image:latest opentrons-ot3-image
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af
