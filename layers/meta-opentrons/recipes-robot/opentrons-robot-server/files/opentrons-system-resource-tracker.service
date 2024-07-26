@@ -7,7 +7,7 @@ Type=notify
 ExecStart=python3 -m performance_metrics.system_resource_tracker
 StateDirectory=system-resource-tracker
 Environment=PYTHONPATH=/opt/opentrons-robot-server:/usr/lib/python3.10/site-packages
-Environment=OT_SYSTEM_RESOURCE_TRACKER_ENABLED=true
+Environment=OT_SYSTEM_RESOURCE_TRACKER_ENABLED=false
 Environment=OT_SYSTEM_RESOURCE_TRACKER_REFRESH_INTERVAL=15.0
 
 Restart=no
