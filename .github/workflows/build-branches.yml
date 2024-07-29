@@ -1,12 +1,12 @@
-name: 'Start an OT3 image build on a git branch'
-run-name: 'Starting a branch build of OT3 software for ${{ github.ref_name }}'
+name: 'Start a Flex image build on a git branch'
+run-name: 'Starting a branch build of Flex for ${{ github.ref_name }}'
 
 on:
   push:
     branches:
-      - '*'
-    tags-ignore:
-      - '*'
+      - 'main'
+  pull_request:
+
 
 jobs:
   start-build:
