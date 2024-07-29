@@ -15,7 +15,7 @@ on:
         default: '-'
       ot3-firmware-ref:
         description: |
-          Ref of https://github.com/opentrons/ot3-firmware to build. ONLY use a tag ref if you are trying to actually release!!! It MUST be a full ref, e.g. refs/heads/main or  or '-' to indicate not-specified. If not specified, will be decided based on the monorepo ref; if that isn't specified, will be main.
+          Ref of https://github.com/opentrons/ot3-firmware to build. ONLY use a tag ref if you are trying to actually release!!! It MUST be a full ref, e.g. refs/heads/main or refs/tags/v52 or '-' to indicate not-specified. If not specified, will be decided based on the monorepo ref; if that isn't specified, will be main.
         required: false
         default: '-'
       infra-stage:
