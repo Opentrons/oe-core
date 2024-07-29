@@ -28,10 +28,6 @@ on:
           - 'stage-dev'
         default: 'stage-prod'
 
-concurrency:
-  group: '${{ inputs.monorepo-ref }}-${{ inputs.oe-core-ref }}-${{ inputs.ot3-firmware-ref }}'
-  cancel-in-progress: true
-
 jobs:
   decide-refs:
     runs-on: ubuntu-latest

@@ -4,13 +4,12 @@ This directory contains git workflows for building our openembedded system.
 
 The main workflow that does the build is [build-ot3-actions.yml](build-ot3-actions.yml). This workflow runs on self-hosted runners on AWS. Custom caching is used to reduce build times. [build-ot3-actions.yml](build-ot3-actions.yml) is triggered **only** by workflow_dispatch.
 
-## Builds, Triggers, and Concurrency
+## Triggers
 
-> Builds are costly and take at least an hour. We want to avoid running them unnecessarily. Soon we will move to ephemeral runners that are dynamically requested, but currently we use always on runners in EC2. This limits us to one run per "channel". Concurrency allows us to avoid stacking up builds when multiple merges or commits happen in quick succession. A concurrency group containing tags should only be initiated during the release process.
+> Builds are costly and take at least an hour. We want to avoid running them unnecessarily. Soon we will move to ephemeral runners that are dynamically requested, but currently we are limited to one run per "channel".
 
 - Builds triggered by this repository itself are controlled by [build-branches.yml](build-branches.yml)
 - <https://github.com/Opentrons/opentrons> triggers the majority of builds. The most common triggers are pushes to its `edge` branch and tagging of releases.
-  - we expect the concurrency group `edge----` to get cancelled frequently, but this makes sense as we don't need a build for every commit to edge.  Instead we will have a build finish every commit to `edge` not followed by another commit within ~1.5 hours.
 - <https://github.com/Opentrons/ot3-firmware> triggers builds on pushes to its `main` branch.
 
 ## Nuances of caching
