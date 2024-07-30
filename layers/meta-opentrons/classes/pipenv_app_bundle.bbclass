@@ -66,6 +66,7 @@ python do_rewrite_requirements() {
         orig = reqsfile_obj.read().split('\n')
     condensed = []
     working = ''
+    bb.verbnote("original file: {}".format("\n".join(orig)))
     for line in orig:
         if not line.endswith('\\'):
             working += line.strip()
@@ -122,10 +123,17 @@ python do_rewrite_requirements() {
         else:
             bb.debug(1, 'Keeping ' + line)
             pypi.append(line)
+
+    formatted_pypi_file = '\n'.join(pypi) + '\n'
+    formatted_local_file = '\n'.join(local) + '\n'
+    
+    bb.verbnote("pypi.txt content:  {}".format(formatted_pypi_file))
+    bb.verbnote("local.txt content: {}".format(formatted_local_file))
+
     with open(pypi_outfile, 'w') as pypi_outfile_obj:
-         pypi_outfile_obj.write('\n'.join(pypi) + '\n')
+         pypi_outfile_obj.write(formatted_pypi_file)
     with open(local_outfile, 'w') as local_outfile_obj:
-         local_outfile_obj.write('\n'.join(local) + '\n')
+         local_outfile_obj.write(formatted_local_file)
 }
 
 do_rewrite_requirements[vardeps] += " PIPENV_APP_BUNDLE_USE_GLOBAL PIPENV_APP_BUNDLE_EXTRAS "
