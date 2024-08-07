@@ -11,3 +11,6 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="800b", ATTRS{idVen
 KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="4853", ATTRS{idVendor}=="0483", SYMLINK+="ot_module_heatershaker%n"
 # gen2 thermocycler on stm32:
 KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ed8d", ATTRS{idVendor}=="0483", SYMLINK+="ot_module_thermocycler%n"
+
+# plate reader module
+KERNEL=="hidraw[0-9]*", ATTRS{idProduct}=="1199", ATTRS{idVendor}=="16d0", SYMLINK+="ot_module_absorbancereader%n"

@@ -46,23 +46,20 @@ IMAGE_INSTALL += " \
     timestamp-service networkmanager crda ch341ser \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
+    plymouth mosquitto hidapi \
+    python3 python3-misc python3-modules python3-pip \
     robot-app-wayland-launch opentrons-robot-app \
     opentrons-robot-server opentrons-update-server \
-    opentrons-usb-bridge \
+    opentrons-usb-bridge opentrons-jupyter-notebook \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
     opentrons-systemd-units opentrons-ssh-keys \
-    python3 python3-misc python3-modules \
-    python3-pip \
-    plymouth \
-    mosquitto \
-    opentrons-jupyter-notebook \
     libjpeg-turbo \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
 # port. Luckily, they are only recommended so it is easy to filter them out.
-PACKAGE_EXCLUDE = "libusbgx libusbgx-examples"
+PACKAGE_EXCLUDE = "libusbgx libusbgx-examples gpsd"
 
 # exclude Toradex hostapd-example as this causes mDNS discovery issues when interface uap0 connects/disconnects.
 PACKAGE_EXCLUDE += " hostapd-example"
