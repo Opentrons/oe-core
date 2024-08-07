@@ -7,6 +7,7 @@ BASE_URL="https://opentrons-modules-builds.s3.us-east-2.amazonaws.com"
 
 TEMPERATURE_MODULE_VERSION="v2.1.0"
 TEMPERATURE_MODULE_SOURCE="temp-deck-arduino.ino.hex"
+TEMPERATURE_MODULE_FILENAME="temperature-module@${TEMPERATURE_MODULE_VERSION}.hex"
 TEMPERATURE_MODULE_URL="temperature-module/${TEMPERATURE_MODULE_VERSION}/${TEMPERATURE_MODULE_SOURCE}"
 SRC_URI += "${BASE_URL}/${TEMPERATURE_MODULE_URL};sha256sum=4e4ef00b44a320fe461265dbd0484d90247a13f405125657be8915c8ea214408"
 
@@ -27,11 +28,11 @@ S = "${WORKDIR}"
 do_install(){
     # install the downloaded binaries to /usr/lib/firmware
     install -d ${D}${FIRMWARE_DIR}
-    install ${S}/${TEMPERATURE_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
+    install ${S}/${TEMPERATURE_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/${TEMPERATURE_MODULE_FILENAME}
     install ${S}/${THERMOCYCLER-GEN2_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
     install ${S}/${HEATER-SHAKER_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
 }
 
-FILES:${PN} += "${libdir}/firmware/${TEMPERATURE_MODULE_SOURCE} \
+FILES:${PN} += "${libdir}/firmware/${TEMPERATURE_MODULE_FILENAME} \
                 ${libdir}/firmware/${THERMOCYCLER-GEN2_MODULE_SOURCE} \
                 ${libdir}/firmware/${HEATER-SHAKER_MODULE_SOURCE} \"
