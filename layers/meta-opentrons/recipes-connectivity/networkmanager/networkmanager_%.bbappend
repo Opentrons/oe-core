@@ -14,7 +14,7 @@ FILES:${PN} += "/etc/NetworkManager/conf.d/system-connections-location.conf \
                 ${systemd_system_unitdir}/opentrons-init-systemconnections.service \
                 /usr/share/default-connections/wired-linklocal.nmconnection \
                 /usr/share/default-connections/wired.nmconnection \
-                /etc/NetworkManager/dispatcher.d/bounce-mlan0.sh
+                /etc/NetworkManager/dispatcher.d/bounce-mlan0.sh \
 "
 
 do_install:append() {
