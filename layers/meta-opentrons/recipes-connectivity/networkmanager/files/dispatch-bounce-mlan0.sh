@@ -9,7 +9,9 @@ test $(nmcli dev show mlan0) -eq 0 && exit 0
 echo 'Detected mlan0 crash, unbinding/rebinding'
 
 echo 30b60000.mmc > /sys/bus/platform/drivers/sdhci-esdhc-imx/unbind
+sleep 1
 echo 30b60000.mmc > /sys/bus/platform/drivers/sdhci-esdhc-imx/bind
+sleep 1
 
 echo 'Restarting NetworkManager after mlan0 crash'
 systemctl restart NetworkManager
