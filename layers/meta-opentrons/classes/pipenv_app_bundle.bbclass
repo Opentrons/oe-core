@@ -97,19 +97,19 @@ python do_rewrite_requirements() {
         bb.debug(1, 'Checking ' + plainname)
 
         if line.startswith('--index-url'): pypi.append(line)
-        elif line.startswith('--editable') or line.startswith('./'):
+        elif line.startswith('--editable') or (line.startswith('./') or line.startswith('../')):
             # an editable probably-local package
             if line.startswith('--editable'):
                 working = line.split('--editable')[-1].strip()
             else:
                 working = line.strip()
-            if not working.startswith('./'):
+            if not (working.startswith('./') or working.startswith('../')):
                 bb.debug(1, 'Skipping {}'.format(line))
                 continue
             working = d.getVar('PIPENV_APP_BUNDLE_PROJECT_ROOT') + '/' + working
             local.append(working)
             bb.debug(1, 'Rewrote local path to ' + working)
-        elif not line.startswith('.') and not '://' in line:
+        elif not (line.startswith('.') or line.startswith('../')) and not '://' in line:
             # This is a package from pypi; check if it's global
             first_nonalpha = [c for c in line if c in '=~^<>']
             pkgname = line.split(first_nonalpha[0])[0] if first_nonalpha else line
@@ -149,24 +149,49 @@ PIP_ARGS := "--no-compile \
              --no-binary :all: \
              --progress-bar off \
              --force-reinstall \
+             --no-deps \
              -t ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
 
 do_compile () {
-   ${PIP_ENVARGS} ${PYTHON} -m pip install \
+   mkdir -p ${B}/pip-buildenv
+
+   bbnote "Installing pypi packages"
+
+   ${PYTHON} -m pip install \
+      -t ${B}/pip-buildenv \
+      hatchling hatch-vcs hatch-fancy-pypi-readme \
+      flit flit-core flit_scm \
+      setuptools==65.6.3 setuptools-scm[toml]==7.1.0 \
+      wheel==0.38.4 \
+      expandvars \
+      cython \
+
+
+   ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+      ${PIP_ARGS} \
+      --no-build-isolation \
       -r ${B}/pypi.txt \
-      ${PIP_ARGS}
+
+
+   bbnote "Building and installing local packages"
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
+      --no-use-pep517 \
       ${PIP_ARGS} \
-      --no-deps \
-      --use-feature=in-tree-build
+      --use-feature=in-tree-build \
+
+
+   bbnote "Building and installing true source packages"
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
+      --no-use-pep517 \
       --use-feature=in-tree-build \
-      --no-deps \
-      ${PIP_ARGS}
+      ${PIP_ARGS} \
+
+
+   bbnote "Done installing python packages"
 }
 
 do_compile[vardeps] += "PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS"
