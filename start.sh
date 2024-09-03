@@ -29,6 +29,7 @@ sudo chown -hR $USER_NAME:$USER_NAME /volumes && chmod -R ug+rw /volumes
 
 pushd ${THISDIR}
 patch -f ./layers/meta-jupyter/conf/layer.conf ./meta-jupyter-backport.patch
+patch -f ./layers/openembedded-core/meta/recipes-rt/rt-tests/rt-tests.inc ./rt-tests.patch
 
 export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
