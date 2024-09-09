@@ -165,6 +165,7 @@ do_compile () {
       wheel==0.38.4 \
       expandvars \
       cython \
+      maturin \
 
 
    ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
