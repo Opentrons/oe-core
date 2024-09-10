@@ -168,7 +168,7 @@ do_compile () {
       maturin \
 
 
-   ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       ${PIP_ARGS} \
       --no-build-isolation \
       -r ${B}/pypi.txt \
