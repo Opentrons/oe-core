@@ -59,6 +59,6 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d
                        "
 
 RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy python3-pyusb"
-DEPENDS:${PN} += " cargo-native "
+DEPENDS += " cargo-native "
 
 inherit pipenv_app_bundle
