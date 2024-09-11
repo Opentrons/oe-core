@@ -3,7 +3,7 @@
 
 inherit setuptools3-base
 
-DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native "
+DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native python3-maturin-native "
 RDEPENDS:${PN} += " python3 python3-modules"
 
 # directory for version file output
@@ -165,7 +165,6 @@ do_compile () {
       wheel==0.38.4 \
       expandvars \
       cython \
-      maturin \
 
 
    PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
