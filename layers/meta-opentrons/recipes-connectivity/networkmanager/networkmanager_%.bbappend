@@ -6,6 +6,7 @@ SRC_URI += "file://system-connections-location.conf \
             file://wired-linklocal.nmconnection \
             file://wired.nmconnection \
             file://opentrons-init-systemconnections.service\
+            file://dispatch-bounce-mlan0.sh \
 "
 
 FILES:${PN} += "/etc/NetworkManager/conf.d/system-connections-location.conf \
@@ -13,6 +14,7 @@ FILES:${PN} += "/etc/NetworkManager/conf.d/system-connections-location.conf \
                 ${systemd_system_unitdir}/opentrons-init-systemconnections.service \
                 /usr/share/default-connections/wired-linklocal.nmconnection \
                 /usr/share/default-connections/wired.nmconnection \
+                /etc/NetworkManager/dispatcher.d/bounce-mlan0.sh \
 "
 
 do_install:append() {
@@ -25,7 +27,8 @@ do_install:append() {
     install -m 600 ${WORKDIR}/wired.nmconnection ${D}/usr/share/default-connections/wired.nmconnection
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-init-systemconnections.service ${D}${systemd_system_unitdir}/opentrons-init-systemconnections.service
-
+    install -d ${D}/etc/NetworkManager/dispatcher.d
+    install -m 744 ${WORKDIR}/dispatch-bounce-mlan0.sh ${D}/etc/NetworkManager/dispatcher.d/bounce-mlan0.sh
 }
 
 SYSTEMD_AUTO_ENABLE = "enable"
