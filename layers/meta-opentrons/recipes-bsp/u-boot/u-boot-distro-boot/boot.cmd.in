@@ -56,6 +56,18 @@ test -n ${overlays_file} || env set overlays_file "${rootfs_boot_dir}/overlays.t
 test -n ${overlays_prefix} || env set overlays_prefix "${rootfs_boot_dir}/overlays/"
 test -n ${vidargs} || env set vidargs "video=DSI-1:1024x600e"
 
+# Determine if the CAN clock speed has to be to be set 20MHz for < revE SOM boards.
+# This is done by reading the rev from the SOM eeprom (bus 0, addr 0x50). When
+# the rev is >= than rev E (34 dec), the 'overlay_to_skip' var is set to the overlay
+# that sets the can clock to 20MHz. When we iterate over the overlays to apply,
+# we skip the overlay equal to 'overlay_to_skip' otherwise the overlay is applied.
+# SOM serial number format in eeprom: product num (4b) + version (3b) + rev (1b)
+env set overlay_to_skip ""
+env set som_rev_e 34  # rev E ('4' ascii or 34 dec)
+env set som_rev_addr 0 && setexpr som_rev_addr ${ramdisk_addr_r} + 0x7
+i2c dev 0 && i2c read 0x50 0x00 0x08 $ramdisk_addr_r
+itest.b *${som_rev_addr} >= ${som_rev_e} && env set overlay_to_skip "verdin-imx8mm_MCP2518_overlay.dtbo"
+
 # load kernel + dtb(s) + overlays from rootfs
 test ${boot_devtype} = "mmc" && env set load_cmd 'ext4load ${boot_devtype} ${root_devnum}:${root_part}'
 test ${boot_devtype} = "usb" && env set load_cmd 'load ${boot_devtype} ${boot_devnum}:${boot_part}'
@@ -116,7 +128,7 @@ then
 else
     env set fdt_resize 'fdt addr ${fdt_addr_r} && fdt resize 0x20000'
     env set set_bootcmd_dtb 'env set bootcmd_dtb "echo Loading DeviceTree: \\${rootfs_boot_dir}/\\${fdtfile}; ${load_cmd} \\${fdt_addr_r} \\${rootfs_boot_dir}/\\${fdtfile}"'
-    env set set_apply_overlays 'env set apply_overlays "for overlay_file in \\${fdt_overlays}; do echo Applying Overlay: \\${rootfs_boot_dir}/\\${overlay_file} && ${load_cmd} \\${loadaddr} \\${overlays_prefix}\\${overlay_file} && fdt apply \\${loadaddr}; env set overlay_file; done; true"'
+    env set set_apply_overlays 'env set apply_overlays "for overlay_file in \\${fdt_overlays}; do test \\${overlay_file} != \\${overlay_to_skip} && echo Applying Overlay: \\${rootfs_boot_dir}/\\${overlay_file} && ${load_cmd} \\${loadaddr} \\${overlays_prefix}\\${overlay_file} && fdt apply \\${loadaddr}; env set overlay_file; done; true"'
     env set bootcmd_boot 'echo "Bootargs: \${bootargs}" && @@KERNEL_BOOTCMD@@ ${kernel_addr_r} - ${fdt_addr_r}'
 fi
 
