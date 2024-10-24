@@ -14,7 +14,9 @@ DEPENDS += "rsync-native zip-native \
     "
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
-IMAGE_LINGUAS = "en-us"
+IMAGE_LINGUAS = "en-us zh-cn"
+GLIBC_GENERATE_LOCALES = "zh_CN.UTF-8 en_GB.UTF-8 en_US.UTF-8"
+LOCALE_UTF8_ONLY="1"
 # Copy Licenses to image /usr/share/common-license
 COPY_LIC_MANIFEST ?= "1"
 COPY_LIC_DIRS ?= "1"
