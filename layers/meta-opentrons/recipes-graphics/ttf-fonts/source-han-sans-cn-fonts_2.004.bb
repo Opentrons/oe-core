@@ -1,5 +1,3 @@
-require ttf.inc
-
 SUMMARY = "Adobe OpenType region specific font family for Simplified Chinese"
 HOMEPAGE = "https://github.com/adobe-fonts/source-han-sans"
 LICENSE = "OFL-1.1"
