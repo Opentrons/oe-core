@@ -16,11 +16,12 @@ do_install() {
     install -d ${D}${sysconfdir}/fonts/conf.d/
     install -m 0644 ${WORKDIR}/44-source-han-sans-cn.conf ${D}${sysconfdir}/fonts/conf.d/
 
-    install -d ${D}${datadir}/fonts/
-    install -m 0644 ${WORKDIR}/SourceHanSansCN-VF.ttf ${D}${datadir}/fonts/
+    install -d ${D}${datadir}/fonts/ttf
+    install -m 0644 ${WORKDIR}/SourceHanSansCN-VF.ttf ${D}${datadir}/fonts/ttf/
 }
 
 FILES:${PN} = " \
     ${sysconfdir}/fonts \
     ${datadir}/fonts \
+    ${datadir}/fonts/ttf \
 "
