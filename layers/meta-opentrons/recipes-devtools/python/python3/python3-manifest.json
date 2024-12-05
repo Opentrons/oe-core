@@ -598,12 +598,24 @@
     "ensurepip": {
         "summary": "Support for bootstrapping the pip installer",
         "rdepends": [
-            "core"
+            "asyncio",
+            "compile",
+            "core",
+            "ctypes",
+            "image",
+            "io",
+            "mmap",
+            "plistlib",
+            "pprint",
+            "unixadmin",
+            "xmlrpc"
         ],
         "files": [
             "${libdir}/python${PYTHON_MAJMIN}/ensurepip/"
         ],
-        "cached": []
+        "cached": [
+            "${libdir}/python${PYTHON_MAJMIN}/ensurepip/_uninstall.*.pyc"
+        ]
     },
     "fcntl": {
         "summary": "Python's fcntl interface",
@@ -799,6 +811,7 @@
             "distutils",
             "doctest",
             "email",
+            "ensurepip",
             "fcntl",
             "html",
             "idle",
