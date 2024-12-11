@@ -22,4 +22,8 @@ sleep 1
     --enable-features=UseOzonePlatform \
     --ozone-platform=wayland \
     --in-process-gpu \
-    --python.pathToPythonOverride=/usr/bin/python3\
+    --python.pathToPythonOverride=/usr/bin/python3 \
+    --enable-logging \
+    --v=1 \
+    --log-level=0 \
+    --enable-wayland-ime
