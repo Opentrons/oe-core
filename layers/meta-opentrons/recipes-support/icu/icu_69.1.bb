@@ -6,7 +6,8 @@ same results on all platforms."
 HOMEPAGE = "http://site.icu-project.org/"
 
 LICENSE = "ICU"
-DEPENDS = "icu-native autoconf-archive-native"
+DEPENDS = "icu-native"
+DEPENDS:class-native = ""
 
 CVE_PRODUCT = "international_components_for_unicode"
 
@@ -14,16 +15,20 @@ S = "${WORKDIR}/icu/source"
 SPDX_S = "${WORKDIR}/icu"
 STAGING_ICU_DIR_NATIVE = "${STAGING_DATADIR_NATIVE}/${BPN}/${PV}"
 
-ICU_MAJOR_VER = "${@d.getVar('PV').split('-')[0]}"
+BINCONFIG = "${bindir}/icu-config"
 
-inherit autotools pkgconfig
+ICU_MAJOR_VER = "${@d.getVar('PV').split('.')[0]}"
+
+inherit autotools pkgconfig binconfig multilib_script
+
+MULTILIB_SCRIPTS = "${PN}-dev:${bindir}/icu-config"
 
 # ICU needs the native build directory as an argument to its --with-cross-build option when
 # cross-compiling. Taken the situation that different builds may share a common sstate-cache
 # into consideration, the native build directory needs to be staged.
-EXTRA_OECONF = "--with-cross-build=${STAGING_ICU_DIR_NATIVE} --disable-icu-config"
-EXTRA_OECONF:class-native = "--disable-icu-config"
-EXTRA_OECONF:class-nativesdk = "--with-cross-build=${STAGING_ICU_DIR_NATIVE} --disable-icu-config"
+EXTRA_OECONF = "--with-cross-build=${STAGING_ICU_DIR_NATIVE}"
+EXTRA_OECONF:class-native = ""
+EXTRA_OECONF:class-nativesdk = "--with-cross-build=${STAGING_ICU_DIR_NATIVE}"
 
 EXTRA_OECONF:append:class-target = "${@oe.utils.conditional('SITEINFO_ENDIANNESS', 'be', ' --with-data-packaging=archive', '', d)}"
 TARGET_CXXFLAGS:append = "${@oe.utils.conditional('SITEINFO_ENDIANNESS', 'be', ' -DICU_DATA_DIR=\\""${datadir}/${BPN}/${PV}\\""', '', d)}"
@@ -53,17 +58,17 @@ do_install:append:class-target() {
     # The native pkgdata can not generate the correct data file.
     # Use icupkg to re-generate it.
     if [ "${SITEINFO_ENDIANNESS}" = "be" ] ; then
-        rm -f ${D}/${datadir}/${BPN}/${@icu_install_folder(d)}/icudt${ICU_MAJOR_VER}b.dat
-        icupkg -tb ${S}/data/in/icudt${ICU_MAJOR_VER}l.dat ${D}/${datadir}/${BPN}/${@icu_install_folder(d)}/icudt${ICU_MAJOR_VER}b.dat
+        rm -f ${D}/${datadir}/${BPN}/${PV}/icudt${ICU_MAJOR_VER}b.dat
+        icupkg -tb ${S}/data/in/icudt${ICU_MAJOR_VER}l.dat ${D}/${datadir}/${BPN}/${PV}/icudt${ICU_MAJOR_VER}b.dat
     fi
-
+	
 	# Remove build host references...
 	sed -i  \
 	    -e 's,--sysroot=${STAGING_DIR_TARGET},,g' \
 	    -e 's|${DEBUG_PREFIX_MAP}||g' \
 	    -e 's:${HOSTTOOLS_DIR}/::g' \
-	    ${D}/${libdir}/${BPN}/${@icu_install_folder(d)}/Makefile.inc \
-	    ${D}/${libdir}/${BPN}/${@icu_install_folder(d)}/pkgdata.inc
+	    ${D}/${bindir}/icu-config ${D}/${libdir}/${BPN}/${PV}/Makefile.inc \
+	    ${D}/${libdir}/${BPN}/${PV}/pkgdata.inc
 }
 
 PACKAGES =+ "libicudata libicuuc libicui18n libicutu libicuio"
@@ -78,19 +83,15 @@ FILES:libicuio = "${libdir}/libicuio.so.*"
 
 BBCLASSEXTEND = "native nativesdk"
 
-LIC_FILES_CHKSUM = "file://../LICENSE;md5=80c2cf39ad8ae12b9b9482a1737c6650"
+LIC_FILES_CHKSUM = "file://../LICENSE;md5=002d2fdc32d17f0ec06e9a47f2c0c8d0"
 
 def icu_download_version(d):
-    pvsplit = d.getVar('PV').split('-')
+    pvsplit = d.getVar('PV').split('.')
     return pvsplit[0] + "_" + pvsplit[1]
 
 def icu_download_folder(d):
-    pvsplit = d.getVar('PV').split('-')
+    pvsplit = d.getVar('PV').split('.')
     return pvsplit[0] + "-" + pvsplit[1]
-
-def icu_install_folder(d):
-    pvsplit = d.getVar('PV').split('-')
-    return pvsplit[0] + "." + pvsplit[1]
 
 ICU_PV = "${@icu_download_version(d)}"
 ICU_FOLDER = "${@icu_download_folder(d)}"
@@ -99,8 +100,8 @@ ICU_FOLDER = "${@icu_download_folder(d)}"
 ARM_INSTRUCTION_SET:armv4 = "arm"
 ARM_INSTRUCTION_SET:armv5 = "arm"
 
-BASE_SRC_URI = "${GITHUB_BASE_URI}/download/release-${ICU_FOLDER}/icu4c-${ICU_PV}-src.tgz"
-DATA_SRC_URI = "${GITHUB_BASE_URI}/download/release-${ICU_FOLDER}/icu4c-${ICU_PV}-data.zip"
+BASE_SRC_URI = "https://github.com/unicode-org/icu/releases/download/release-${ICU_FOLDER}/icu4c-${ICU_PV}-src.tgz"
+DATA_SRC_URI = "https://github.com/unicode-org/icu/releases/download/release-${ICU_FOLDER}/icu4c-${ICU_PV}-data.zip"
 SRC_URI = "${BASE_SRC_URI};name=code \
            ${DATA_SRC_URI};name=data \
            file://filter.json \
@@ -111,11 +112,11 @@ SRC_URI = "${BASE_SRC_URI};name=code \
 SRC_URI:append:class-target = "\
            file://0001-Disable-LDFLAGSICUDT-for-Linux.patch \
           "
-SRC_URI[code.sha256sum] = "818a80712ed3caacd9b652305e01afc7fa167e6f2e94996da44b90c2ab604ce1"
-SRC_URI[data.sha256sum] = "ca1ee076163b438461e484421a7679fc33a64cd0a54f9d4b401893fa1eb42701"
+SRC_URI[code.sha256sum] = "4cba7b7acd1d3c42c44bb0c14be6637098c7faf2b330ce876bc5f3b915d09745"
+SRC_URI[data.sha256sum] = "4fc2d8cfc3343673123586fca3967404abd4e346fba5515829204533b3bae4bf"
 
-UPSTREAM_CHECK_REGEX = "releases/tag/release-(?P<pver>(?!.+rc).+)"
-GITHUB_BASE_URI = "https://github.com/unicode-org/icu/releases"
+UPSTREAM_CHECK_REGEX = "icu4c-(?P<pver>\d+(_\d+)+)-src"
+UPSTREAM_CHECK_URI = "https://github.com/unicode-org/icu/releases"
 
 EXTRA_OECONF:append:libc-musl = " ac_cv_func_strtod_l=no"
 
@@ -146,4 +147,4 @@ do_make_icudata() {
     :
 }
 
-addtask make_icudata before do_configure after do_patch do_prepare_recipe_sysroot
+addtask make_icudata before do_configure after do_patch
