@@ -20,6 +20,5 @@ sleep 1
     --isOnDevice=1 \
     --no-sandbox \
     --enable-features=UseOzonePlatform \
-    --ozone-platform=wayland \
     --in-process-gpu \
     --python.pathToPythonOverride=/usr/bin/python3\
