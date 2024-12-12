@@ -13,6 +13,7 @@ S = "${WORKDIR}/maturin-${PV}"
 CFLAGS:append = " -fdebug-prefix-map=${CARGO_HOME}=${TARGET_DBGSRC_DIR}/cargo_home"
 
 DEPENDS += "\
+    python3-pip-native \
     python3-setuptools-rust-native \
     python3-semantic-version-native \
     python3-setuptools-rust \
