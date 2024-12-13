@@ -5,15 +5,9 @@ LIC_FILES_CHKSUM = " \
     file://LICENSE;md5=384ed0e2e0b2dac094e51fbf93fdcbe0 \
 "
 
-
-SRC_URI = " \
-	git://github.com/lu-zero/cargo-c.git;branch=master;protocol=https \
-	file://0001-Add-Cargo.lock-file.patch \
-"
-UPSTREAM_CHECK_GITTAGREGEX = "v(?P<pver>.*)"
-
-SRCREV = "4eaf39ebbbc9ab8f092adf487d5b53435511d619"
-S = "${WORKDIR}/git"
+SRC_URI = "crate://crates.io/cargo-c/${PV};name=cargo-c"
+SRC_URI[cargo-c.sha256sum] = "ec77e3635cdb0d211f88f22d0460eef0ba031eb616ded57f2ffb98a90365c445"
+S = "${CARGO_VENDORING_DIRECTORY}/cargo-c-${PV}"
 
 inherit cargo cargo-update-recipe-crates pkgconfig native
 
