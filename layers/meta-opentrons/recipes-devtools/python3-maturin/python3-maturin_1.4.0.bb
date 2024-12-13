@@ -27,6 +27,7 @@ do_configure() {
     python_pyo3_do_configure
     cargo_common_do_configure
     python_pep517_do_configure
+    rustc --print target-list
 }
 
 RDEPENDS:${PN} += "\
