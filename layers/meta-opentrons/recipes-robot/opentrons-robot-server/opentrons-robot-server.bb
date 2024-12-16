@@ -8,6 +8,10 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 # Modify these as desired
 DEST_SYSTEMD_DROPFILE ?= "${B}/robot-server-version.conf"
 OT_PACKAGE = "robot-server"
+
+# Rust python modules installed by pip get stripped outside OE infra
+INSANE_SKIP:${PN}:append = "already-stripped"
+
 inherit insane systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
@@ -20,6 +24,7 @@ PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
 PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq mosquitto"
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
+
 
 do_compile:append() {
     # dont include scripts

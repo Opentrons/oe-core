@@ -8,6 +8,10 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 # Modify these as desired
 DEST_SYSTEMD_DROPFILE ?= "${B}/system-server-version.conf"
 OT_PACKAGE = "system-server"
+
+# Rust python modules installed by pip get stripped outside OE infra
+INSANE_SKIP:${PN}:append = "already-stripped"
+
 inherit insane systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
