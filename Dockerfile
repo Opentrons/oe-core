@@ -15,7 +15,7 @@ RUN apt-get update \
     build-essential chrpath socat cpio python python3-pexpect \
     xz-utils debianutils iputils-ping python3-git python3-jinja2 \
     libegl1-mesa libsdl1.2-dev  pylint3 xterm tar locales curl git sudo \
-    clang cmake zstd lz4
+    clang cmake zstd lz4 bison byacc flex
 
 # By default, Ubuntu uses dash as an alias for sh. Dash does not support the source command
 # needed for setting up the build environment in CMD. Use bash as an alias for sh.
