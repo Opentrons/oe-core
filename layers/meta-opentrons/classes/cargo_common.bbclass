@@ -16,7 +16,7 @@
 
 # add crate fetch support
 inherit rust-common
-
+UNPACKDIR ?= "${WORKDIR}"
 # Where we download our registry and dependencies to
 export CARGO_HOME = "${UNPACKDIR}/cargo_home"
 
