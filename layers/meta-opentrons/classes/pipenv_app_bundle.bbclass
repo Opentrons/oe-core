@@ -1,7 +1,7 @@
 # pipenv_app_bundle.bbclass: Install python applications described by
 # pipenv projects as directories in /opt (or anywhere, really)
 
-inherit setuptools3-base
+inherit setuptools3-base cargo python_pyo3
 
 DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native python3-maturin-native "
 RDEPENDS:${PN} += " python3 python3-modules"
@@ -141,6 +141,8 @@ do_configure:prepend () {
        HASHES="--no-hashes"
    fi
    ${PYTHON} -m micropipenv requirements --method ${PIPENV_APP_BUNDLE_PACKAGE_SOURCE} --no-dev ${HASHES} > ${B}/requirements-unfiltered.txt
+   python_pyo3_do_configure
+   cargo_common_do_configure
 }
 
 do_configure[vardeps] += "PIPENV_APP_BUNDLE_STRIP_HASHES PIPENV_APP_BUNDLE_PROJECT_ROOT"
