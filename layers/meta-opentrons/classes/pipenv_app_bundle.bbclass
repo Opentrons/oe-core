@@ -1,6 +1,8 @@
 # pipenv_app_bundle.bbclass: Install python applications described by
 # pipenv projects as directories in /opt (or anywhere, really)
 
+CARGO_DISABLE_BITBAKE_VENDORING := "1"
+
 inherit setuptools3-base cargo python_pyo3
 
 DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native python3-maturin-native "
