@@ -14,3 +14,6 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ed8d", ATTRS{idVen
 
 # plate reader module
 KERNEL=="hidraw[0-9]*", ATTRS{idProduct}=="1199", ATTRS{idVendor}=="16d0", SYMLINK+="ot_module_absorbancereader%n"
+
+# flex stacker module
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ef24", ATTRS{idVendor}=="0483", SYMLINK+="ot_module_flexstacker%n"
