@@ -1,4 +1,5 @@
-#! /bin/bash
+#!/usr/bin/env sh
+
 echo "Clear Fontconfig cache."
 rm -rf /var/cache/fontconfig/*
 fc-cache -rf
