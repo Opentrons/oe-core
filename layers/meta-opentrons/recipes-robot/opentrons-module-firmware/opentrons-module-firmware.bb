@@ -33,7 +33,7 @@ S = "${WORKDIR}"
 do_install(){
     # install the downloaded binaries to /usr/lib/firmware
     install -d ${D}${FIRMWARE_DIR}
-    install ${S}/${TEMPERATURE_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
+    install ${S}/${TEMPERATURE_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/${TEMPERATURE_MODULE_FILENAME}
     install ${S}/${THERMOCYCLER-GEN2_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
     install ${S}/${HEATER-SHAKER_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
     install ${S}/${FLEX-STACKER_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
