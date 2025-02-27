@@ -1,5 +1,5 @@
 LINUX_VERSION ?= "6.1.120-rt47"
-LINUX_REPO = "git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git"
+LINUX_REPO = "https://kernel.googlesource.com/pub/scm/linux/kernel/git/stable/linux.git"
 require recipes-kernel/linux/linux-toradex-mainline_git.bb
 
 SUMMARY = "Toradex mainline real-time Linux kernel"
