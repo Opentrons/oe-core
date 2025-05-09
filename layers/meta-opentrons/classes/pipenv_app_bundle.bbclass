@@ -163,7 +163,7 @@ do_compile () {
 
    ${PYTHON} -m pip install \
       -t ${B}/pip-buildenv \
-      hatchling hatch-vcs hatch-fancy-pypi-readme \
+      hatchling hatch-vcs hatch-vcs-tunable hatch-dependency-coversion hatch-fancy-pypi-readme \
       flit flit-core flit_scm \
       setuptools==65.6.3 setuptools-scm[toml]==7.1.0 \
       wheel==0.38.4 \
