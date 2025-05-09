@@ -45,14 +45,13 @@ PIPENV_APP_BUNDLE_DIR ??= "/opt/${PN}"
 PIPENV_APP_BUNDLE_STRIP_HASHES ??= "no"
 PIPENV_APP_BUNDLE_SOURCE_VENV := "${B}/build-venv"
 
-# Extra environment args to pass to pip when building packages
-PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS ??= ""
+# Extra environment args to pass to pip when building local packages
+PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL ??= ""
 
 PIP_ENVARGS := " \
    STAGING_INCDIR=${STAGING_INCDIR} \
    STAGING_LIBDIR=${STAGING_LIBDIR} \
    _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__linux_x86_64-linux-gnu \
-   ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS} \
 "
 
 python do_rewrite_requirements() {
@@ -135,6 +134,7 @@ do_rewrite_requirements[vardeps] += " PIPENV_APP_BUNDLE_USE_GLOBAL PIPENV_APP_BU
 addtask do_rewrite_requirements after do_configure before do_compile
 
 do_configure:prepend () {
+   mkdir -p ${B}/pip-buildenv
    cd ${PIPENV_APP_BUNDLE_PROJECT_ROOT}
    bbplain "Running micropipenv in ${PIPENV_APP_BUNDLE_PROJECT_ROOT}"
    if [[ "${PIPENV_APP_BUNDLE_STRIP_HASHES}" = "no" ]] ; then
@@ -154,6 +154,7 @@ PIP_ARGS := "--no-compile \
              --progress-bar off \
              --force-reinstall \
              --no-deps \
+             --no-build-isolation \
              -t ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
 
 do_compile () {
@@ -163,43 +164,39 @@ do_compile () {
 
    ${PYTHON} -m pip install \
       -t ${B}/pip-buildenv \
-      hatchling hatch-vcs hatch-fancy-pypi-readme \
-      flit flit-core flit_scm \
-      setuptools==65.6.3 setuptools-scm[toml]==7.1.0 \
+      hatchling==1.27.0 hatch-vcs==0.5.0 hatch-vcs-tunable==0.0.1a3 hatch-dependency-coversion==0.0.1a4 hatch-fancy-pypi-readme==25.1.0 \
+      flit==3.12.0 flit-core==3.12.0 flit-scm==1.7.0 \
+      setuptools==65.6.3 setuptools-scm[toml]==8.2.0 \
       wheel==0.38.4 \
-      expandvars \
-      cython \
-      setuptools_rust \
+      expandvars==1.0.0 \
+      cython==3.1.1 \
+      setuptools_rust==1.11.1 \
+      typing-extensions==4.13.2 \
 
 
    PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       ${PIP_ARGS} \
-      --no-build-isolation \
       -r ${B}/pypi.txt \
 
 
    bbnote "Building and installing local packages"
 
-   ${PIP_ENVARGS} ${PYTHON} -m pip install \
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
-      --no-use-pep517 \
       ${PIP_ARGS} \
-      --use-feature=in-tree-build \
 
 
    bbnote "Building and installing true source packages"
 
-   ${PIP_ENVARGS} ${PYTHON} -m pip install \
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
-      --no-use-pep517 \
-      --use-feature=in-tree-build \
       ${PIP_ARGS} \
 
 
    bbnote "Done installing python packages"
 }
 
-do_compile[vardeps] += "PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS"
+do_compile[vardeps] += "PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL"
 do_compile[dirs] += " ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
 
 do_install () {

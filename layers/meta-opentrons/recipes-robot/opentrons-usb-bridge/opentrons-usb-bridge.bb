@@ -8,7 +8,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 RDEPENDS:${PN} += " nginx python3-pyudev python3-pyserial"
 
-inherit insane systemd
+OT_PROJECT = 'usb-bridge'
+
+inherit insane systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-usb-bridge.service"
@@ -23,7 +25,7 @@ PIPENV_APP_BUNDLE_DIR = "/opt/ot3usb"
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = ""
 PIPENV_APP_BUNDLE_USE_GLOBAL = "pyudev pyserial"
-PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
+PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 
 do_install:append() {
   # create json file to be used in VERSION.json
