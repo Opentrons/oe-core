@@ -4,13 +4,13 @@ SUMMARY = "Download, build, install, upgrade, and uninstall Python packages"
 HOMEPAGE = "https://pypi.org/project/setuptools"
 SECTION = "devel/python"
 LICENSE = "MIT"
-LIC_FILES_CHKSUM = "file://LICENSE;beginline=1;endline=19;md5=7a7126e068206290f3fe9f8d6c713ea6"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=141643e11c48898150daa83802dbc65f"
 
 inherit pypi python_setuptools_build_meta
 
 SRC_URI:append:class-native = " file://0001-conditionally-do-not-fetch-code-by-easy_install.patch"
 
-SRC_URI += "file://0001-change-shebang-to-python3.patch \
+SRC_URI += " \
             file://0001-_distutils-sysconfig.py-make-it-possible-to-substite.patch"
 
 SRC_URI[sha256sum] = "4ac1475276d2f1c48684874089fefcd83bd7162ddaafb81fac866ba0db282a87"
@@ -36,7 +36,6 @@ RDEPENDS:${PN} = "\
     ${PYTHON_PN}-threading \
     ${PYTHON_PN}-unittest \
     ${PYTHON_PN}-xml \
-    ${PYTHON_PN}-tomli \
 "
 
 BBCLASSEXTEND = "native nativesdk"
