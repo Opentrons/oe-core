@@ -20,7 +20,8 @@ SKIPLIST ?= ""
 SKIPLIST:libc-musl = "--deselect tests/test_manylinux.py::test_is_manylinux_compatible_old --ignore=tests/test_tags.py"
 
 do_compile:class-native () {
-    python_flit_core_do_manual_build
+    cd ${PEP517_SOURCE_PATH}
+    nativepython3 -m flit_core.wheel --outdir ${PEP517_WHEEL_PATH} .
 }
 
 do_install_ptest() {
