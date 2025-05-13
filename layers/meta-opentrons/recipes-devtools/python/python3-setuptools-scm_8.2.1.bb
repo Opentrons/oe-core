@@ -29,3 +29,7 @@ RDEPENDS:${PN}:append:class-target = " \
 "
 
 BBCLASSEXTEND = "native nativesdk"
+
+do_compile () {
+    nativepython3 -m picobuild --source ${PEP517_SOURCE_PATH} --dest ${PEP517_WHEEL_PATH} --wheel ${PEP517_PICOBUILD_OPTS}
+}
