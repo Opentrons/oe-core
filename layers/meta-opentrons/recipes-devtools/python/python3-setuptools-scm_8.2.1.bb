@@ -13,7 +13,7 @@ UPSTREAM_CHECK_PYPI_PACKAGE = "${PYPI_PACKAGE}"
 
 inherit pypi python_setuptools_build_meta
 
-DEPENDS += "python3-packaging-native python3-typing-extensions-native"
+DEPENDS += "python3-packaging-native python3-typing-extensions-native python3-tomli-native"
 
 RDEPENDS:${PN} = "\
     python3-packaging \
