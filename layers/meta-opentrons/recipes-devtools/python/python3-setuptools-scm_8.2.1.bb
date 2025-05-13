@@ -11,9 +11,9 @@ SRC_URI[sha256sum] = "51cfdd1deefc9b8c08d1a61e940a59c4dec39eb6c285d33fa2f1b4be26
 PYPI_PACKAGE = "setuptools_scm"
 UPSTREAM_CHECK_PYPI_PACKAGE = "${PYPI_PACKAGE}"
 
-inherit pypi python_setuptools_build_meta
+inherit pypi python_setuptools_build_meta python_pep517
 
-DEPENDS += "python3-packaging-native python3-typing-extensions-native python3-tomli-native"
+DEPENDS += "python3-packaging-native python3-typing-extensions-native python3-tomli-native python3-picobuild-native "
 
 RDEPENDS:${PN} = "\
     python3-packaging \
