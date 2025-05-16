@@ -163,7 +163,7 @@ do_compile () {
 
    ${PYTHON} -m pip install \
       -t ${B}/pip-buildenv \
-      hatchling hatch-vcs hatch-fancy-pypi-readme \
+      hatchling hatch-vcs hatch-vcs-tunable hatch-dependency-coversion hatch-fancy-pypi-readme \
       flit flit-core flit_scm \
       setuptools==65.6.3 setuptools-scm[toml]==7.1.0 \
       wheel==0.38.4 \
@@ -182,7 +182,6 @@ do_compile () {
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
-      --no-use-pep517 \
       ${PIP_ARGS} \
       --use-feature=in-tree-build \
 
@@ -191,7 +190,6 @@ do_compile () {
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
-      --no-use-pep517 \
       --use-feature=in-tree-build \
       ${PIP_ARGS} \
 
