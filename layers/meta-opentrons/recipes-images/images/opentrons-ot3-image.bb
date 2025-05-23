@@ -11,6 +11,7 @@ DEPENDS += "rsync-native zip-native \
     opentrons-usb-bridge \
     opentrons-system-server \
     opentrons-mcu-firmware \
+    ffmpeg \
     "
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
