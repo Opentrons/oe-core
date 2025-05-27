@@ -182,6 +182,7 @@ do_compile () {
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
+      --no-use-pep517 \
       ${PIP_ARGS} \
       --use-feature=in-tree-build \
 
@@ -190,6 +191,7 @@ do_compile () {
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
+      --no-use-pep517 \
       --use-feature=in-tree-build \
       ${PIP_ARGS} \
 
