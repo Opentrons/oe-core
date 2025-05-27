@@ -154,6 +154,7 @@ PIP_ARGS := "--no-compile \
              --progress-bar off \
              --force-reinstall \
              --no-deps \
+             --no-build-isolation \
              -t ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
 
 do_compile () {
@@ -174,7 +175,6 @@ do_compile () {
 
    PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       ${PIP_ARGS} \
-      --no-build-isolation \
       -r ${B}/pypi.txt \
 
 
@@ -182,7 +182,6 @@ do_compile () {
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
-      --no-use-pep517 \
       ${PIP_ARGS} \
       --use-feature=in-tree-build \
 
@@ -191,7 +190,6 @@ do_compile () {
 
    ${PIP_ENVARGS} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
-      --no-use-pep517 \
       --use-feature=in-tree-build \
       ${PIP_ARGS} \
 
