@@ -173,14 +173,14 @@ do_compile () {
       setuptools_rust \
 
 
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   ${PIP_ENVARGS} ${B}/pip-buildenv/bin/pip install \
       ${PIP_ARGS} \
       -r ${B}/pypi.txt \
 
 
    bbnote "Building and installing local packages"
 
-   ${PIP_ENVARGS} ${PYTHON} -m pip install \
+   ${PIP_ENVARGS} ${B}/pip-buildenv/bin/pip install \
       -r ${B}/local.txt \
       ${PIP_ARGS} \
       --use-feature=in-tree-build \
@@ -188,7 +188,7 @@ do_compile () {
 
    bbnote "Building and installing true source packages"
 
-   ${PIP_ENVARGS} ${PYTHON} -m pip install \
+   ${PIP_ENVARGS} ${B}/pip-buildenv/bin/pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
       --use-feature=in-tree-build \
       ${PIP_ARGS} \
