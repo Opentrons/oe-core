@@ -183,14 +183,12 @@ do_compile () {
    PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
       ${PIP_ARGS} \
-      --use-feature=in-tree-build \
 
 
    bbnote "Building and installing true source packages"
 
    PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
-      --use-feature=in-tree-build \
       ${PIP_ARGS} \
 
 
