@@ -14,6 +14,9 @@ def get_ot_package_version(d):
     finally:
         sys.path = sys.path[:-1]
 
+def get_ot_package_version_override(d):
+    return 'SETUPTOOLS_SCM_PRETEND_VERSION={}'.format(get_ot_package_version(d))
+
 # Add this as a task if you want to use it:
 # addtask do_write_systemd_dropfile after do_compile before do_install
 python do_write_systemd_dropfile () {

@@ -45,14 +45,13 @@ PIPENV_APP_BUNDLE_DIR ??= "/opt/${PN}"
 PIPENV_APP_BUNDLE_STRIP_HASHES ??= "no"
 PIPENV_APP_BUNDLE_SOURCE_VENV := "${B}/build-venv"
 
-# Extra environment args to pass to pip when building packages
-PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS ??= ""
+# Extra environment args to pass to pip when building local packages
+PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL ??= ""
 
 PIP_ENVARGS := " \
    STAGING_INCDIR=${STAGING_INCDIR} \
    STAGING_LIBDIR=${STAGING_LIBDIR} \
    _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata__linux_x86_64-linux-gnu \
-   ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS} \
 "
 
 python do_rewrite_requirements() {
@@ -181,14 +180,14 @@ do_compile () {
 
    bbnote "Building and installing local packages"
 
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
       ${PIP_ARGS} \
 
 
    bbnote "Building and installing true source packages"
 
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
       ${PIP_ARGS} \
 
