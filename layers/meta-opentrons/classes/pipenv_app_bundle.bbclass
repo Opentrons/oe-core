@@ -134,6 +134,7 @@ do_rewrite_requirements[vardeps] += " PIPENV_APP_BUNDLE_USE_GLOBAL PIPENV_APP_BU
 addtask do_rewrite_requirements after do_configure before do_compile
 
 do_configure:prepend () {
+   mkdir -p ${B}/pip-buildenv
    cd ${PIPENV_APP_BUNDLE_PROJECT_ROOT}
    bbplain "Running micropipenv in ${PIPENV_APP_BUNDLE_PROJECT_ROOT}"
    if [[ "${PIPENV_APP_BUNDLE_STRIP_HASHES}" = "no" ]] ; then
@@ -180,14 +181,14 @@ do_compile () {
 
    bbnote "Building and installing local packages"
 
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
       ${PIP_ARGS} \
 
 
    bbnote "Building and installing true source packages"
 
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
       ${PIP_ARGS} \
 
@@ -195,7 +196,7 @@ do_compile () {
    bbnote "Done installing python packages"
 }
 
-do_compile[vardeps] += "PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS"
+do_compile[vardeps] += "PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL"
 do_compile[dirs] += " ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
 
 do_install () {
