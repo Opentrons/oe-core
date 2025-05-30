@@ -7,9 +7,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 
 RDEPENDS:${PN} += " bmap-tools libubootenv nginx python3-dbus python3-aiohttp python3-systemd"
+OT_PROJECT = 'update-server'
 
-
-inherit insane systemd
+inherit insane systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-update-server.service"
@@ -26,7 +26,7 @@ PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-update-server"
 PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
 PIPENV_APP_BUNDLE_EXTRAS = ""
 PIPENV_APP_BUNDLE_USE_GLOBAL = "python3-aiohttp systemd-python python3-async-timeout"
-PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT}"
+PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 
 do_install:append() {
   # create json file to be used in VERSION.json
