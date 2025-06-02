@@ -22,4 +22,5 @@ sleep 1
     --enable-features=UseOzonePlatform \
     --ozone-platform=wayland \
     --in-process-gpu \
+    --disable-software-rasterizer \
     --python.pathToPythonOverride=/usr/bin/python3\

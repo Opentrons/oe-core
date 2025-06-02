@@ -1,9 +1,11 @@
 # pipenv_app_bundle.bbclass: Install python applications described by
 # pipenv projects as directories in /opt (or anywhere, really)
 
-inherit setuptools3-base
+CARGO_DISABLE_BITBAKE_VENDORING := "1"
 
-DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native "
+inherit setuptools3-base cargo python_pyo3
+
+DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native python3-maturin-native "
 RDEPENDS:${PN} += " python3 python3-modules"
 
 # directory for version file output
@@ -141,6 +143,8 @@ do_configure:prepend () {
        HASHES="--no-hashes"
    fi
    ${PYTHON} -m micropipenv requirements --method ${PIPENV_APP_BUNDLE_PACKAGE_SOURCE} --no-dev ${HASHES} > ${B}/requirements-unfiltered.txt
+   python_pyo3_do_configure
+   cargo_common_do_configure
 }
 
 do_configure[vardeps] += "PIPENV_APP_BUNDLE_STRIP_HASHES PIPENV_APP_BUNDLE_PROJECT_ROOT"
@@ -159,15 +163,18 @@ do_compile () {
 
    ${PYTHON} -m pip install \
       -t ${B}/pip-buildenv \
-      hatchling hatch-vcs hatch-fancy-pypi-readme \
-      flit flit-core flit_scm \
-      setuptools==65.6.3 setuptools-scm[toml]==7.1.0 \
+      hatchling==1.27.0 hatch-vcs==0.5.0 hatch-fancy-pypi-readme==25.1.0 \
+      flit==3.12.0 flit-core==3.12.0 flit-scm==1.7.0 \
+      setuptools==65.6.3 setuptools-scm[toml]==8.2.0 \
       wheel==0.38.4 \
-      expandvars \
-      cython \
+      expandvars==1.0.0 \
+      cython==3.1.1 \
+      setuptools_rust==1.11.1 \
+      typing-extensions==4.13.2 \
 
 
-   ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       ${PIP_ARGS} \
       --no-build-isolation \
       -r ${B}/pypi.txt \

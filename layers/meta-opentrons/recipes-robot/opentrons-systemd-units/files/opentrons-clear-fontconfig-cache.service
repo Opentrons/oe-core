@@ -1,0 +1,6 @@
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ot-clear-fontconfig-cache
+
+[Install]
+WantedBy=basic.target
