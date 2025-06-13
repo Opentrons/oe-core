@@ -47,6 +47,8 @@ _REPO_PATH_OVERRIDES = {"tools/bitbake": "layers/openembedded-core/bitbake"}
 
 @dataclass
 class SubmoduleSpec:
+    """Track a git submodule"""
+
     tracking: str | None
     sha: str
     name: str
@@ -55,6 +57,7 @@ class SubmoduleSpec:
 
 
 def _spec_from_lines(git_lines: str) -> Iterator[SubmoduleSpec]:
+    """Read a submodule spec from lines in .gitmodules"""
     for git_line in git_lines:
         if not git_line:
             continue
@@ -68,6 +71,8 @@ def _spec_from_lines(git_lines: str) -> Iterator[SubmoduleSpec]:
 
 @dataclass
 class GitmodulesEntry:
+    """Track an entry in .gitmodules, which tracks names and tracking info for submodules"""
+
     name: str
     path: str
     url: str
@@ -102,21 +107,43 @@ def _parse_one_gm_payload_line(
 def parse_one_gitmodule(
     current_line: str, rest_lines: Iterable[str]
 ) -> tuple[str, Iterable[str], GitmodulesEntry]:
+    """Parse the next entry out of gitmodules."""
+    # first, consume lines until the line is a header (we get the current line as of this function
+    # being called as an argument, because things come out of iterators exactly once so the last call
+    # gave us our first line, and we will give the next call its first line)
     while not _is_gitmodule_header(current_line):
         current_line = next(rest_lines)
+    # split into ('[submodule', '"layers/meta-freescale"]')
     _, pathplus = current_line.split(" ")
+    # drop the quotes and closing brackets
     name = pathplus[1:-2]
     entry = GitmodulesEntry(name=name, path="", url="", branch=None)
     current_line = next(rest_lines)
     try:
+        # until we get the next header, each line is an attribute
         while not _is_gitmodule_header(current_line):
             entry = _parse_one_gm_payload_line(current_line, entry)
             current_line = next(rest_lines)
     finally:
+        # return the 'current' (aka first of next block) line. if we ran out of file,
+        # that also ends the module, so it's valid to return everything we currently know.
         return (current_line, rest_lines, entry)
 
 
 def parse_gitmodules(gitmodules_content: str) -> Iterator[GitmodulesEntry]:
+    """Parse a repo's .gitmodules file into some nice coherent information.
+
+    This is a bit of a pain because .gitmodules looks like this:
+
+    [submodule "layers/meta-freescale"]
+        path = layers/meta-freescale
+        url = https://github.com/Freescale/meta-freescale.git
+
+    So you have to do a little stateful parser thing. This is pretty easy when you're tracking
+    the cursor implicitly by using python iterators, luckily. For parsing details see
+    parse_one_gitmodule; consider the gitmodules_lines iterator to be the cursor.
+
+    """
     gitmodules_lines = iter(gitmodules_content.strip().split("\n"))
     current_line = next(gitmodules_lines)
     while True:
@@ -133,6 +160,11 @@ def parse_gitmodules(gitmodules_content: str) -> Iterator[GitmodulesEntry]:
 def augment_specs_with_gitmodules(
     specs: Iterable[SubmoduleSpec], repo_path: Path
 ) -> Iterator[SubmoduleSpec]:
+    """Add origin url information to known submodules.
+
+    git submodule only gives us the paths and current shas of submodules; we need to get
+    where they come from using the magic .gitmodules file.
+    """
     gitmodules_path = repo_path / ".gitmodules"
     LOG.debug(f"reading .gitmodules from {gitmodules_path}")
     gitmodules_file = gitmodules_path.read_text()
@@ -151,6 +183,7 @@ def augment_specs_with_gitmodules(
 
 
 def parse_current_repo(repo_root: Path) -> list[SubmoduleSpec]:
+    """Learn the current submodule setup from the repo that we're going to modify."""
     LOG.info(f"find current submodule config from repo {repo_root}")
     status_proc = git(["submodule", "status"], stdout=subprocess.PIPE)
     lines = status_proc.stdout.strip().split("\n")
@@ -179,6 +212,7 @@ def merge_manifest_tree(et: ElementTree, manifest_tree_root: Path) -> ElementTre
 
 
 def repos_from_merged_manifest(et: ElementTree) -> dict[str, str]:
+    """Take a fully flattened manifest tree and get all the remote sources."""
     repos = {
         repo.get("name"): repo.get("fetch") for repo in et.getroot().findall("remote")
     }
@@ -189,13 +223,17 @@ def repos_from_merged_manifest(et: ElementTree) -> dict[str, str]:
 def submodules_from_merged_manifest(
     et: ElementTree,
 ) -> Iterator[SubmoduleSpec]:
+    """From a merged manifest tree, fuse repo and project info to yield out submodule objects."""
+    # Each project specifies a remote, so we need to know those first...
     repos = repos_from_merged_manifest(et)
     for project in et.getroot().findall("project"):
+        # then we can look at all the projects and put their details in submodule objects....
         spec = SubmoduleSpec(
             tracking=project.get("upstream", None),
             sha=project.get("revision"),
             name=project.get("name"),
             path=project.get("path"),
+            # and combine them with the remotes as we go
             url=repos[project.get("remote")],
         )
         LOG.info(f"Found manifest submodule {spec}")
@@ -206,10 +244,29 @@ def submodules_from_merged_manifest(
 def parse_manifest_tree(
     manifest_root_dir: Path, manifest_file: Path
 ) -> Iterator[SubmoduleSpec]:
+    """Parse the repotool manifest hierarchy into a list of layers.
+
+    The repotool manifest hierarchy is an xml tree. Starting at a root file, each file
+    can have the following three things we care about:
+    (1) an <include> tag pointing to another xml manifest
+    (2) a <remote> tag indicating an upstream and providing a url
+    (3) a <project> tag indicating a layer to download
+
+    We'll do a three-pass parse for ease of implementation where each pass handles one of those things.
+
+    We first do nothing but merge all the xml files; we then parse all the remotes; and finally we
+    combine the remotes with the projects.
+
+    Not wishing to summon elder gods, we'll use actual xml libraries (defusedxml so nothing explodes) but
+    not fancy ones because I don't want to deal with "understanding xml" and these don't have a dtd anyway.
+    """
+    # once we have the root...
     manifest_tree = ET.parse(manifest_root_dir / manifest_file)
     LOG.debug(f"base manifest tree: {list(manifest_tree.getroot().iter())}")
+    # we can read its includes recursively to get the merged manifest...
     manifest_merged = merge_manifest_tree(manifest_tree, manifest_root_dir)
     LOG.debug(f"merged manifest tree: {list(manifest_tree.getroot().iter())}")
+    # and then turn the merged manifest into a list of projects
     return list(submodules_from_merged_manifest(manifest_merged))
 
 
@@ -227,6 +284,7 @@ def git(args: list[str], **kwargs: str) -> subprocess.CompletedProcess:
 
 @contextlib.contextmanager
 def provide_dir(working_dir: str | None) -> Iterator[Path]:
+    """Provide a dir, whether specific override or temp dir"""
     if working_dir:
         working = Path(working_dir)
         working.mkdir(parents=True, exist_ok=True)
@@ -237,6 +295,7 @@ def provide_dir(working_dir: str | None) -> Iterator[Path]:
 
 
 def ensure_manifest_dir(working_dir: Path) -> Path:
+    """Make sure the working dir is clear."""
     LOG.info(f"clearing manifest path {working_dir}")
     for path in working_dir.iterdir():
         LOG.debug(f"removing {path}")
@@ -249,6 +308,7 @@ def ensure_manifest_dir(working_dir: Path) -> Path:
 def get_manifest_repo(
     manifest_target_path: Path, manifest_repo: str, quiet: bool
 ) -> None:
+    """Get the manifest repo with git clone."""
     LOG.info(f"cloning manifest {manifest_repo} to {manifest_target_path}")
     git_results = git(
         ["clone", manifest_repo, manifest_target_path],
@@ -262,7 +322,10 @@ def get_manifest_repo(
 def checkout_manifest_ref(
     manifest_target_path: Path, reflike: str, quiet: bool
 ) -> None:
+    """Check out the desired manifest ref."""
     LOG.info(f"checking out {reflike} in {manifest_target_path}")
+    # unlike our local repo's submodules, we don't have to fetch here because
+    # we just downloaded this repo
     checkout_results = git(
         ["checkout", reflike],
         cwd=manifest_target_path,
@@ -276,6 +339,7 @@ def checkout_manifest_ref(
 def prep_manifest_repo(
     working_dir: Path, manifest_repo: str, reflike: str, quiet: bool
 ) -> Path:
+    """Get the manifest repo downloaded from toradex's git server."""
     manifest_path = ensure_manifest_dir(working_dir)
     get_manifest_repo(manifest_path, manifest_repo, quiet)
     checkout_manifest_ref(manifest_path, reflike, quiet)
@@ -285,10 +349,14 @@ def prep_manifest_repo(
 def match_manifest_to_repo(
     manifest_modules: list[SubmoduleSpec], repo_module: SubmoduleSpec
 ) -> Iterator[tuple[SubmoduleSpec, SubmoduleSpec]]:
+    """Search for this repo submodule in the manifest."""
+    # if we get a path match, we're done
     for manifest in manifest_modules:
         if manifest.path == repo_module.path:
             yield (manifest, repo_module)
             return
+    # if we don't get a path match, it might be because we put the repo in
+    # a different place than the manifest, so check in our overrides dict
     if repo_module.path in _REPO_PATH_OVERRIDES:
         for manifest in manifest_modules:
             if manifest.path == _REPO_PATH_OVERRIDES[repo_module.path]:
@@ -300,6 +368,13 @@ def match_manifest_to_repo(
 def match_manifest_and_repo(
     manifest_modules: list[SubmoduleSpec], repo_modules: list[SubmoduleSpec]
 ) -> list[tuple[SubmoduleSpec, SubmoduleSpec]]:
+    """Match up submodule entries between the local repo and the manifest.
+
+    We can also print warnings about modules that are in the manifest but not local
+    (which might happen in a BSP major release where they add new functionality or split
+    some functionality into new repos) and that are local but not in the manifest (which
+    would happen because we added something not from the bsp).
+    """
     matched_manifest_modules: list[str] = []
     for repo in repo_modules:
         matches = list(match_manifest_to_repo(manifest_modules, repo))
@@ -316,6 +391,7 @@ def rationalize(
     oecore_path: Path,
     update: bool,
 ) -> None:
+    """Does the actual work, maybe, of updating local submodules."""
     action_note: str
     if manifest_module.sha != repo_module.sha:
         if update:
@@ -331,12 +407,14 @@ def rationalize(
         f"{repo_module.path}: {action_note}: current sha {repo_module.sha}, manifest sha {manifest_module.sha}"
     )
     if (manifest_module.sha != repo_module.sha) and update:
-        LOG.info(f'Fetching in {repo_module.path}')
-        fetch_result = git(
-            ['fetch'], cwd=str(oecore_path / repo_module.path)
-        )
+        LOG.info(f"Fetching in {repo_module.path}")
+        # we need to make sure the ref we're going to switch to is actually present locally
+        fetch_result = git(["fetch"], cwd=str(oecore_path / repo_module.path))
         LOG.debug(fetch_result)
-        LOG.info(f'Checking out manifest sha {manifest_module.sha} in {repo_module.path}')
+        LOG.info(
+            f"Checking out manifest sha {manifest_module.sha} in {repo_module.path}"
+        )
+        # and then we can switch our local repo's submodule to the sha specified by the manifest
         result = git(
             ["checkout", manifest_module.sha], cwd=str(oecore_path / repo_module.path)
         )
@@ -353,15 +431,20 @@ def _do_run(
     quiet: bool,
 ) -> None:
     with provide_dir(working_dir) as checked_working_dir:
+        # first we get the manifests
         manifest_path = prep_manifest_repo(
             checked_working_dir, manifest_repo, manifest_ref, quiet
         )
+        # then we parse them for their submodules
         manifest_modules = parse_manifest_tree(
             manifest_path, Path("tdxref") / f"{manifest_name}.xml"
         )
+        # then we parse our local submodules
         oecore_modules = parse_current_repo(Path(oecore_path))
+        # then we pair up the local and upstream submodules
         matched = list(match_manifest_and_repo(manifest_modules, oecore_modules))
         for manifest_module, repo_module in matched:
+            # then we do something for each pair
             rationalize(manifest_module, repo_module, Path(oecore_path), update)
 
 
