@@ -1,6 +1,6 @@
 # Use Ubuntu LTS as the basis for the Docker image.
 
-FROM python:3.6-bullseye
+FROM python:3.13-bullseye
 
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
