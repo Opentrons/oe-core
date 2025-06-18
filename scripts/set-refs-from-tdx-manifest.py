@@ -40,7 +40,7 @@ except ImportError:
 
 LOG = logging.getLogger()
 
-_MANIFEST_REPO = "http://git.toradex.com/toradex-manifest.git"
+_MANIFEST_REPO = "git://git.toradex.com/toradex-manifest.git"
 
 _REPO_PATH_OVERRIDES = {"tools/bitbake": "layers/openembedded-core/bitbake"}
 
@@ -311,7 +311,18 @@ def get_manifest_repo(
     """Get the manifest repo with git clone."""
     LOG.info(f"cloning manifest {manifest_repo} to {manifest_target_path}")
     git_results = git(
-        ["clone", manifest_repo, manifest_target_path],
+        [
+            "clone",
+            "--depth=1",
+            # we need this because a default shallow clone can only have one branch
+            # and thus we couldn't switch. this is normally the default because normally
+            # we would pass --branch= to git clone, but that won't work if the refspec
+            # from the command line arg was a commit sha, so keep it safe. it's not really
+            # any slower.
+            "--no-single-branch",
+            manifest_repo,
+            manifest_target_path,
+        ],
         stdout=subprocess.PIPE,
         **quiet_proc(quiet),
     )
@@ -323,11 +334,21 @@ def checkout_manifest_ref(
     manifest_target_path: Path, reflike: str, quiet: bool
 ) -> None:
     """Check out the desired manifest ref."""
-    LOG.info(f"checking out {reflike} in {manifest_target_path}")
+    LOG.info(f"fetching and checking out {reflike} in {manifest_target_path}")
+    fetch_results = git(
+        ["fetch", "--tags", "origin", reflike],
+        cwd=manifest_target_path,
+        stdout=subprocess.PIPE,
+        **quiet_proc(quiet),
+    )
+    LOG.debug(fetch_results.stdout)
+    LOG.info(
+        git(["branch", "-a"], stdout=subprocess.PIPE, cwd=manifest_target_path).stdout
+    )
     # unlike our local repo's submodules, we don't have to fetch here because
     # we just downloaded this repo
     checkout_results = git(
-        ["checkout", reflike],
+        ["checkout", f"origin/{reflike}"],
         cwd=manifest_target_path,
         stdout=subprocess.PIPE,
         **quiet_proc(quiet),
@@ -495,16 +516,25 @@ def _run(desc: str) -> int:
     )
 
     parser.add_argument(
-        "--manifest-url", dest="manifest_url", action="store", default=_MANIFEST_REPO
+        "--manifest-url",
+        dest="manifest_url",
+        action="store",
+        default=_MANIFEST_REPO,
+        help="URL to the tdx manifest repo storage",
     )
     parser.add_argument(
-        "--manifest-name", dest="manifest_name", action="store", default="default"
+        "--manifest-name",
+        dest="manifest_name",
+        action="store",
+        default="default",
+        help="TDX manifest name (e.g. default, integration, next)",
     )
     parser.add_argument(
         "--oecore-path",
         dest="oecore_path",
         action="store",
-        default=str(Path(__file__).parent),
+        help=f"Path to the root of the oe-core repo.",
+        default=str(Path(__file__).parent.parent),
     )
 
     args = parser.parse_args()
