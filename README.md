@@ -35,3 +35,7 @@ If you also don't want to use `start.sh` (please consider adding the capability 
 `BITBAKEDIR=$(pwd)/tools/bitbake . ./layers/openembedded-core/oe-init-build-env`
 
 You'll get moved to `build`. Then you can run `bitbake`. To check recipe errors you can try `bitbake --setscene-only RECIPENAME`.
+
+## Updating from upstream
+
+If you want to update to the latest upstream release from toradex, use `scripts/set-refs-from-tdx-manifest.py`. Run it with `uv` to install its dependencies.
