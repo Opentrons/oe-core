@@ -12,7 +12,7 @@ SRC_URI = "\
     file://cmake-install-libcares.pc.patch \
     file://0001-fix-configure-error-mv-libcares.pc.cmakein-to-libcar.patch \
 "
-SRC_URI[sha256sum] = "7b836bd45376d86f5e78bc64f39d203fdf6dfa00a3dc66cf288db9bde3d34a85"
+SRC_URI[sha256sum] = "7cf2c46f6c14e453e4e8df9dc667c9fe308e12c7ff9d46ddf3e8d7f944ccf3b1"
 SRCREV = "39c73b503d9ef70a58ad1f4a4643f15b01407c66"
 
 UPSTREAM_CHECK_GITTAGREGEX = "cares-(?P<pver>\d+_(\d_?)+)"
