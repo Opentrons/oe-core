@@ -1,1 +1,1 @@
-SRC_URI = "git://github.com/intel/${BPN};protocol=https"
+SRC_URI = "git://github.com/intel/${BPN};branch=main;protocol=https"
