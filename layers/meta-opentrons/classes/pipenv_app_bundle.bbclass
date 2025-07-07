@@ -157,7 +157,7 @@ do_compile () {
 
    bbnote "Installing pypi packages"
 
-   ${PYTHON} -m pip install --upgrade pip==24.1
+   ${PYTHON} -m pip install "pip<24.1"
 
    ${PYTHON} -m pip install \
       -t ${B}/pip-buildenv \
