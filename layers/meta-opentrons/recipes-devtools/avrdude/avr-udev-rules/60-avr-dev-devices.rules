@@ -1,0 +1,31 @@
+# JTAGICEMKII
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2103", MODE="0666"
+
+# AVRISPMKII
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2104", MODE="0666"
+
+# STK600
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2106", MODE="0666"
+
+# AVRDRAGON
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2107", MODE="0666"
+
+# JTAGICE3
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2110", MODE="0666"
+# JTAGICE3 in JTAG mode"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2140", MODE="0666"
+
+# XPLAINEDPRO
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2111", MODE="0666"
+
+# ATMEL_ICE
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2141", MODE="0666"
+
+# usbprog bootloader
+ATTRS{idVendor}=="1781", ATTRS{idProduct}=="0c62", MODE="0666"
+
+# USBasp programmer
+ATTRS{idVendor}=="16c0", ATTRS{idProduct}=="05dc", MODE="0666"
+
+# USBtiny programmer
+ATTRS{idVendor}=="1781", ATTRS{idProduct}=="0c9f", MODE="0666"
