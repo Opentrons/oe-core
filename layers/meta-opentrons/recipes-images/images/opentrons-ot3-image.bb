@@ -11,6 +11,7 @@ DEPENDS += "rsync-native zip-native \
     opentrons-usb-bridge \
     opentrons-system-server \
     opentrons-mcu-firmware \
+    opentrons-live-stream \
     ffmpeg \
     "
 IMAGE_FSTYPES += "ext4.xz teziimg"
@@ -57,7 +58,7 @@ IMAGE_INSTALL += " \
     opentrons-usb-bridge opentrons-jupyter-notebook \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
-    opentrons-systemd-units opentrons-ssh-keys \
+    opentrons-systemd-units opentrons-ssh-keys opentrons-live-stream \
     libjpeg-turbo avrdude ffmpeg \
  "
 
