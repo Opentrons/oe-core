@@ -9,6 +9,8 @@ SRC_URI:append = " file://nginx.service "
 
 do_install:append () {
     install -d ${D}${systemd_system_unitdir}
+    install -d ${D}/var/www/localhost/html/stream/hls
+    chown -R nginx:nginx ${D}/var/www/localhost/html/stream
     install -m 0644 ${WORKDIR}/nginx.service ${D}${systemd_system_unitdir}/nginx.service
 }
 
