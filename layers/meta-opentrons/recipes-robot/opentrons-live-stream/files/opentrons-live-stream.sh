@@ -3,7 +3,7 @@
 # The FFMPEG process samples the video source provided by the
 # opentrons-live-stream.conf file to be streamed at an endpoint.
 
-FFMPEG_CONFIG="/usr/share/opentrons/opentrons-live-stream.conf"
+FFMPEG_CONFIG="/var/lib/opentrons-live-stream/opentrons-live-stream.conf"
 
 if [[ -f "$FFMPEG_CONFIG" ]]; then
   source "$FFMPEG_CONFIG"
