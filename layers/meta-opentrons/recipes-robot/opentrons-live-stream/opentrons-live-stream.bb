@@ -26,7 +26,11 @@ do_install () {
     install -d ${D}/${datadir}/opentrons
     install -m 0644 ${WORKDIR}/opentrons-live-stream.conf ${D}/${datadir}/opentrons/opentrons-live-stream.conf
 
-FILES:${PN}:append = " \ ${datadir}/opentrons/opentrons-live-stream.conf \ "
+FILES:${PN}:append = " \
+    ${D}/${datadir}/opentrons \
+    ${D}/${datadir}/opentrons-live-stream.conf \
+    ${D}/${systemd_unitdir}/system/opentrons-live-stream.service \
+    ${D}/${bindir}/opentrons-live-stream.sh \"
 
 SYSTEMD_PACKAGES = "${PN}"
 SYSTEMD_SERVICE:${PN} = "opentrons-live-stream.service"
