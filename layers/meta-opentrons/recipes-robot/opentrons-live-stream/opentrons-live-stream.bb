@@ -28,6 +28,7 @@ do_install:append () {
     install -d ${D}/${localstatedir}/opentrons-live-stream
     bbnote "Installing opentrons-live-stream.conf to ${D}/${localstatedir}/opentrons-live-stream/"
     install -m 0644 ${WORKDIR}/opentrons-live-stream.conf ${D}/${localstatedir}/opentrons-live-stream/opentrons-live-stream.conf
+}
 
 FILES:${PN} += " ${localstatedir}/opentrons-live-stream \
                  ${localstatedir}/opentrons-live-stream/opentrons-live-stream.conf \
