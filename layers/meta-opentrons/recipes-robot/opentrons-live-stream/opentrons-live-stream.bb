@@ -21,13 +21,13 @@ do_install:append () {
     install -d ${D}${systemd_unitdir}/system/
     bbnote "Installing opentrons-live-stream.service to ${D}${systemd_unitdir}/system"
     install -m 0644 ${WORKDIR}/opentrons-live-stream.service ${D}${systemd_unitdir}/system
-    bbnote "Installing opentrons-live-stream.sh to ${D}/${bindir}"
-    install -m 0755 ${WORKDIR}/opentrons-live-stream.sh ${D}/${bindir}
+    bbnote "Installing opentrons-live-stream.sh to ${D}${bindir}"
+    install -m 0755 ${WORKDIR}/opentrons-live-stream.sh ${D}${bindir}
 
     install -d ${D}/${localstatedir}
     install -d ${D}/${localstatedir}/opentrons-live-stream
-    bbnote "Installing opentrons-live-stream.conf to ${D}/${localstatedir}/opentrons-live-stream/"
-    install -m 0644 ${WORKDIR}/opentrons-live-stream.conf ${D}/${localstatedir}/opentrons-live-stream/opentrons-live-stream.conf
+    bbnote "Installing opentrons-live-stream.conf to ${D}${localstatedir}/opentrons-live-stream/"
+    install -m 0644 ${WORKDIR}/opentrons-live-stream.conf ${D}${localstatedir}/opentrons-live-stream/opentrons-live-stream.conf
 }
 
 FILES:${PN} += " ${localstatedir}/opentrons-live-stream \
