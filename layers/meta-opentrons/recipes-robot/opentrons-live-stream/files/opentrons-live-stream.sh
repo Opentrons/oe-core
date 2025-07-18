@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # This script is responsible for starting our FFMPEG process.
 # The FFMPEG process samples the video source provided by the
 # opentrons-live-stream.conf file to be streamed at an endpoint.
