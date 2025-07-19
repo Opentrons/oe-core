@@ -1,0 +1,10 @@
+[Unit]
+Requires=nginx.service
+After=nginx.service
+
+[Service]
+ExecStart=/usr/bin/opentrons-live-stream.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
