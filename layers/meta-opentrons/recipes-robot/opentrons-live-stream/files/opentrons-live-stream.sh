@@ -31,7 +31,7 @@ else
   # Create the configuration file with a default streaming source
   DIRECTORY="/var/lib/opentrons-live-stream"
   if [ ! -d "$DIRECTORY" ]; then
-    mkdir $DIRECTORY
+    mkdir -p $DIRECTORY
   fi
   echo -e "SOURCE=$DEFAULT_SOURCE\nRESOLUTION=$DEFAULT_RESOLUTION\nFRAMERATE=$DEFAULT_FRAMERATE\nBITRATE=$DEFAULT_BITRATE" >> $FFMPEG_CONFIG
 fi
