@@ -124,6 +124,7 @@ jobs:
           echo 'OT_BUILD_TYPE = "${{needs.decide-refs.outputs.build-type}}"' >> ./build/conf/local.conf
           echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./build/conf/local.conf
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
+          echo 'CONNECTIVITY_CHECK_URIS = "https://www.yoctoproject.org/connectivity.html"' >> ./build/conf/local.conf
           cd ..
       - name: Apply internal-release variant CI config overrides
         if: needs.decide-refs.outputs.variant == 'internal-release'
