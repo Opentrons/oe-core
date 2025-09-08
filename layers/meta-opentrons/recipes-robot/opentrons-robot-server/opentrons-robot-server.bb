@@ -17,7 +17,7 @@ inherit insane systemd get_ot_package_version
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service"
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
-SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-modules.rules"
+SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules"
 
 PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
@@ -54,12 +54,12 @@ do_install:append () {
     install -m 0644 ${B}/robot-server-version.conf ${D}${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf
     install -m 0644 ${WORKDIR}/opentrons-ot3-canbus.service ${D}${systemd_system_unitdir}/opentrons-ot3-canbus.service
     install -d ${D}${sysconfdir}/udev/rules.d/
-    install -m 0644 ${WORKDIR}/95-opentrons-modules.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-modules.rules
+    install -m 0644 ${WORKDIR}/95-opentrons-udev.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-udev.rules
 }
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d \
                        ${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf \
-                       ${sysconfdir}/udev/rules.d/95-opentrons-modules.rules \
+                       ${sysconfdir}/udev/rules.d/95-opentrons-udev.rules \
                        ${sysconfdir}/release-notes.md \
                        "
 
