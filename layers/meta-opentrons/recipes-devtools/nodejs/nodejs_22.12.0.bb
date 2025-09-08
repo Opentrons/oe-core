@@ -41,7 +41,7 @@ SRC_URI:append:toolchain-clang:powerpc64le = " \
            "
 SRC_URI[sha256sum] = "fe1bc4be004dc12721ea2cb671b08a21de01c6976960ef8a1248798589679e16"
 
-S = "${UNPACKDIR}/node-v${PV}"
+S = "${WORKDIR}/node-v${PV}"
 
 CVE_PRODUCT += "node.js"
 
