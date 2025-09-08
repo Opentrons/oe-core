@@ -17,3 +17,6 @@ KERNEL=="hidraw[0-9]*", ATTRS{idProduct}=="1199", ATTRS{idVendor}=="16d0", SYMLI
 
 # flex stacker module
 KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ef24", ATTRS{idVendor}=="0483", SYMLINK+="ot_module_flexstacker%n"
+
+# system camera
+KERNEL=="video[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="9230", ATTRS{idVendor}=="32e4", SYMLINK+="ot_system_camera"
