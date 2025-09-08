@@ -21,7 +21,6 @@ COMPATIBLE_HOST:powerpc = "null"
 COMPATIBLE_HOST:powerpc64le = "null"
 
 SRC_URI = "https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
-           file://0001-Do-not-use-glob-in-deps.patch \
            file://0001-Disable-running-gyp-files-for-bundled-deps.patch \
            file://0004-v8-don-t-override-ARM-CFLAGS.patch \
            file://system-c-ares.patch \
