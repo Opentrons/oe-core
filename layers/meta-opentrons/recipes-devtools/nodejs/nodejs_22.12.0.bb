@@ -18,9 +18,8 @@ COMPATIBLE_MACHINE:mips64 = "(!.*mips64).*"
 COMPATIBLE_HOST:riscv64 = "null"
 COMPATIBLE_HOST:riscv32 = "null"
 COMPATIBLE_HOST:powerpc = "null"
-COMPATIBLE_HOST:powerpc64le = "null"
 
-SRC_URI = "https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
+SRC_URI = "http://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
            file://0001-Disable-running-gyp-files-for-bundled-deps.patch \
            file://0004-v8-don-t-override-ARM-CFLAGS.patch \
            file://system-c-ares.patch \
@@ -29,7 +28,6 @@ SRC_URI = "https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
            file://0001-deps-disable-io_uring-support-in-libuv.patch \
            file://0001-positional-args.patch \
            file://0001-custom-env.patch \
-           file://0001-build-remove-redundant-mXX-flags-for-V8.patch \
            file://run-ptest \
            "
 SRC_URI:append:class-target = " \
