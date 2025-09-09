@@ -7,7 +7,6 @@ CVE_PRODUCT = "nodejs node.js"
 
 DEPENDS = "openssl openssl-native file-replacement-native python3-packaging-native"
 DEPENDS:append:class-target = " qemu-native"
-DEPENDS:append:class-native = " c-ares-native"
 
 inherit pkgconfig python3native qemu ptest siteinfo
 
@@ -23,7 +22,6 @@ COMPATIBLE_HOST:powerpc64le = "null"
 SRC_URI = "https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
            file://0001-Disable-running-gyp-files-for-bundled-deps.patch \
            file://0004-v8-don-t-override-ARM-CFLAGS.patch \
-           file://system-c-ares.patch \
            file://0001-liftoff-Correct-function-signatures.patch \
            file://libatomic.patch \
            file://0001-deps-disable-io_uring-support-in-libuv.patch \
@@ -66,7 +64,7 @@ ARCHFLAGS:append:mips = " --v8-lite-mode"
 ARCHFLAGS:append:mipsel = " --v8-lite-mode"
 ARCHFLAGS ?= ""
 
-PACKAGECONFIG ??= "ares brotli icu zlib"
+PACKAGECONFIG ??= "brotli icu zlib"
 
 PACKAGECONFIG[ares] = "--shared-cares,,c-ares c-ares-native"
 PACKAGECONFIG[brotli] = "--shared-brotli,,brotli brotli-native"
