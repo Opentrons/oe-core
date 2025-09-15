@@ -51,6 +51,9 @@ fakeroot do_install(){
     # @see https://github.com/nodejs/node-gyp/pull/2721
     find -type d -name node_gyp_bins -prune -exec rm -rf "{}" \;
 
+    # Remove incompatible Sentry CLI binaries that cause objcopy failures
+    find -path "*/node_modules/@sentry/cli-*/bin/*" -type f -delete
+
     find -type d -exec install -o root -g root -Dm 755 "{}" "${DESTDIR}/{}" \;
     find -type f -exec install -o root -g root -Dm 755 "{}" "${DESTDIR}/{}" \;
     # A side effect of using precompiled electron is that for some reason it
