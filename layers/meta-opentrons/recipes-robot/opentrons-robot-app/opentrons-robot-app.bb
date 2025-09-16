@@ -34,10 +34,31 @@ do_compile(){
     export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
     export NODE_OPTIONS=--openssl-legacy-provider
     export OPENSSL_MODULES=${STAGING_LIBDIR_NATIVE}/ossl-modules
-    OT_APP_MIXPANEL_ID=${MIXPANEL_ID} OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app dist
-    OT_APP_MIXPANEL_ID=${MIXPANEL_ID} OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C ${S}/app-shell-odd lib
+    export OT_BUILD_TARGET=${OT_BUILD_TARGET}
+    export OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN}
+    export OT_SENTRY_DSN=${OT_SENTRY_DSN}
+
+    OT_APP_MIXPANEL_ID=${MIXPANEL_ID} \
+    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} \
+    OT_BUILD_TARGET=${OT_BUILD_TARGET} \
+    OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN} \
+    OT_SENTRY_DSN=${OT_SENTRY_DSN} \
+    make -C ${S}/app dist
+
+    OT_APP_MIXPANEL_ID=${MIXPANEL_ID} \
+    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} \
+    OT_BUILD_TARGET=${OT_BUILD_TARGET} \
+    OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN} \
+    OT_SENTRY_DSN=${OT_SENTRY_DSN} \
+    make -C ${S}/app-shell-odd lib
+
     cd ${S}/app-shell-odd
-    OT_APP_MIXPANEL_ID=${MIXPANEL_ID} OPENTRONS_PROJECT=${OPENTRONS_PROJECT} NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
+    OT_APP_MIXPANEL_ID=${MIXPANEL_ID} \
+    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} \
+    OT_BUILD_TARGET=${OT_BUILD_TARGET} \
+    OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN} \
+    OT_SENTRY_DSN=${OT_SENTRY_DSN} \
+    NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
 
 fakeroot do_install(){
