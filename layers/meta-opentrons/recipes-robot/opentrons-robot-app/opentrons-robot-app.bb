@@ -35,7 +35,7 @@ do_compile(){
     export NODE_OPTIONS=--openssl-legacy-provider
     export OPENSSL_MODULES=${STAGING_LIBDIR_NATIVE}/ossl-modules
     export OT_BUILD_TARGET=${OT_BUILD_TARGET}
-    export OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN}
+    export OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN_OE_CORE}
     export OT_SENTRY_DSN=${OT_SENTRY_DSN}
     export OT_APP_MIXPANEL_ID=${MIXPANEL_ID}
     export OPENTRONS_PROJECT=${OPENTRONS_PROJECT}
