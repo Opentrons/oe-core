@@ -39,6 +39,9 @@ do_compile(){
     export OT_SENTRY_DSN=${OT_SENTRY_DSN}
     export OT_APP_MIXPANEL_ID=${MIXPANEL_ID}
     export OPENTRONS_PROJECT=${OPENTRONS_PROJECT}
+
+    bbnote "OT_SENTRY_DSN in bitbake: ${OT_SENTRY_DSN}"
+    bbnote "OT_BUILD_TARGET in bitbake: ${OT_BUILD_TARGET}"
     
     make -C ${S}/app dist
     make -C ${S}/app-shell-odd lib
