@@ -37,27 +37,13 @@ do_compile(){
     export OT_BUILD_TARGET=${OT_BUILD_TARGET}
     export OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN}
     export OT_SENTRY_DSN=${OT_SENTRY_DSN}
-
-    OT_APP_MIXPANEL_ID=${MIXPANEL_ID} \
-    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} \
-    OT_BUILD_TARGET=${OT_BUILD_TARGET} \
-    OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN} \
-    OT_SENTRY_DSN=${OT_SENTRY_DSN} \
+    export OT_APP_MIXPANEL_ID=${MIXPANEL_ID}
+    export OPENTRONS_PROJECT=${OPENTRONS_PROJECT}
+    
     make -C ${S}/app dist
-
-    OT_APP_MIXPANEL_ID=${MIXPANEL_ID} \
-    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} \
-    OT_BUILD_TARGET=${OT_BUILD_TARGET} \
-    OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN} \
-    OT_SENTRY_DSN=${OT_SENTRY_DSN} \
     make -C ${S}/app-shell-odd lib
 
     cd ${S}/app-shell-odd
-    OT_APP_MIXPANEL_ID=${MIXPANEL_ID} \
-    OPENTRONS_PROJECT=${OPENTRONS_PROJECT} \
-    OT_BUILD_TARGET=${OT_BUILD_TARGET} \
-    OT_SENTRY_AUTH_TOKEN=${OT_SENTRY_AUTH_TOKEN} \
-    OT_SENTRY_DSN=${OT_SENTRY_DSN} \
     NODE_ENV=production NO_PYTHON=true yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
 
