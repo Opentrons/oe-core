@@ -47,8 +47,8 @@ do_compile(){
 
     cd ${S}/app-shell-odd
 
-   # Remove incompatible Sentry CLI binaries that cause objcopy failures
-   find -path "*/node_modules/@sentry/cli-*/bin/*" -type f -delete
+    # Remove incompatible Sentry CLI binaries that cause objcopy failures
+    find -path "*/node_modules/@sentry/cli-*/bin/*" -type f -delete
 
     OT_BUILD_TARGET="${OT_BUILD_TARGET}" \
     OT_SENTRY_AUTH_TOKEN="${OT_SENTRY_AUTH_TOKEN_OE_CORE}" \
