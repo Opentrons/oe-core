@@ -63,6 +63,9 @@ jobs:
     concurrency:
       group: ${{needs.decide-refs.outputs.monorepo}} ${{needs.decide-refs.outputs.oe-core}} ${{needs.decide-refs.outputs.ot3-firmware}} ${{needs.decide-refs.outputs.variant}} ${{needs.decide-refs.outputs.build-type}} ${{inputs.infra-stage}}
       cancel-in-progress: false
+    outputs:
+      system_url: ${{ steps.upload-results.outputs.system_url }}
+      fullimage_url: ${{ steps.upload-results.output.fullimage_url }}
     steps:
       - name: Fetch initial sources for action
         uses: 'actions/checkout@v3'
