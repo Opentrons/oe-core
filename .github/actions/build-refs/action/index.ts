@@ -1,5 +1,6 @@
 import { getOctokit } from '@actions/github'
 import * as core from '@actions/core'
+import * as semver from 'semver'
 
 export type Repo = 'oe-core' | 'monorepo' | 'ot3-firmware'
 export type BuildType = 'develop' | 'release'
@@ -71,7 +72,41 @@ function latestTagPrefixFor(repo: Repo, variant: Variant): string[] {
 }
 
 export function latestTag(tagRefs: GitHubApiTag[]): Tag | null {
-  return (tagRefs.at(-1)?.ref as Tag | null | undefined) ?? null
+  if (tagRefs.length === 0) return null
+  
+  // Extract and parse version numbers from tag refs
+  const tagVersions = tagRefs
+    .map(tag => {
+      const tagName = tag.ref.replace('refs/tags/', '')
+      
+      // Handle v* tags (e.g., "v1.19.4")
+      if (tagName.startsWith('v')) {
+        const version = tagName.substring(1)
+        return { tag: tag.ref, version, isValid: semver.valid(version) }
+      }
+      
+      // Handle internal@* tags (e.g., "internal@1.2.0-alpha.0")
+      if (tagName.startsWith('internal@')) {
+        const version = tagName.substring(9) // Remove "internal@"
+        return { tag: tag.ref, version, isValid: semver.valid(version) }
+      }
+      
+      // Handle ot3@* tags (e.g., "ot3@1.2.0-alpha.0")
+      if (tagName.startsWith('ot3@')) {
+        const version = tagName.substring(4) // Remove "ot3@"
+        return { tag: tag.ref, version, isValid: semver.valid(version) }
+      }
+      
+      // Unknown tag format
+      return { tag: tag.ref, version: null, isValid: false }
+    })
+    .filter(tv => tv.isValid) // Only keep valid semantic versions
+  
+  if (tagVersions.length === 0) return null
+  
+  // Sort by semantic version and return the latest
+  tagVersions.sort((a, b) => semver.compare(a.version!, b.version!))
+  return tagVersions[tagVersions.length - 1].tag
 }
 
 function restDetailsFor(input: Repo): { owner: string; repo: string } {
@@ -171,7 +206,7 @@ async function resolveRefs(
               ...restDetailsFor(repoName),
               ref: restAPICompliantRef(prefix),
             })
-            .then(response => {
+            .then((response: any) => {
               if (response.status != 200) {
                 throw new Error(
                   `Bad response from github api for ${repoName} get tags: ${response.status}`
@@ -185,7 +220,7 @@ async function resolveRefs(
             })
         )
       ).then(results =>
-        results.reduce((prev, current) => prev ?? current, null)
+        results.reduce((prev: any, current: any) => prev ?? current, null)
       )
     }
 
@@ -207,13 +242,13 @@ async function resolveRefs(
           ...restDetailsFor(repoName),
           ref: restAPICompliantRef(correctRef),
         })
-        .then(value => {
+        .then((value: any) => {
           if (value.status != 200 || !value.data) {
             throw new Error(
               `Bad response from github api for ${repoName} get matching refs: ${value.status}`
             )
           }
-          const availableRefs = value.data.map(refObj => refObj.ref)
+          const availableRefs = value.data.map((refObj: any) => refObj.ref)
           core.info(`refs on ${repoName} matching ${ref}: ${availableRefs}`)
           return availableRefs.includes(correctRef) ? correctRef : null
         })
