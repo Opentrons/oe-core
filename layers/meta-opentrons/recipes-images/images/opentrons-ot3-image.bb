@@ -59,7 +59,7 @@ IMAGE_INSTALL += " \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
     opentrons-systemd-units opentrons-ssh-keys opentrons-live-stream \
-    libjpeg-turbo avrdude ffmpeg rtl8812au
+    libjpeg-turbo avrdude ffmpeg rtl8812au \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
