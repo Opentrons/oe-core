@@ -3,35 +3,41 @@
 # The FFMPEG process samples the video source provided by the
 # opentrons-live-stream.conf file to be streamed at an endpoint.
 
+# Capture the current boot ID to determine if stream config is stale
+CURRENT_BOOT_ID=$(cat /proc/sys/kernel/random/boot_id)
+
+# Default Configurations
+DEFAULT_STATUS="OFF"
 DEFAULT_SOURCE="NONE"
 DEFAULT_RESOLUTION=1280x720
 DEFAULT_FRAMERATE=30
-DEFAULT_BITRATE=2M
+DEFAULT_BITRATE=2000K
 
-FFMPEG_CONFIG="/var/lib/opentrons-live-stream/opentrons-live-stream.conf"
+FFMPEG_CONFIG="/data/opentrons-live-stream.conf"
 
 if [[ -f "$FFMPEG_CONFIG" ]]; then
   source "$FFMPEG_CONFIG"
   echo "Opentrons FFMPEG Configuration loaded from $FFMPEG_CONFIG"
-
-  if [ "$SOURCE" != "NONE" ]; then
-    ffmpeg \
-      -hwaccel auto \
-      -video_size $RESOLUTION \
-      -i $SOURCE \
-      -flags low_delay \
-      -c:v h264_v4l2m2m \
-      -b:v $BITRATE \
-      -f flv \
-      -r $FRAMERATE \
-      rtmp://localhost/live/stream
+  if [ "$CURRENT_BOOT_ID" == "$BOOT_ID" ]; then 
+    if [ "$SOURCE" != "NONE" ]; then
+      ffmpeg \
+        -hwaccel auto \
+        -video_size $RESOLUTION \
+        -i $SOURCE \
+        -flags low_delay \
+        -c:v h264_v4l2m2m \
+        -b:v $BITRATE \
+        -f flv \
+        -r $FRAMERATE \
+        rtmp://localhost/live/stream
+    fi
   fi
 
 else
   # Create the configuration file with a default streaming source
-  DIRECTORY="/var/lib/opentrons-live-stream"
+  DIRECTORY="/data"
   if [ ! -d "$DIRECTORY" ]; then
     mkdir -p $DIRECTORY
   fi
-  echo -e "SOURCE=$DEFAULT_SOURCE\nRESOLUTION=$DEFAULT_RESOLUTION\nFRAMERATE=$DEFAULT_FRAMERATE\nBITRATE=$DEFAULT_BITRATE" >> $FFMPEG_CONFIG
+  echo -e "BOOT_ID=$CURRENT_BOOT_ID\nSTATUS=$DEFAULT_STATUS\nSOURCE=$DEFAULT_SOURCE\nRESOLUTION=$DEFAULT_RESOLUTION\nFRAMERATE=$DEFAULT_FRAMERATE\nBITRATE=$DEFAULT_BITRATE" >> $FFMPEG_CONFIG
 fi
