@@ -19,7 +19,8 @@ if [[ -f "$FFMPEG_CONFIG" ]]; then
   source "$FFMPEG_CONFIG"
   echo "Opentrons FFMPEG Configuration loaded from $FFMPEG_CONFIG"
   if [ "$CURRENT_BOOT_ID" == "$BOOT_ID" ]; then 
-    if [ "$SOURCE" != "NONE" ] && [ "$STATUS" != "OFF" ]; then
+    if [ -e "$SOURCE" ] && [ "$STATUS" != "OFF" ]; then
+      echo "Beginning Opentrons Live Stream with camera $SOURCE"
       ffmpeg \
         -hwaccel auto \
         -video_size $RESOLUTION \
