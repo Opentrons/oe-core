@@ -79,10 +79,17 @@ export function latestTag(tagRefs: GitHubApiTag[]): Tag | null {
     .map(tag => {
       const tagName = tag.ref.replace('refs/tags/', '')
 
-      // Handle v* tags (e.g., "v1.19.4")
+      // Handle v* tags (e.g., "v1.19.4" or "v66")
       if (tagName.startsWith('v')) {
         const version = tagName.substring(1)
-        return { tag: tag.ref, version, isValid: semver.valid(version) }
+        // Accept both semantic versions and simple numeric versions like "v66"
+        const isValidSemver = semver.valid(version)
+        const isValidNumeric = /^\d+$/.test(version)
+        return {
+          tag: tag.ref,
+          version,
+          isValid: isValidSemver || isValidNumeric,
+        }
       }
 
       // Handle internal@* tags (e.g., "internal@1.2.0-alpha.0")
@@ -100,12 +107,28 @@ export function latestTag(tagRefs: GitHubApiTag[]): Tag | null {
       // Unknown tag format
       return { tag: tag.ref, version: null, isValid: false }
     })
-    .filter(tv => tv.isValid) // Only keep valid semantic versions
+    .filter(tv => tv.isValid) // Only keep valid versions (semantic or numeric)
 
   if (tagVersions.length === 0) return null
 
-  // Sort by semantic version and return the latest
-  tagVersions.sort((a, b) => semver.compare(a.version!, b.version!))
+  // Sort by version and return the latest
+  tagVersions.sort((a, b) => {
+    const aIsSemver = semver.valid(a.version!)
+    const bIsSemver = semver.valid(b.version!)
+
+    if (aIsSemver && bIsSemver) {
+      return semver.compare(a.version!, b.version!)
+    } else if (aIsSemver && !bIsSemver) {
+      // Semantic versions are considered newer than numeric versions
+      return 1
+    } else if (!aIsSemver && bIsSemver) {
+      // Numeric versions are considered older than semantic versions
+      return -1
+    } else {
+      // Both are numeric versions, compare numerically
+      return parseInt(a.version!) - parseInt(b.version!)
+    }
+  })
   return tagVersions[tagVersions.length - 1].tag
 }
 
