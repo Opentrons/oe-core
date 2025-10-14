@@ -34645,10 +34645,17 @@ function latestTag(tagRefs) {
     const tagVersions = tagRefs
         .map(tag => {
         const tagName = tag.ref.replace('refs/tags/', '');
-        // Handle v* tags (e.g., "v1.19.4")
+        // Handle v* tags (e.g., "v1.19.4" or "v66")
         if (tagName.startsWith('v')) {
             const version = tagName.substring(1);
-            return { tag: tag.ref, version, isValid: semver__WEBPACK_IMPORTED_MODULE_2__.valid(version) };
+            // Accept both semantic versions and simple numeric versions like "v66"
+            const isValidSemver = semver__WEBPACK_IMPORTED_MODULE_2__.valid(version);
+            const isValidNumeric = /^\d+$/.test(version);
+            return {
+                tag: tag.ref,
+                version,
+                isValid: isValidSemver || isValidNumeric,
+            };
         }
         // Handle internal@* tags (e.g., "internal@1.2.0-alpha.0")
         if (tagName.startsWith('internal@')) {
@@ -34663,11 +34670,29 @@ function latestTag(tagRefs) {
         // Unknown tag format
         return { tag: tag.ref, version: null, isValid: false };
     })
-        .filter(tv => tv.isValid); // Only keep valid semantic versions
+        .filter(tv => tv.isValid); // Only keep valid versions (semantic or numeric)
     if (tagVersions.length === 0)
         return null;
-    // Sort by semantic version and return the latest
-    tagVersions.sort((a, b) => semver__WEBPACK_IMPORTED_MODULE_2__.compare(a.version, b.version));
+    // Sort by version and return the latest
+    tagVersions.sort((a, b) => {
+        const aIsSemver = semver__WEBPACK_IMPORTED_MODULE_2__.valid(a.version);
+        const bIsSemver = semver__WEBPACK_IMPORTED_MODULE_2__.valid(b.version);
+        if (aIsSemver && bIsSemver) {
+            return semver__WEBPACK_IMPORTED_MODULE_2__.compare(a.version, b.version);
+        }
+        else if (aIsSemver && !bIsSemver) {
+            // Semantic versions are considered newer than numeric versions
+            return 1;
+        }
+        else if (!aIsSemver && bIsSemver) {
+            // Numeric versions are considered older than semantic versions
+            return -1;
+        }
+        else {
+            // Both are numeric versions, compare numerically
+            return parseInt(a.version) - parseInt(b.version);
+        }
+    });
     return tagVersions[tagVersions.length - 1].tag;
 }
 function restDetailsFor(input) {
