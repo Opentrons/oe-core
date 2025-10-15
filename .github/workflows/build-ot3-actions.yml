@@ -52,6 +52,17 @@ jobs:
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
           ot3-firmware: ${{ inputs.ot3-firmware-ref }}
+      - name: Add refs to the summary
+        run: |
+          echo "### Decide refs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **oe-core** | ${{ steps.build-refs.outputs.oe-core }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **monorepo** | ${{ steps.build-refs.outputs.monorepo }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **ot3-firmware** | ${{ steps.build-refs.outputs.ot3-firmware }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **variant** | ${{ steps.build-refs.outputs.variant }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **build type** | ${{ steps.build-refs.outputs.build-type }} |" >> $GITHUB_STEP_SUMMARY
   run-build:
     needs: decide-refs
     strategy:
