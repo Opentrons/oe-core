@@ -34657,10 +34657,17 @@ function latestTag(tagRefs) {
                 isValid: isValidSemver || isValidNumeric,
             };
         }
-        // Handle internal@* tags (e.g., "internal@1.2.0-alpha.0")
+        // Handle internal@* tags (e.g., "internal@1.2.0-alpha.0" or "internal@v23")
         if (tagName.startsWith('internal@')) {
-            const version = tagName.substring(9); // Remove "internal@"
-            return { tag: tag.ref, version, isValid: semver__WEBPACK_IMPORTED_MODULE_2__.valid(version) };
+            let version = tagName.substring(9); // Remove "internal@"
+            // Handle internal@v* format by removing the 'v' prefix
+            if (version.startsWith('v')) {
+                version = version.substring(1);
+            }
+            // Accept both semantic versions and simple numeric versions
+            const isValidSemver = semver__WEBPACK_IMPORTED_MODULE_2__.valid(version);
+            const isValidNumeric = /^\d+$/.test(version);
+            return { tag: tag.ref, version, isValid: isValidSemver || isValidNumeric };
         }
         // Handle ot3@* tags (e.g., "ot3@1.2.0-alpha.0")
         if (tagName.startsWith('ot3@')) {
