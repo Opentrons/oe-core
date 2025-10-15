@@ -204,3 +204,70 @@ VARIANT_TEST_SPECS.forEach(
     })
   }
 )
+
+const LATEST_TAG_TEST_SPECS: Array<
+  [string, action.GitHubApiTag[], string | null]
+> = [
+  [
+    'handles internal@v* numeric tags correctly',
+    [
+      { ref: 'refs/tags/internal@v23' },
+      { ref: 'refs/tags/internal@v22' },
+      { ref: 'refs/tags/internal@v21' },
+    ],
+    'refs/tags/internal@v23',
+  ],
+  [
+    'handles internal@* semantic version tags correctly',
+    [
+      { ref: 'refs/tags/internal@1.2.0-alpha.0' },
+      { ref: 'refs/tags/internal@1.1.0-alpha.0' },
+      { ref: 'refs/tags/internal@1.0.0-alpha.0' },
+    ],
+    'refs/tags/internal@1.2.0-alpha.0',
+  ],
+  [
+    'handles mixed internal@* tag formats and picks the latest',
+    [
+      { ref: 'refs/tags/internal@v23' },
+      { ref: 'refs/tags/internal@1.2.0-alpha.0' },
+      { ref: 'refs/tags/internal@v22' },
+    ],
+    'refs/tags/internal@1.2.0-alpha.0', // semantic versions are considered newer
+  ],
+  [
+    'handles v* tags correctly',
+    [
+      { ref: 'refs/tags/v1.19.4' },
+      { ref: 'refs/tags/v1.19.3' },
+      { ref: 'refs/tags/v66' },
+    ],
+    'refs/tags/v1.19.4',
+  ],
+  [
+    'handles ot3@* tags correctly',
+    [
+      { ref: 'refs/tags/ot3@2.8.0-alpha.0' },
+      { ref: 'refs/tags/ot3@2.7.0-alpha.0' },
+    ],
+    'refs/tags/ot3@2.8.0-alpha.0',
+  ],
+  ['returns null for empty tag list', [], null],
+  [
+    'filters out invalid tags and returns the latest valid one',
+    [
+      { ref: 'refs/tags/invalid-tag' },
+      { ref: 'refs/tags/internal@v23' },
+      { ref: 'refs/tags/another-invalid' },
+    ],
+    'refs/tags/internal@v23',
+  ],
+]
+
+LATEST_TAG_TEST_SPECS.forEach(
+  ([testNameFragment, testTagRefs, testExpectedResult]) => {
+    test(`latestTag ${testNameFragment}`, () => {
+      expect(action.latestTag(testTagRefs)).toStrictEqual(testExpectedResult)
+    })
+  }
+)
