@@ -102,7 +102,11 @@ export function latestTag(tagRefs: GitHubApiTag[]): Tag | null {
         // Accept both semantic versions and simple numeric versions
         const isValidSemver = semver.valid(version)
         const isValidNumeric = /^\d+$/.test(version)
-        return { tag: tag.ref, version, isValid: isValidSemver || isValidNumeric }
+        return {
+          tag: tag.ref,
+          version,
+          isValid: isValidSemver || isValidNumeric,
+        }
       }
 
       // Handle ot3@* tags (e.g., "ot3@1.2.0-alpha.0")
