@@ -10,7 +10,7 @@ RDEPENDS:${PN} += " nginx python3-pyudev python3-pyserial"
 
 OT_PROJECT = 'usb-bridge'
 
-inherit insane systemd get_ot_package_version
+inherit systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-usb-bridge.service"
