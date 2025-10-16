@@ -1,6 +1,8 @@
 # Use Ubuntu LTS as the basis for the Docker image.
 
-FROM python:3.6-bullseye
+# bookworm is the latest tested debian version for scarthgap per
+# https://docs.yoctoproject.org/5.0.12/ref-manual/system-requirements.html
+FROM python:3.14-bookworm
 
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
@@ -12,9 +14,9 @@ RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONT
 RUN apt-get update \
     && apt-get -y install \
     gawk wget git-core diffstat unzip texinfo gcc-multilib \
-    build-essential chrpath socat cpio python python3-pexpect \
+    build-essential chrpath socat cpio python3-pexpect \
     xz-utils debianutils iputils-ping python3-git python3-jinja2 \
-    libegl1-mesa libsdl1.2-dev  pylint3 xterm tar locales curl git sudo \
+    libegl1-mesa-dev libsdl1.2-dev  pylint xterm tar locales curl git sudo \
     clang cmake zstd lz4 bison byacc flex
 
 # By default, Ubuntu uses dash as an alias for sh. Dash does not support the source command
@@ -38,6 +40,7 @@ ENV LC_ALL en_US.UTF-8
 ARG host_uid=1001
 ARG host_gid=1001
 ARG username=opentrons-ci
+
 ENV USER_NAME ${username}
 ENV PROJECT ot3
 RUN groupadd -g $host_gid $USER_NAME || true \
