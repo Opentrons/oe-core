@@ -34,21 +34,16 @@ SYSTEMD_DEFAULT_TARGET = "graphical.target"
 #"
 EXTRA_IMAGE_FEATURES += " debug-tweaks"
 
-IMAGE_INSTALL += " \
+IMAGE_INSTALL:append = " \
     packagegroup-boot \
     packagegroup-basic \
-    packagegroup-base-tdx-cli \
     packagegroup-tdx-cli \
-    packagegroup-machine-tdx-cli \
-    packagegroup-wifi-tdx-cli \
-    packagegroup-wifi-fw-tdx-cli \
-    packagegroup-tdx-graphical \
     packagegroup-fsl-isp \
     udev-extraconf \
     v4l-utils dfu-util \
     source-han-sans-cn-fonts \
     bash coreutils makedevs mime-support util-linux \
-    timestamp-service networkmanager crda ch341ser \
+    timestamp-service networkmanager ch341ser \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
     plymouth mosquitto hidapi \
@@ -65,10 +60,10 @@ IMAGE_INSTALL += " \
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
 # port. Luckily, they are only recommended so it is easy to filter them out.
-PACKAGE_EXCLUDE = "libusbgx libusbgx-examples gpsd"
+PACKAGE_EXCLUDE:append := "libusbgx libusbgx-examples gpsd "
 
 # exclude Toradex hostapd-example as this causes mDNS discovery issues when interface uap0 connects/disconnects.
-PACKAGE_EXCLUDE += " hostapd-example"
+PACKAGE_EXCLUDE:append := " hostapd-example"
 
 ROBOT_TYPE = "OT-3 Standard"
 
