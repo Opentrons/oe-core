@@ -1,0 +1,181 @@
+From a7021f904505da69155257612c8cb011be735290 Mon Sep 17 00:00:00 2001
+From: Philippe Schenker <philippe.schenker@toradex.com>
+Date: Mon, 13 Jun 2022 19:35:23 +0200
+Subject: [PATCH 3/5] toradex: tdx-cfg-block: extend assembly version
+
+There are two decimal digits reserved to encode the module version and
+revision. This code so far implemented A-Z which used 0-25 of this
+range.
+This commit extends the range to make use of all 99 numbers. After
+capital letters the form with a hashtag and number (e.g. #26) is used.
+
+Examples:
+
+If the assembly version is between zero and 25 the numbering is as follows,
+as it also has been before this commit:
+0: V0.0A
+1: V0.0B
+...
+25: V0.0Z
+
+New numbering of assembly version:
+If the number is between 26 and 99 the new assembly version name is:
+26: V0.0#26
+27: V0.0#27
+...
+99: V0.0#99
+
+Upstream-Status: Backport [7e27ce16c5d289e5b9712a179e798ea4eb831816]
+Signed-off-by: Philippe Schenker <philippe.schenker@toradex.com>
+Reviewed-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+Acked-by: Marcel Ziswiler <marcel.ziswiler@toradex.com>
+---
+ board/toradex/common/tdx-cfg-block.c | 32 ++++++++++++++++++++++++----
+ board/toradex/common/tdx-common.c    | 25 +++++++++++++++++-----
+ 2 files changed, 48 insertions(+), 9 deletions(-)
+
+diff --git a/board/toradex/common/tdx-cfg-block.c b/board/toradex/common/tdx-cfg-block.c
+index 6c8cf4592d1..678d4e07c21 100644
+--- a/board/toradex/common/tdx-cfg-block.c
++++ b/board/toradex/common/tdx-cfg-block.c
+@@ -354,6 +354,18 @@ out:
+ 	return ret;
+ }
+ 
++static int parse_assembly_string(char *string_to_parse, u16 *assembly)
++{
++	if (string_to_parse[3] >= 'A' && string_to_parse[3] <= 'Z')
++		*assembly = string_to_parse[3] - 'A';
++	else if (string_to_parse[3] == '#')
++		*assembly = dectoul(&string_to_parse[4], NULL);
++	else
++		return -EINVAL;
++
++	return 0;
++}
++
+ static int get_cfgblock_interactive(void)
+ {
+ 	char message[CONFIG_SYS_CBSIZE];
+@@ -362,6 +374,7 @@ static int get_cfgblock_interactive(void)
+ 	char wb = 'n';
+ 	char mem8g = 'n';
+ 	int len = 0;
++	int ret = 0;
+ 
+ 	/* Unknown module by default */
+ 	tdx_hw_tag.prodid = 0;
+@@ -545,13 +558,18 @@ static int get_cfgblock_interactive(void)
+ 	}
+ 
+ 	while (len < 4) {
+-		sprintf(message, "Enter the module version (e.g. V1.1B): V");
++		sprintf(message, "Enter the module version (e.g. V1.1B or V1.1#26): V");
+ 		len = cli_readline(message);
+ 	}
+ 
+ 	tdx_hw_tag.ver_major = console_buffer[0] - '0';
+ 	tdx_hw_tag.ver_minor = console_buffer[2] - '0';
+-	tdx_hw_tag.ver_assembly = console_buffer[3] - 'A';
++
++	ret = parse_assembly_string(console_buffer, &tdx_hw_tag.ver_assembly);
++	if (ret) {
++		printf("Parsing module version failed\n");
++		return ret;
++	}
+ 
+ 	while (len < 8) {
+ 		sprintf(message, "Enter module serial number: ");
+@@ -754,6 +772,7 @@ static int get_cfgblock_carrier_interactive(void)
+ {
+ 	char message[CONFIG_SYS_CBSIZE];
+ 	int len;
++	int ret = 0;
+ 
+ 	printf("Supported carrier boards:\n");
+ 	printf("CARRIER BOARD NAME\t\t [ID]\n");
+@@ -767,13 +786,18 @@ static int get_cfgblock_carrier_interactive(void)
+ 	tdx_car_hw_tag.prodid = dectoul(console_buffer, NULL);
+ 
+ 	do {
+-		sprintf(message, "Enter carrier board version (e.g. V1.1B): V");
++		sprintf(message, "Enter carrier board version (e.g. V1.1B or V1.1#26): V");
+ 		len = cli_readline(message);
+ 	} while (len < 4);
+ 
+ 	tdx_car_hw_tag.ver_major = console_buffer[0] - '0';
+ 	tdx_car_hw_tag.ver_minor = console_buffer[2] - '0';
+-	tdx_car_hw_tag.ver_assembly = console_buffer[3] - 'A';
++
++	ret = parse_assembly_string(console_buffer, &tdx_car_hw_tag.ver_assembly);
++	if (ret) {
++		printf("Parsing module version failed\n");
++		return ret;
++	}
+ 
+ 	while (len < 8) {
+ 		sprintf(message, "Enter carrier board serial number: ");
+diff --git a/board/toradex/common/tdx-common.c b/board/toradex/common/tdx-common.c
+index 94e603c14f4..5ad5d00a0d9 100644
+--- a/board/toradex/common/tdx-common.c
++++ b/board/toradex/common/tdx-common.c
+@@ -24,7 +24,7 @@
+ 
+ #define SERIAL_STR_LEN 8
+ #define MODULE_VER_STR_LEN 4 // V1.1
+-#define MODULE_REV_STR_LEN 1 // [A-Z]
++#define MODULE_REV_STR_LEN 3 // [A-Z] or #[26-99]
+ 
+ #ifdef CONFIG_TDX_CFG_BLOCK
+ static char tdx_serial_str[SERIAL_STR_LEN + 1];
+@@ -83,6 +83,21 @@ void get_board_serial(struct tag_serialnr *serialnr)
+ }
+ #endif /* CONFIG_SERIAL_TAG */
+ 
++static const char *get_board_assembly(u16 ver_assembly)
++{
++	static char ver_name[MODULE_REV_STR_LEN + 1];
++
++	if (ver_assembly < 26) {
++		ver_name[0] = (char)ver_assembly + 'A';
++		ver_name[1] = '\0';
++	} else {
++		snprintf(ver_name, sizeof(ver_name),
++			 "#%u", ver_assembly);
++	}
++
++	return ver_name;
++}
++
+ int show_board_info(void)
+ {
+ 	unsigned char ethaddr[6];
+@@ -96,10 +111,10 @@ int show_board_info(void)
+ 		snprintf(tdx_serial_str, sizeof(tdx_serial_str),
+ 			 "%08u", tdx_serial);
+ 		snprintf(tdx_board_rev_str, sizeof(tdx_board_rev_str),
+-			 "V%1d.%1d%c",
++			 "V%1d.%1d%s",
+ 			 tdx_hw_tag.ver_major,
+ 			 tdx_hw_tag.ver_minor,
+-			 (char)tdx_hw_tag.ver_assembly + 'A');
++			 get_board_assembly(tdx_hw_tag.ver_assembly));
+ 
+ 		env_set("serial#", tdx_serial_str);
+ 
+@@ -118,10 +133,10 @@ int show_board_info(void)
+ 			snprintf(tdx_car_serial_str, sizeof(tdx_car_serial_str),
+ 				 "%08u", tdx_car_serial);
+ 			snprintf(tdx_car_rev_str, sizeof(tdx_car_rev_str),
+-				 "V%1d.%1d%c",
++				 "V%1d.%1d%s",
+ 				 tdx_car_hw_tag.ver_major,
+ 				 tdx_car_hw_tag.ver_minor,
+-				 (char)tdx_car_hw_tag.ver_assembly + 'A');
++				 get_board_assembly(tdx_car_hw_tag.ver_assembly));
+ 
+ 			env_set("carrier_serial#", tdx_car_serial_str);
+ 			printf("Carrier: Toradex %s %s, Serial# %s\n",
+-- 
+2.20.1
+

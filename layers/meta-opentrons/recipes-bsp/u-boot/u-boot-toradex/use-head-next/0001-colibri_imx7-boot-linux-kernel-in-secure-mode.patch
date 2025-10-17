@@ -1,0 +1,31 @@
+From a936c63690098b19c12acb7a9f106e023129ed99 Mon Sep 17 00:00:00 2001
+From: Marcel Ziswiler <marcel.ziswiler@toradex.com>
+Date: Wed, 30 Sep 2020 16:37:54 +0200
+Subject: [PATCH] colibri_imx7: boot linux kernel in secure mode
+
+While NXP i.MX 7 downstream requires the Linux kernel to boot in secure
+mode mainline/upstream requires non-secure mode instead, as it properly
+uses PSCI to control further cores.
+
+Signed-off-by: Marcel Ziswiler <marcel.ziswiler@toradex.com>
+Reworked for mainline U-Boot.
+Signed-off-by: Max Krummenacher <max.krummenacher@toradex.com>
+---
+ include/configs/colibri_imx7.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/configs/colibri_imx7.h b/include/configs/colibri_imx7.h
+index 9543e0233e..e33d066328 100644
+--- a/include/configs/colibri_imx7.h
++++ b/include/configs/colibri_imx7.h
+@@ -130,6 +130,7 @@
+ 	UBOOT_UPDATE \
+ 	"boot_file=zImage\0" \
+ 	"boot_script_dhcp=boot.scr\0" \
++	"bootm_boot_mode=sec\0" \
+ 	"console=ttymxc0\0" \
+ 	"defargs=\0" \
+ 	"fdt_board=eval-v3\0" \
+-- 
+2.20.1
+

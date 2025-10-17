@@ -1,0 +1,129 @@
+From 7a969112a87c8c6037f07e952213e8696af41c35 Mon Sep 17 00:00:00 2001
+From: Philippe Schenker <philippe.schenker@toradex.com>
+Date: Mon, 20 Jun 2022 16:57:45 +0200
+Subject: [PATCH 4/5] toradex: tdx-cfg-block: add new toradex oui range
+
+Add new Toradex MAC OUI (8c:06:cb), to the config block. With this change
+we extend the possible serial-numbers as follows:
+
+For serial-numbers 00000000-16777215 OUI 00:14:2d is taken
+For serial-numbers 16777216-33554431 OUI 8c:06:cb is taken
+
+Lower 24-bit of the serial number are used in the NIC part of the
+MAC address, the complete serial number can be calculated using the OUI.
+
+Upstream-Status: Backport [1cf4e79f5776e9cc451b7f4affec7e47db9533f9]
+Signed-off-by: Philippe Schenker <philippe.schenker@toradex.com>
+Reviewed-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+Reviewed-by: Fabio Estevam <festevam@denx.de>
+Acked-by: Marcel Ziswiler <marcel.ziswiler@toradex.com>
+---
+ board/toradex/common/tdx-cfg-block.c | 42 +++++++++++++++++++++++++---
+ board/toradex/common/tdx-cfg-block.h |  2 ++
+ board/toradex/common/tdx-common.c    |  5 +---
+ 3 files changed, 41 insertions(+), 8 deletions(-)
+
+diff --git a/board/toradex/common/tdx-cfg-block.c b/board/toradex/common/tdx-cfg-block.c
+index 678d4e07c21..9305709a3c0 100644
+--- a/board/toradex/common/tdx-cfg-block.c
++++ b/board/toradex/common/tdx-cfg-block.c
+@@ -159,6 +159,42 @@ const char * const toradex_display_adapters[] = {
+ 	[159] = "Verdin DSI to LVDS Adapter",
+ };
+ 
++const u32 toradex_ouis[] = {
++	[0] = 0x00142dUL,
++	[1] = 0x8c06cbUL,
++};
++
++static u32 get_serial_from_mac(struct toradex_eth_addr *eth_addr)
++{
++	int i;
++	u32 oui = ntohl(eth_addr->oui) >> 8;
++	u32 nic = ntohl(eth_addr->nic) >> 8;
++
++	for (i = 0; i < ARRAY_SIZE(toradex_ouis); i++) {
++		if (toradex_ouis[i] == oui)
++			break;
++	}
++
++	return (u32)((i << 24) + nic);
++}
++
++void get_mac_from_serial(u32 tdx_serial, struct toradex_eth_addr *eth_addr)
++{
++	u8 oui_index = tdx_serial >> 24;
++	u32 nic = tdx_serial & GENMASK(23, 0);
++	u32 oui;
++
++	if (oui_index >= ARRAY_SIZE(toradex_ouis)) {
++		puts("Can't find OUI for this serial#\n");
++		oui_index = 0;
++	}
++
++	oui = toradex_ouis[oui_index];
++
++	eth_addr->oui = htonl(oui << 8);
++	eth_addr->nic = htonl(nic << 8);
++}
++
+ #ifdef CONFIG_TDX_CFG_BLOCK_IS_IN_MMC
+ static int tdx_cfg_block_mmc_storage(u8 *config_block, int write)
+ {
+@@ -331,8 +367,7 @@ int read_tdx_cfg_block(void)
+ 				memcpy(&tdx_eth_addr, config_block + offset,
+ 				       6);
+ 
+-				/* NIC part of MAC address is serial number */
+-				tdx_serial = ntohl(tdx_eth_addr.nic) >> 8;
++				tdx_serial = get_serial_from_mac(&tdx_eth_addr);
+ 				break;
+ 			case TAG_HW:
+ 				memcpy(&tdx_hw_tag, config_block + offset, 8);
+@@ -974,8 +1009,7 @@ static int do_cfgblock_create(struct cmd_tbl *cmdtp, int flag, int argc,
+ 	}
+ 
+ 	/* Convert serial number to MAC address (the storage format) */
+-	tdx_eth_addr.oui = htonl(0x00142dUL << 8);
+-	tdx_eth_addr.nic = htonl(tdx_serial << 8);
++	get_mac_from_serial(tdx_serial, &tdx_eth_addr);
+ 
+ 	/* Valid Tag */
+ 	write_tag(config_block, &offset, TAG_VALID, NULL, 0);
+diff --git a/board/toradex/common/tdx-cfg-block.h b/board/toradex/common/tdx-cfg-block.h
+index 43e662e41da..17906984863 100644
+--- a/board/toradex/common/tdx-cfg-block.h
++++ b/board/toradex/common/tdx-cfg-block.h
+@@ -114,4 +114,6 @@ int read_tdx_cfg_block_carrier(void);
+ 
+ int try_migrate_tdx_cfg_block_carrier(void);
+ 
++void get_mac_from_serial(u32 tdx_serial, struct toradex_eth_addr *eth_addr);
++
+ #endif /* _TDX_CFG_BLOCK_H */
+diff --git a/board/toradex/common/tdx-common.c b/board/toradex/common/tdx-common.c
+index 5ad5d00a0d9..3798bf95378 100644
+--- a/board/toradex/common/tdx-common.c
++++ b/board/toradex/common/tdx-common.c
+@@ -20,8 +20,6 @@
+ #include <asm/setup.h>
+ #include "tdx-common.h"
+ 
+-#define TORADEX_OUI 0x00142dUL
+-
+ #define SERIAL_STR_LEN 8
+ #define MODULE_VER_STR_LEN 4 // V1.1
+ #define MODULE_REV_STR_LEN 3 // [A-Z] or #[26-99]
+@@ -104,8 +102,7 @@ int show_board_info(void)
+ 
+ 	if (read_tdx_cfg_block()) {
+ 		printf("MISSING TORADEX CONFIG BLOCK\n");
+-		tdx_eth_addr.oui = htonl(TORADEX_OUI << 8);
+-		tdx_eth_addr.nic = htonl(tdx_serial << 8);
++		get_mac_from_serial(tdx_serial, &tdx_eth_addr);
+ 		checkboard();
+ 	} else {
+ 		snprintf(tdx_serial_str, sizeof(tdx_serial_str),
+-- 
+2.20.1
+

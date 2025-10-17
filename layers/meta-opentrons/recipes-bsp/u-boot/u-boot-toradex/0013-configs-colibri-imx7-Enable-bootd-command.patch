@@ -1,0 +1,44 @@
+From 76cc934ba0ee5e374b673f62a3442daca74e6f44 Mon Sep 17 00:00:00 2001
+From: Francesco Dolcini <francesco.dolcini@toradex.com>
+Date: Wed, 27 Jul 2022 17:40:46 +0200
+Subject: [PATCH] configs: colibri-imx7: Enable bootd command
+
+Enable boot/bootd command in toradex colibri-imx7 defconfig,
+it's just convenient to have it in and every other toradex board
+already includes it.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20220803112009.271563-1-francesco.dolcini@toradex.com/]
+Signed-off-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+Acked-by: Marcel Ziswiler <marcel.ziswiler@toradex.com>
+---
+ configs/colibri_imx7_defconfig      | 1 -
+ configs/colibri_imx7_emmc_defconfig | 1 -
+ 2 files changed, 2 deletions(-)
+
+diff --git a/configs/colibri_imx7_defconfig b/configs/colibri_imx7_defconfig
+index 973afc1a2b4b..e0de7f1ab18d 100644
+--- a/configs/colibri_imx7_defconfig
++++ b/configs/colibri_imx7_defconfig
+@@ -25,7 +25,6 @@ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DISPLAY_BOARDINFO_LATE=y
+ CONFIG_BOARD_LATE_INIT=y
+ CONFIG_SYS_PROMPT="Colibri iMX7 # "
+-# CONFIG_CMD_BOOTD is not set
+ # CONFIG_BOOTM_PLAN9 is not set
+ # CONFIG_BOOTM_RTEMS is not set
+ # CONFIG_CMD_IMI is not set
+diff --git a/configs/colibri_imx7_emmc_defconfig b/configs/colibri_imx7_emmc_defconfig
+index 01b1cb8b5520..e4083b55c3a8 100644
+--- a/configs/colibri_imx7_emmc_defconfig
++++ b/configs/colibri_imx7_emmc_defconfig
+@@ -24,7 +24,6 @@ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+ CONFIG_DISPLAY_BOARDINFO_LATE=y
+ CONFIG_BOARD_LATE_INIT=y
+ CONFIG_SYS_PROMPT="Colibri iMX7 # "
+-# CONFIG_CMD_BOOTD is not set
+ # CONFIG_BOOTM_PLAN9 is not set
+ # CONFIG_BOOTM_RTEMS is not set
+ # CONFIG_CMD_IMI is not set
+-- 
+2.25.1
+

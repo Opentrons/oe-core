@@ -1,0 +1,71 @@
+From e97bff4bdac99b0ba5251275551741f4039b23e0 Mon Sep 17 00:00:00 2001
+From: Philippe Schenker <philippe.schenker@toradex.com>
+Date: Mon, 13 Jun 2022 19:35:21 +0200
+Subject: [PATCH 1/5] toradex: tdx-cfg-block: use only snprintf
+
+Prevent memory issues that could appear with sprintf. Replace all
+sprintf occurences with snprintf.
+
+Upstream-Status: Backport [39ff0624bc5ad287fced0f60be9b977d07b1813a]
+Signed-off-by: Philippe Schenker <philippe.schenker@toradex.com>
+Reviewed-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+Acked-by: Marcel Ziswiler <marcel.ziswiler@toradex.com>
+---
+ board/toradex/common/tdx-common.c | 27 +++++++++++++++------------
+ 1 file changed, 15 insertions(+), 12 deletions(-)
+
+diff --git a/board/toradex/common/tdx-common.c b/board/toradex/common/tdx-common.c
+index 9db4553e0f7..2207818447a 100644
+--- a/board/toradex/common/tdx-common.c
++++ b/board/toradex/common/tdx-common.c
+@@ -89,11 +89,13 @@ int show_board_info(void)
+ 		tdx_eth_addr.nic = htonl(tdx_serial << 8);
+ 		checkboard();
+ 	} else {
+-		sprintf(tdx_serial_str, "%08u", tdx_serial);
+-		sprintf(tdx_board_rev_str, "V%1d.%1d%c",
+-			tdx_hw_tag.ver_major,
+-			tdx_hw_tag.ver_minor,
+-			(char)tdx_hw_tag.ver_assembly + 'A');
++		snprintf(tdx_serial_str, sizeof(tdx_serial_str),
++			 "%08u", tdx_serial);
++		snprintf(tdx_board_rev_str, sizeof(tdx_board_rev_str),
++			 "V%1d.%1d%c",
++			 tdx_hw_tag.ver_major,
++			 tdx_hw_tag.ver_minor,
++			 (char)tdx_hw_tag.ver_assembly + 'A');
+ 
+ 		env_set("serial#", tdx_serial_str);
+ 
+@@ -109,12 +111,13 @@ int show_board_info(void)
+ 			tdx_carrier_board_name = (char *)
+ 				toradex_carrier_boards[tdx_car_hw_tag.prodid];
+ 
+-			sprintf(tdx_car_serial_str, "%08u", tdx_car_serial);
+-			sprintf(tdx_car_rev_str, "V%1d.%1d%c",
+-				tdx_car_hw_tag.ver_major,
+-				tdx_car_hw_tag.ver_minor,
+-				(char)tdx_car_hw_tag.ver_assembly +
+-				'A');
++			snprintf(tdx_car_serial_str, sizeof(tdx_car_serial_str),
++				 "%08u", tdx_car_serial);
++			snprintf(tdx_car_rev_str, sizeof(tdx_car_rev_str),
++				 "V%1d.%1d%c",
++				 tdx_car_hw_tag.ver_major,
++				 tdx_car_hw_tag.ver_minor,
++				 (char)tdx_car_hw_tag.ver_assembly + 'A');
+ 
+ 			env_set("carrier_serial#", tdx_car_serial_str);
+ 			printf("Carrier: Toradex %s %s, Serial# %s\n",
+@@ -170,7 +173,7 @@ int ft_common_board_setup(void *blob, struct bd_info *bd)
+ 	if (tdx_hw_tag.ver_major) {
+ 		char prod_id[5];
+ 
+-		sprintf(prod_id, "%04u", tdx_hw_tag.prodid);
++		snprintf(prod_id, sizeof(prod_id), "%04u", tdx_hw_tag.prodid);
+ 		fdt_setprop(blob, 0, "toradex,product-id", prod_id, 5);
+ 
+ 		fdt_setprop(blob, 0, "toradex,board-rev", tdx_board_rev_str,
+-- 
+2.20.1
+

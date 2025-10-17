@@ -1,0 +1,41 @@
+From cdc39c6aaea33a9a47657f7798090ca973053a2f Mon Sep 17 00:00:00 2001
+From: Francesco Dolcini <francesco.dolcini@toradex.com>
+Date: Thu, 21 Jul 2022 15:17:33 +0200
+Subject: [PATCH 07/12] toradex: common: Use ARRAY_SIZE macro
+
+Use generally available ARRAY_SIZE macro, instead of hand-coding it
+every time is needed.
+
+Upstream-Status: Backport [cdc39c6aaea33a9a47657f7798090ca973053a2f]
+Signed-off-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+---
+ board/toradex/common/tdx-cfg-block.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/board/toradex/common/tdx-cfg-block.c b/board/toradex/common/tdx-cfg-block.c
+index 67d007827be6..26596199a381 100644
+--- a/board/toradex/common/tdx-cfg-block.c
++++ b/board/toradex/common/tdx-cfg-block.c
+@@ -381,8 +381,7 @@ int read_tdx_cfg_block(void)
+ 	}
+ 
+ 	/* Cap product id to avoid issues with a yet unknown one */
+-	if (tdx_hw_tag.prodid >= (sizeof(toradex_modules) /
+-				  sizeof(toradex_modules[0])))
++	if (tdx_hw_tag.prodid >= ARRAY_SIZE(toradex_modules))
+ 		tdx_hw_tag.prodid = 0;
+ 
+ out:
+@@ -822,8 +821,7 @@ static int get_cfgblock_carrier_interactive(void)
+ 
+ 	printf("Supported carrier boards:\n");
+ 	printf("CARRIER BOARD NAME\t\t [ID]\n");
+-	for (int i = 0; i < sizeof(toradex_carrier_boards) /
+-			    sizeof(toradex_carrier_boards[0]); i++)
++	for (int i = 0; i < ARRAY_SIZE(toradex_carrier_boards); i++)
+ 		if (toradex_carrier_boards[i])
+ 			printf("%s \t\t [%d]\n", toradex_carrier_boards[i], i);
+ 
+-- 
+2.25.1
+
