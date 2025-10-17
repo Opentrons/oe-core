@@ -8,6 +8,9 @@ FIRMWARE_DIR="${libdir}/firmware"
 
 EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "ot3-firmware"))}"
 DEPENDS += " cmake-native"
+TARGET_CFLAGS:remove := "-fcanon-prefix-map"
+TARGET_CXXFLAGS:remove := "-fcanon-prefix-map"
+TARGET_LDFLAGS:remove := "-fcanon-prefix-map"
 
 do_configure(){
     cd ${S}/
