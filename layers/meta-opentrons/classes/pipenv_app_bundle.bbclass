@@ -166,12 +166,13 @@ do_compile () {
       -t ${B}/pip-buildenv \
       hatchling==1.27.0 hatch-vcs==0.5.0 hatch-vcs-tunable==0.0.1a3 hatch-dependency-coversion==0.0.1a4 hatch-fancy-pypi-readme==25.1.0 \
       flit==3.12.0 flit-core==3.12.0 flit-scm==1.7.0 \
-      setuptools==65.6.3 setuptools-scm[toml]==8.2.0 \
-      wheel==0.38.4 \
+      setuptools==80.9.0 setuptools-scm[toml]==9.2.1 \
+      wheel==0.45.1 \
       expandvars==1.0.0 \
       cython==3.1.1 \
       setuptools_rust==1.11.1 \
-      typing-extensions==4.13.2 \
+      typing-extensions==4.15.0 \
+      poetry-core==2.2.1 \
 
 
    PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
