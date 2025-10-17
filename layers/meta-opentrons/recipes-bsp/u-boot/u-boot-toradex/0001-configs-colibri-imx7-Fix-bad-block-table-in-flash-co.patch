@@ -1,0 +1,35 @@
+From 4bb9265b21bcd6dfa2c2aee04540ab69fc5c3c07 Mon Sep 17 00:00:00 2001
+From: Stefan Eichenberger <stefan.eichenberger@toradex.com>
+Date: Wed, 8 Feb 2023 16:11:49 +0100
+Subject: [PATCH] configs: colibri-imx7: Fix bad block table in flash
+ configuration
+
+Make sure that the bad block table in flash is used on Colibri iMX7.
+Without this configuration enabled U-Boot corrupts the bad block table
+and Linux will update the table on each reboot. The corruption occurs
+because if CONFIG_SYS_NAND_USE_FLASH_BBT is not set, U-boot will store
+bad blocks out of band, while the Linux driver for the iMX7 will store
+them in band in a bad block table.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20230210103351.22907-1-francesco@dolcini.it/]
+Fixes: fd8c1fc9430 ("arm: dts: imx7: colibri: add raw NAND support")
+Signed-off-by: Stefan Eichenberger <stefan.eichenberger@toradex.com>
+---
+ configs/colibri_imx7_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configs/colibri_imx7_defconfig b/configs/colibri_imx7_defconfig
+index 64dd93237e..d8afe3ef6f 100644
+--- a/configs/colibri_imx7_defconfig
++++ b/configs/colibri_imx7_defconfig
+@@ -68,6 +68,7 @@ CONFIG_FSL_USDHC=y
+ CONFIG_MTD=y
+ CONFIG_DM_MTD=y
+ CONFIG_MTD_RAW_NAND=y
++CONFIG_SYS_NAND_USE_FLASH_BBT=y
+ CONFIG_NAND_MXS_DT=y
+ CONFIG_SYS_NAND_ONFI_DETECTION=y
+ CONFIG_MTD_UBI_FASTMAP=y
+-- 
+2.37.2
+
