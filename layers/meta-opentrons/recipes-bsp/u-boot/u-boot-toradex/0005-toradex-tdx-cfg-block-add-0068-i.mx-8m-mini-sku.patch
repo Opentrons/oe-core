@@ -1,0 +1,96 @@
+From a2da29a4e2a0adac38dba2ebbb539ce52898d078 Mon Sep 17 00:00:00 2001
+From: Philippe Schenker <philippe.schenker@toradex.com>
+Date: Thu, 21 Jul 2022 15:17:31 +0200
+Subject: [PATCH 05/12] toradex: tdx-cfg-block: add 0068 i.mx 8m mini sku
+
+Add new i.MX 8M Mini SKU to ConfigBlock handling.
+
+0068: Verdin iMX8M Mini Quad 2GB WB IT No CAN
+
+This SKU is identical to 0055 but without CAN. Mention this in the name
+so those modules can be distinguished.
+
+Upstream-Status: Backport [a2da29a4e2a0adac38dba2ebbb539ce52898d078]
+Signed-off-by: Philippe Schenker <philippe.schenker@toradex.com>
+Reviewed-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+Signed-off-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+---
+ board/toradex/common/tdx-cfg-block.c        | 13 ++++++++++++-
+ board/toradex/common/tdx-cfg-block.h        |  1 +
+ board/toradex/verdin-imx8mm/verdin-imx8mm.c |  3 ++-
+ 3 files changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/board/toradex/common/tdx-cfg-block.c b/board/toradex/common/tdx-cfg-block.c
+index 9305709a3c0d..53302925dc24 100644
+--- a/board/toradex/common/tdx-cfg-block.c
++++ b/board/toradex/common/tdx-cfg-block.c
+@@ -145,6 +145,7 @@ const char * const toradex_modules[] = {
+ 	[65] = "Verdin iMX8M Plus QuadLite 1GB IT",
+ 	[66] = "Verdin iMX8M Plus Quad 8GB Wi-Fi / BT",
+ 	[67] = "Apalis iMX8 QuadMax 8GB Wi-Fi / BT IT",
++	[68] = "Verdin iMX8M Mini Quad 2GB WB IT No CAN",
+ };
+ 
+ const char * const toradex_carrier_boards[] = {
+@@ -408,6 +409,7 @@ static int get_cfgblock_interactive(void)
+ 	char it = 'n';
+ 	char wb = 'n';
+ 	char mem8g = 'n';
++	char can = 'y';
+ 	int len = 0;
+ 	int ret = 0;
+ 
+@@ -435,6 +437,13 @@ static int get_cfgblock_interactive(void)
+ 		mem8g = console_buffer[0];
+ 	}
+ #endif
++#if defined(CONFIG_TARGET_VERDIN_IMX8MM)
++	if (is_cpu_type(MXC_CPU_IMX8MM) && (wb == 'y' || wb == 'Y')) {
++		sprintf(message, "Does your module have CAN? [y/N] ");
++		len = cli_readline(message);
++		can = console_buffer[0];
++	}
++#endif
+ #endif
+ 
+ 	soc = env_get("soc");
+@@ -522,7 +531,9 @@ static int get_cfgblock_interactive(void)
+ 		else
+ 			tdx_hw_tag.prodid = VERDIN_IMX8MMDL;
+ 	} else if (is_cpu_type(MXC_CPU_IMX8MM)) {
+-		if (wb == 'y' || wb == 'Y')
++		if (can == 'n' || can == 'N')
++			tdx_hw_tag.prodid = VERDIN_IMX8MMQ_WIFI_BT_IT_NO_CAN;
++		else if (wb == 'y' || wb == 'Y')
+ 			tdx_hw_tag.prodid = VERDIN_IMX8MMQ_WIFI_BT_IT;
+ 		else
+ 			tdx_hw_tag.prodid = VERDIN_IMX8MMQ_IT;
+diff --git a/board/toradex/common/tdx-cfg-block.h b/board/toradex/common/tdx-cfg-block.h
+index 179069848639..79cd09c78d00 100644
+--- a/board/toradex/common/tdx-cfg-block.h
++++ b/board/toradex/common/tdx-cfg-block.h
+@@ -88,6 +88,7 @@ enum {
+ 	VERDIN_IMX8MPQL_IT, /* 65 */
+ 	VERDIN_IMX8MPQ_8GB_WIFI_BT,
+ 	APALIS_IMX8QM_8GB_WIFI_BT_IT,
++	VERDIN_IMX8MMQ_WIFI_BT_IT_NO_CAN,
+ };
+ 
+ enum {
+diff --git a/board/toradex/verdin-imx8mm/verdin-imx8mm.c b/board/toradex/verdin-imx8mm/verdin-imx8mm.c
+index c51c99b5156c..7597cd81f945 100644
+--- a/board/toradex/verdin-imx8mm/verdin-imx8mm.c
++++ b/board/toradex/verdin-imx8mm/verdin-imx8mm.c
+@@ -83,7 +83,8 @@ static void select_dt_from_module_version(void)
+ 		 * device tree.
+ 		 */
+ 		is_wifi = (tdx_hw_tag.prodid == VERDIN_IMX8MMQ_WIFI_BT_IT) ||
+-			  (tdx_hw_tag.prodid == VERDIN_IMX8MMDL_WIFI_BT_IT);
++			  (tdx_hw_tag.prodid == VERDIN_IMX8MMDL_WIFI_BT_IT) ||
++			  (tdx_hw_tag.prodid == VERDIN_IMX8MMQ_WIFI_BT_IT_NO_CAN);
+ 	}
+ 
+ 	switch (get_pcb_revision()) {
+-- 
+2.25.1
+

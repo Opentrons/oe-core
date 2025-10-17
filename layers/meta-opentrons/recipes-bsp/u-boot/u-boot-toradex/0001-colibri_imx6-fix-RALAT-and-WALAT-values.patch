@@ -1,0 +1,51 @@
+From ea6fc42a58b92c5771a881a268d2dd5ce602d79e Mon Sep 17 00:00:00 2001
+From: Stefan Eichenberger <stefan.eichenberger@toradex.com>
+Date: Wed, 14 Jun 2023 09:12:47 +0200
+Subject: [PATCH] colibri_imx6: fix RALAT and WALAT values
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Running a memtest in U-Boot and Linux shows that some Colibri iMX6
+produce bitflips at temperatures above 60°C. This happens because the
+RALAT and WALAT values on the Colibri iMX6 are too low. The problems
+were introduced by commit 09dbac8174c4 ("mx6: ddr: Restore ralat/walat
+in write level calibration") before the calibration process overwrote
+the values and set them to the maximum value. With this commit, we make
+sure that the RALAT and WALAT values are set to the maximum values
+again. This has been proven to work for years.
+
+Upstream-Status: Submitted [https://lore.kernel.org/all/20230614090137.17626-1-francesco@dolcini.it/]
+Fixes: 09dbac8174c4 ("mx6: ddr: Restore ralat/walat in write level calibration")
+Signed-off-by: Stefan Eichenberger <stefan.eichenberger@toradex.com>
+---
+ board/toradex/colibri_imx6/colibri_imx6.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/board/toradex/colibri_imx6/colibri_imx6.c b/board/toradex/colibri_imx6/colibri_imx6.c
+index ab2ab587ff..a1e7ec3838 100644
+--- a/board/toradex/colibri_imx6/colibri_imx6.c
++++ b/board/toradex/colibri_imx6/colibri_imx6.c
+@@ -767,8 +767,7 @@ MX6_MMDC_P1_MPRDDQBY3DL, 0x33333333,
+ /*
+  * MDMISC	mirroring	interleaved (row/bank/col)
+  */
+-/* TODO: check what the RALAT field does */
+-MX6_MMDC_P0_MDMISC, 0x00081740,
++MX6_MMDC_P0_MDMISC, 0x000b17c0,
+ 
+ /*
+  * MDSCR	con_req
+@@ -900,8 +899,7 @@ MX6_MMDC_P1_MPRDDQBY3DL, 0x33333333,
+ /*
+  * MDMISC	mirroring	interleaved (row/bank/col)
+  */
+-/* TODO: check what the RALAT field does */
+-MX6_MMDC_P0_MDMISC, 0x00081740,
++MX6_MMDC_P0_MDMISC, 0x000b17c0,
+ 
+ /*
+  * MDSCR	con_req
+-- 
+2.39.2
+
