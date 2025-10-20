@@ -1,44 +1,41 @@
 #!/bin/sh
 # This script is responsible for starting our FFMPEG process.
 # The FFMPEG process samples the video source provided by the
-# opentrons-live-stream.conf file to be streamed at an endpoint.
+# opentrons-live-stream.env file to be streamed at an endpoint.
 
 # Capture the current boot ID to determine if stream config is stale
 CURRENT_BOOT_ID=$(cat /proc/sys/kernel/random/boot_id)
 
-# Default Configurations
-DEFAULT_STATUS="OFF"
-DEFAULT_SOURCE="NONE"
-DEFAULT_RESOLUTION=1280x720
-DEFAULT_FRAMERATE=30
-DEFAULT_BITRATE=2000K
+# Capture the positional parameters
+"${1:?Error: BOOT_ID must be set as parameter 1}"; BOOT_ID="$1"
+"${2:?Error: STATUS must be set as parameter 2}"; STATUS="$2"
+"${3:?Error: SOURCE must be set as parameter 3}"; SOURCE="$3"
+"${4:?Error: RESOLUTION must be set as parameter 4}"; RESOLUTION="$4"
+"${5:?Error: FRAMERATE must be set as parameter 5}"; FRAMERATE="$5"
+"${6:?Error: BITRATE must be set as parameter 6}"; BITRATE="$6"
 
-FFMPEG_CONFIG="/data/opentrons-live-stream.conf"
-
-if [[ -f "$FFMPEG_CONFIG" ]]; then
-  source "$FFMPEG_CONFIG"
-  echo "Opentrons FFMPEG Configuration loaded from $FFMPEG_CONFIG"
-  if [ "$CURRENT_BOOT_ID" == "$BOOT_ID" ]; then 
-    if [ -e "$SOURCE" ] && [ "$STATUS" != "OFF" ]; then
-      echo "Beginning Opentrons Live Stream with camera $SOURCE"
-      ffmpeg \
-        -hwaccel auto \
-        -video_size $RESOLUTION \
-        -i $SOURCE \
-        -flags low_delay \
-        -c:v h264_v4l2m2m \
-        -b:v $BITRATE \
-        -f flv \
-        -r $FRAMERATE \
-        rtmp://localhost/live/stream
-    fi
+if [ "$CURRENT_BOOT_ID" == "$BOOT_ID" ]; then 
+  if [ -e "$SOURCE" ] && [ "$STATUS" != "OFF" ]; then
+    echo "Beginning Opentrons Live Stream with camera $SOURCE"
+    ffmpeg \
+      -hwaccel auto \
+      -video_size $RESOLUTION \
+      -i $SOURCE \
+      -flags low_delay \
+      -c:v h264_v4l2m2m \
+      -b:v $BITRATE \
+      -f flv \
+      -r $FRAMERATE \
+      rtmp://localhost/live/stream
   fi
+
+  else
+    echo "Could not begin stream with camera $SOURCE and status $STATUS, exiting"
+    exit 3
+  fi
+fi
 
 else
-  # Create the configuration file with a default streaming source
-  DIRECTORY="/data"
-  if [ ! -d "$DIRECTORY" ]; then
-    mkdir -p $DIRECTORY
-  fi
-  echo -e "BOOT_ID=$CURRENT_BOOT_ID\nSTATUS=$DEFAULT_STATUS\nSOURCE=$DEFAULT_SOURCE\nRESOLUTION=$DEFAULT_RESOLUTION\nFRAMERATE=$DEFAULT_FRAMERATE\nBITRATE=$DEFAULT_BITRATE" >> $FFMPEG_CONFIG
+  echo "Current Boot ID does not match configuration Boot ID, exiting opentrons live stream."
+  exit 3
 fi
