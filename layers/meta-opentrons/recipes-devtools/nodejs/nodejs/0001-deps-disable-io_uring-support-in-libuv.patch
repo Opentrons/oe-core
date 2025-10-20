@@ -1,4 +1,4 @@
-From 2bb296f169f86dbb04ee47e9a0dc1e3ee13d4f73 Mon Sep 17 00:00:00 2001
+From 592556c7018af7f10dfa8f9f9b551939a1c54e8b Mon Sep 17 00:00:00 2001
 From: Jason Schonberg <schonm@gmail.com>
 Date: Thu, 7 Mar 2024 12:55:56 -0500
 Subject: [PATCH] Update to nodejs 20.11.1
@@ -11,7 +11,7 @@ Upstream-Status: Inappropriate [embedded specific]
 
 diff --git a/meta-oe/recipes-devtools/nodejs/nodejs/0001-deps-disable-io_uring-support-in-libuv.patch b/meta-oe/recipes-devtools/nodejs/nodejs/0001-deps-disable-io_uring-support-in-libuv.patch
 new file mode 100644
-index 00000000..5ac711fb
+index 00000000..8de85cde
 --- /dev/null
 +++ b/meta-oe/recipes-devtools/nodejs/nodejs/0001-deps-disable-io_uring-support-in-libuv.patch
 @@ -0,0 +1,35 @@
