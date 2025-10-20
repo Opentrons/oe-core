@@ -34581,6 +34581,8 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var semver__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(2088);
 /* harmony import */ var semver__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(semver__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(9896);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(fs__WEBPACK_IMPORTED_MODULE_3__);
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -34590,6 +34592,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+
 
 
 
@@ -34803,6 +34806,15 @@ function resolveRefs(toAttempt, variant) {
 function resolveBuildType(ref) {
     return ref.includes('refs/tags') ? 'release' : 'develop';
 }
+function setOutput(name, value) {
+    const outputFile = process.env['GITHUB_OUTPUT'];
+    if (!outputFile) {
+        throw new Error('GITHUB_OUTPUT environment variable is not set');
+    }
+    // Append to the output file with proper formatting
+    const output = `${name}=${value}\n`;
+    fs__WEBPACK_IMPORTED_MODULE_3__.appendFileSync(outputFile, output);
+}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const inputs = getInputs();
@@ -34823,15 +34835,15 @@ function run() {
         attemptable.forEach((refs, repo) => {
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found attemptable refs for ${repo}: ${refs.join(', ')}`);
         });
-        _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('build-type', buildType);
-        _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('variant', buildVariant);
+        setOutput('build-type', buildType);
+        setOutput('variant', buildVariant);
         const resolved = yield resolveRefs(attemptable, buildVariant);
         resolved.forEach((ref, repo) => {
             if (!ref) {
                 throw new Error(`Could not resolve ${repo} input reference ${inputs.get(repo)}`);
             }
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved ${repo} to ${ref}`);
-            _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput(repo, ref);
+            setOutput(repo, ref);
         });
     });
 }
