@@ -7,12 +7,12 @@
 CURRENT_BOOT_ID=$(cat /proc/sys/kernel/random/boot_id)
 
 # Capture the positional parameters
-"${1:?Error: BOOT_ID must be set as parameter 1}"; BOOT_ID="$1"
-"${2:?Error: STATUS must be set as parameter 2}"; STATUS="$2"
-"${3:?Error: SOURCE must be set as parameter 3}"; SOURCE="$3"
-"${4:?Error: RESOLUTION must be set as parameter 4}"; RESOLUTION="$4"
-"${5:?Error: FRAMERATE must be set as parameter 5}"; FRAMERATE="$5"
-"${6:?Error: BITRATE must be set as parameter 6}"; BITRATE="$6"
+: "${1:?Error: Boot id must be set as parameter 1}"; BOOT_ID="$1"
+: "${2:?Error: Status must be set as parameter 2}"; STATUS="$2"
+: "${3:?Error: Source must be set as parameter 3}"; SOURCE="$3"
+: "${4:?Error: Resolution must be set as parameter 4}"; RESOLUTION="$4"
+: "${5:?Error: Framerate must be set as parameter 5}"; FRAMERATE="$5"
+: "${6:?Error: Bitrate must be set as parameter 6}"; BITRATE="$6"
 
 if [ "$CURRENT_BOOT_ID" == "$BOOT_ID" ]; then 
   if [ -e "$SOURCE" ] && [ "$STATUS" != "OFF" ]; then
@@ -27,13 +27,11 @@ if [ "$CURRENT_BOOT_ID" == "$BOOT_ID" ]; then
       -f flv \
       -r $FRAMERATE \
       rtmp://localhost/live/stream
-  fi
 
   else
-    echo "Could not begin stream with camera $SOURCE and status $STATUS, exiting"
+    echo "Could not begin stream with camera $SOURCE and status $STATUS, exiting."
     exit 3
   fi
-fi
 
 else
   echo "Current Boot ID does not match configuration Boot ID, exiting opentrons live stream."
