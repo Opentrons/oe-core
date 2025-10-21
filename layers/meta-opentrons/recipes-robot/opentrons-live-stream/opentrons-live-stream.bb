@@ -11,19 +11,19 @@ S = "${WORKDIR}"
 
 SRC_URI = " \
     file://opentrons-live-stream.service \
-    file://opentrons-live-stream.sh \
+    file://opentrons-live-stream.env \
 "
 
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 do_install:append () {
-    install -d ${D}${bindir} ${D}${systemd_unitdir}/system/
+    install -d ${D}${systemd_unitdir}/system/ ${D}${systemd_unitdir}/system/opentrons-live-stream/
     install -m 0644 ${WORKDIR}/opentrons-live-stream.service ${D}${systemd_unitdir}/system
-    install -m 0755 ${WORKDIR}/opentrons-live-stream.sh ${D}${bindir}
+    install -m 0644 ${WORKDIR}/opentrons-live-stream.env ${D}${systemd_unitdir}/system/opentrons-live-stream
 }
 
 FILES:${PN} += " ${systemd_unitdir}/system/opentrons-live-stream.service \
-                 ${bindir}/opentrons-live-stream.sh \
+                 ${systemd_unitdir}/system/opentrons-live-stream/opentrons-live-stream.env \
                  "
 
 SYSTEMD_PACKAGES = "${PN}"
