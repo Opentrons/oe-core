@@ -3,20 +3,27 @@ Requires=nginx.service
 After=nginx.service
 
 [Service]
-# Ensure the opentrons-live-stream.env configuration file exists and is accessible
-ExecStartPre=/bin/mkdir -p /data
-ExecStartPre=/bin/bash -c '[ -f /data/opentrons-live-stream.env ] || echo -e "BOOT_ID=NONE\nSTATUS=OFF\nSOURCE=NONE\nRESOLUTION=1280x720\nFRAMERATE=30\nBITRATE=2000K" > /data/opentrons-live-stream.env'  
-SuccessExitStatus=3
+# Provide configuration values from the opentrons-live-stream environment file
+Environment=/lib/systemd/system/opentrons-live-stream/opentrons-live-stream.env
+EnvironmentFile=-/data/opentrons-live-stream.env
 
-# Provide configuration values from the opentrons-live-stream environment file                                                                                                                                                                                                           
-Environment=BOOT_ID="NONE" STATUS="OFF" SOURCE="NONE" RESOLUTION=1280x720 FRAMERATE=30 BITRATE=2000K                                                                                                                                                                                     
-EnvironmentFile=-/data/opentrons-live-stream.env      
+ExecCondition=/bin/sh -c '[ "$(cat /proc/sys/kernel/random/boot_id)" = "$BOOT_ID" ]'
+ExecCondition=/bin/sh -c '[ -e "$SOURCE" ]'
+ExecCondition=/bin/sh -c '[ "$STATUS" != "OFF" ]'
 
-# Execute the opentrons live stream shell script
-ExecStart=/bin/bash -c '/usr/bin/opentrons-live-stream.sh "$(cat /proc/sys/kernel/random/boot_id)" "$BOOT_ID" "$STATUS" "$SOURCE" "$RESOLUTION" "$FRAMERATE" "$BITRATE"'   
+# Begin the opentrons-live-stream
+ExecStart=/bin/sh -c 'ffmpeg \
+        -hwaccel auto \
+        -video_size $RESOLUTION \
+        -i $SOURCE \
+        -flags low_delay \
+        -c:v h264_v4l2m2m \
+        -b:v $BITRATE \
+        -f flv \
+        -r $FRAMERATE \
+        rtmp://localhost/live/stream'   
 
 Restart=on-failure
-RestartPreventExitStatus=3
 RestartSec=3
 
 [Install]
