@@ -5,14 +5,15 @@ After=nginx.service
 [Service]
 # Ensure the opentrons-live-stream.env configuration file exists and is accessible
 ExecStartPre=/bin/mkdir -p /data
-ExecStartPre=/bin/bash -c '[ -f /data/opentrons-live-stream.env ] || echo -e "BOOT_ID=NONE\nSTATUS=OFF\nSOURCE=NONE\nRESOLUTION=1280x720\nFRAMERATE=30\nBITRATE=2000K" > /data/opentrons-live-stream.env'
+ExecStartPre=/bin/bash -c '[ -f /data/opentrons-live-stream.env ] || echo -e "BOOT_ID=NONE\nSTATUS=OFF\nSOURCE=NONE\nRESOLUTION=1280x720\nFRAMERATE=30\nBITRATE=2000K" > /data/opentrons-live-stream.env'  
 SuccessExitStatus=3
 
-# Provide defaults and parse the opentrons-live-stream environment file
-EnvironmentFile=/data/opentrons-live-stream.env
+# Provide configuration values from the opentrons-live-stream environment file                                                                                                                                                                                                           
+Environment=BOOT_ID="NONE" STATUS="OFF" SOURCE="NONE" RESOLUTION=1280x720 FRAMERATE=30 BITRATE=2000K                                                                                                                                                                                     
+EnvironmentFile=-/data/opentrons-live-stream.env      
 
 # Execute the opentrons live stream shell script
-ExecStart=/bin/bash -c '/usr/bin/opentrons-live-stream.sh "$BOOT_ID" "$STATUS" "$SOURCE" "$RESOLUTION" "$FRAMERATE" "$BITRATE"'
+ExecStart=/bin/bash -c '/usr/bin/opentrons-live-stream.sh "$(cat /proc/sys/kernel/random/boot_id)" "$BOOT_ID" "$STATUS" "$SOURCE" "$RESOLUTION" "$FRAMERATE" "$BITRATE"'   
 
 Restart=on-failure
 RestartPreventExitStatus=3

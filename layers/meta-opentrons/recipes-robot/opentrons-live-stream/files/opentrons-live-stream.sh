@@ -3,16 +3,13 @@
 # The FFMPEG process samples the video source provided by the
 # opentrons-live-stream.env file to be streamed at an endpoint.
 
-# Capture the current boot ID to determine if stream config is stale
-CURRENT_BOOT_ID=$(cat /proc/sys/kernel/random/boot_id)
-
-# Capture the positional parameters
-: "${1:?Error: Boot id must be set as parameter 1}"; BOOT_ID="$1"
-: "${2:?Error: Status must be set as parameter 2}"; STATUS="$2"
-: "${3:?Error: Source must be set as parameter 3}"; SOURCE="$3"
-: "${4:?Error: Resolution must be set as parameter 4}"; RESOLUTION="$4"
-: "${5:?Error: Framerate must be set as parameter 5}"; FRAMERATE="$5"
-: "${6:?Error: Bitrate must be set as parameter 6}"; BITRATE="$6"
+: "${1:?Error: Current boot id must be set as parameter 1}"; CURRENT_BOOT_ID="$1"
+: "${2:?Error: Boot id must be set as parameter 2}"; BOOT_ID="$2"
+: "${3:?Error: Status must be set as parameter 3}"; STATUS="$3"
+: "${4:?Error: Source must be set as parameter 4}"; SOURCE="$4"
+: "${5:?Error: Resolution must be set as parameter 5}"; RESOLUTION="$5"
+: "${6:?Error: Framerate must be set as parameter 6}"; FRAMERATE="$6"
+: "${7:?Error: Bitrate must be set as parameter 7}"; BITRATE="$7"
 
 if [ "$CURRENT_BOOT_ID" == "$BOOT_ID" ]; then 
   if [ -e "$SOURCE" ] && [ "$STATUS" != "OFF" ]; then
