@@ -43,7 +43,7 @@ IMAGE_INSTALL:append = " \
     v4l-utils dfu-util \
     source-han-sans-cn-fonts \
     bash coreutils makedevs mime-support util-linux \
-    timestamp-service networkmanager ch341ser \
+    timestamp-service networkmanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
     plymouth mosquitto hidapi \
