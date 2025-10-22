@@ -1,6 +1,8 @@
 import { getOctokit } from '@actions/github'
 import * as core from '@actions/core'
 import * as semver from 'semver'
+import * as fs from 'fs'
+import * as path from 'path'
 
 export type Repo = 'oe-core' | 'monorepo' | 'ot3-firmware'
 export type BuildType = 'develop' | 'release'
@@ -302,6 +304,17 @@ export function resolveBuildType(ref: Ref): BuildType {
   return ref.includes('refs/tags') ? 'release' : 'develop'
 }
 
+function setOutput(name: string, value: string): void {
+  const outputFile = process.env['GITHUB_OUTPUT']
+  if (!outputFile) {
+    throw new Error('GITHUB_OUTPUT environment variable is not set')
+  }
+
+  // Append to the output file with proper formatting
+  const output = `${name}=${value}\n`
+  fs.appendFileSync(outputFile, output)
+}
+
 async function run() {
   const inputs = getInputs()
   inputs.forEach((ref, repo) => {
@@ -328,8 +341,8 @@ async function run() {
   attemptable.forEach((refs, repo) => {
     core.debug(`found attemptable refs for ${repo}: ${refs.join(', ')}`)
   })
-  core.setOutput('build-type', buildType)
-  core.setOutput('variant', buildVariant)
+  setOutput('build-type', buildType)
+  setOutput('variant', buildVariant)
 
   const resolved = await resolveRefs(attemptable, buildVariant)
   resolved.forEach((ref, repo) => {
@@ -339,7 +352,7 @@ async function run() {
       )
     }
     core.info(`Resolved ${repo} to ${ref}`)
-    core.setOutput(repo, ref)
+    setOutput(repo, ref)
   })
 }
 
