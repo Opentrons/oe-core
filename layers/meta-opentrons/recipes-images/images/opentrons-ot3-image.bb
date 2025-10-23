@@ -39,7 +39,7 @@ IMAGE_INSTALL:append = " \
     packagegroup-basic \
     packagegroup-tdx-cli \
     packagegroup-fsl-isp \
-    udev-extraconf \
+    udev udev-extraconf \
     v4l-utils dfu-util \
     source-han-sans-cn-fonts \
     bash coreutils makedevs mime-support util-linux \
