@@ -38,6 +38,9 @@ do_install:append() {
 
   # install the signing key, we decide if we keep it in the opentrons-ot3-image recipe
   install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/opentrons_versions/opentrons-robot-signing-key.crt
+
+  # remove pycaches
+  rm -rf ${D}${PIPENV_APP_BUNDLE_DIR}/**/__pycache__
 }
 
 inherit pipenv_app_bundle
