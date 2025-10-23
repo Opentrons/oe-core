@@ -165,6 +165,7 @@ do_make_rootfs_changes() {
 
     # cleanup
     rm -rf ${IMAGE_ROOTFS}/opentrons_versions
+
 }
 ROOTFS_POSTPROCESS_COMMAND += "do_make_rootfs_changes; "
 
@@ -288,7 +289,7 @@ fakeroot do_create_tezi_ot3() {
 # create the opentrons ot3 image
 do_create_opentrons_ot3() {
     cd ${DEPLOY_DIR_IMAGE}/
-    ln -f opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
+    ln -f opentrons-ot3-image-verdin-imx8mm.rootfs.ext4.xz systemfs.xz
 
     # compute the sha256sum
     sha256sum systemfs.xz | cut -d " " -f 1 > systemfs.xz.sha256
@@ -305,11 +306,18 @@ do_create_opentrons_ot3() {
     zip ot3-system.zip systemfs.xz systemfs.xz.sha256 $signed_rootfs VERSION.json
 }
 
+# create a standin tagged firmware; this is for uuu, which we don't use, but putting it in the filesystem is
+# for some reason not optional
+do_create_dummy_bootloader() {
+    echo "surprise" > ${DEPLOY_DIR_IMAGE}/flash.bin.tagged
+}
+
 do_create_filesystem[depends] += "virtual/fakeroot-native:do_populate_sysroot"
 do_create_tezi_manifest[prefuncs] += "do_image_teziimg"
 
 do_create_tezi_ot3[depends] += "virtual/fakeroot-native:do_populate_sysroot"
 do_create_tezi_ot3[prefuncs] += "do_image_teziimg do_create_filesystem"
+do_image_wic[prefuncs] += "do_create_dummy_bootloader"
 
 addtask do_create_filesystem after do_image_complete before do_populate_lic_deploy
 addtask do_create_tezi_manifest after do_create_filesystem before do_populate_lic_deploy
