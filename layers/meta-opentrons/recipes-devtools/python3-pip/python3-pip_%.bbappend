@@ -1,6 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SRC_URI:append += "\
+SRC_URI:append := "\
 	file://pip.conf \
 	file://user-packages.pth \
 	"
