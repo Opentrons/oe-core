@@ -1,7 +1,7 @@
 SUMMARY = "Opentrons OT3 Image"
 DESCRIPTION = "Opentrons OT3 Robot Image"
 
-LICENSE = "apache-2"
+LICENSE = "Apache-2"
 
 inherit core-image image_type_tezi
 
