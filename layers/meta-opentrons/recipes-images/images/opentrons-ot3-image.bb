@@ -60,6 +60,7 @@ IMAGE_INSTALL += " \
     opentrons-user-environment opentrons-module-firmware \
     opentrons-systemd-units opentrons-ssh-keys opentrons-live-stream \
     libjpeg-turbo avrdude ffmpeg rtl88x2bu \
+    zip \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
