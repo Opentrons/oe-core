@@ -34581,6 +34581,8 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_1__);
 /* harmony import */ var semver__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(2088);
 /* harmony import */ var semver__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(semver__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(9896);
+/* harmony import */ var fs__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(fs__WEBPACK_IMPORTED_MODULE_3__);
 var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -34590,6 +34592,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+
 
 
 
@@ -34645,15 +34648,33 @@ function latestTag(tagRefs) {
     const tagVersions = tagRefs
         .map(tag => {
         const tagName = tag.ref.replace('refs/tags/', '');
-        // Handle v* tags (e.g., "v1.19.4")
+        // Handle v* tags (e.g., "v1.19.4" or "v66")
         if (tagName.startsWith('v')) {
             const version = tagName.substring(1);
-            return { tag: tag.ref, version, isValid: semver__WEBPACK_IMPORTED_MODULE_2__.valid(version) };
+            // Accept both semantic versions and simple numeric versions like "v66"
+            const isValidSemver = semver__WEBPACK_IMPORTED_MODULE_2__.valid(version);
+            const isValidNumeric = /^\d+$/.test(version);
+            return {
+                tag: tag.ref,
+                version,
+                isValid: isValidSemver || isValidNumeric,
+            };
         }
-        // Handle internal@* tags (e.g., "internal@1.2.0-alpha.0")
+        // Handle internal@* tags (e.g., "internal@1.2.0-alpha.0" or "internal@v23")
         if (tagName.startsWith('internal@')) {
-            const version = tagName.substring(9); // Remove "internal@"
-            return { tag: tag.ref, version, isValid: semver__WEBPACK_IMPORTED_MODULE_2__.valid(version) };
+            let version = tagName.substring(9); // Remove "internal@"
+            // Handle internal@v* format by removing the 'v' prefix
+            if (version.startsWith('v')) {
+                version = version.substring(1);
+            }
+            // Accept both semantic versions and simple numeric versions
+            const isValidSemver = semver__WEBPACK_IMPORTED_MODULE_2__.valid(version);
+            const isValidNumeric = /^\d+$/.test(version);
+            return {
+                tag: tag.ref,
+                version,
+                isValid: isValidSemver || isValidNumeric,
+            };
         }
         // Handle ot3@* tags (e.g., "ot3@1.2.0-alpha.0")
         if (tagName.startsWith('ot3@')) {
@@ -34663,11 +34684,29 @@ function latestTag(tagRefs) {
         // Unknown tag format
         return { tag: tag.ref, version: null, isValid: false };
     })
-        .filter(tv => tv.isValid); // Only keep valid semantic versions
+        .filter(tv => tv.isValid); // Only keep valid versions (semantic or numeric)
     if (tagVersions.length === 0)
         return null;
-    // Sort by semantic version and return the latest
-    tagVersions.sort((a, b) => semver__WEBPACK_IMPORTED_MODULE_2__.compare(a.version, b.version));
+    // Sort by version and return the latest
+    tagVersions.sort((a, b) => {
+        const aIsSemver = semver__WEBPACK_IMPORTED_MODULE_2__.valid(a.version);
+        const bIsSemver = semver__WEBPACK_IMPORTED_MODULE_2__.valid(b.version);
+        if (aIsSemver && bIsSemver) {
+            return semver__WEBPACK_IMPORTED_MODULE_2__.compare(a.version, b.version);
+        }
+        else if (aIsSemver && !bIsSemver) {
+            // Semantic versions are considered newer than numeric versions
+            return 1;
+        }
+        else if (!aIsSemver && bIsSemver) {
+            // Numeric versions are considered older than semantic versions
+            return -1;
+        }
+        else {
+            // Both are numeric versions, compare numerically
+            return parseInt(a.version) - parseInt(b.version);
+        }
+    });
     return tagVersions[tagVersions.length - 1].tag;
 }
 function restDetailsFor(input) {
@@ -34767,6 +34806,15 @@ function resolveRefs(toAttempt, variant) {
 function resolveBuildType(ref) {
     return ref.includes('refs/tags') ? 'release' : 'develop';
 }
+function setOutput(name, value) {
+    const outputFile = process.env['GITHUB_OUTPUT'];
+    if (!outputFile) {
+        throw new Error('GITHUB_OUTPUT environment variable is not set');
+    }
+    // Append to the output file with proper formatting
+    const output = `${name}=${value}\n`;
+    fs__WEBPACK_IMPORTED_MODULE_3__.appendFileSync(outputFile, output);
+}
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const inputs = getInputs();
@@ -34787,15 +34835,15 @@ function run() {
         attemptable.forEach((refs, repo) => {
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found attemptable refs for ${repo}: ${refs.join(', ')}`);
         });
-        _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('build-type', buildType);
-        _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput('variant', buildVariant);
+        setOutput('build-type', buildType);
+        setOutput('variant', buildVariant);
         const resolved = yield resolveRefs(attemptable, buildVariant);
         resolved.forEach((ref, repo) => {
             if (!ref) {
                 throw new Error(`Could not resolve ${repo} input reference ${inputs.get(repo)}`);
             }
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved ${repo} to ${ref}`);
-            _actions_core__WEBPACK_IMPORTED_MODULE_1__.setOutput(repo, ref);
+            setOutput(repo, ref);
         });
     });
 }
