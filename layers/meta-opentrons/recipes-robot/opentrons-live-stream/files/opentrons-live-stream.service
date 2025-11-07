@@ -15,6 +15,7 @@ ExecCondition=/bin/sh -c '[ "$STATUS" != "OFF" ]'
 ExecStart=/bin/sh -c 'ffmpeg \
         -hwaccel auto \
         -video_size $RESOLUTION \
+        -f v4l2 \
         -i $SOURCE \
         -flags low_delay \
         -c:v h264_v4l2m2m \
