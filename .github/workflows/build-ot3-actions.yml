@@ -350,11 +350,18 @@ jobs:
         with:
           submodules: false
           path: ./oe-core-for-workflow
+      - name: 'Extract tag name'
+        id: tag-name
+        run: |
+          tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
+          tag_name="${tag_ref#refs/tags/}"
+          echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
       - name: 'Send success alert'
         uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
         with:
           status: 'success'
           workflow_name: 'Build Flex image on github workflows'
+          tag_name: ${{ steps.tag-name.outputs.tag_name }}
           webhook_url: ${{ secrets.OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL }}
   notify-failure:
     name: 'Notify Build Failure'
@@ -367,11 +374,18 @@ jobs:
         with:
           submodules: false
           path: ./oe-core-for-workflow
+      - name: 'Extract tag name'
+        id: tag-name
+        run: |
+          tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
+          tag_name="${tag_ref#refs/tags/}"
+          echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
       - name: 'Send failure alert'
         uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
         with:
           status: 'failure'
           workflow_name: 'Build Flex image on github workflows'
+          tag_name: ${{ steps.tag-name.outputs.tag_name }}
           webhook_url: ${{ secrets.OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL }}
   notify-cancelled:
     name: 'Notify Build Cancelled'
@@ -384,9 +398,16 @@ jobs:
         with:
           submodules: false
           path: ./oe-core-for-workflow
+      - name: 'Extract tag name'
+        id: tag-name
+        run: |
+          tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
+          tag_name="${tag_ref#refs/tags/}"
+          echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
       - name: 'Send cancelled alert'
         uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
         with:
           status: 'cancelled'
           workflow_name: 'Build Flex image on github workflows'
+          tag_name: ${{ steps.tag-name.outputs.tag_name }}
           webhook_url: ${{ secrets.OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL }}
