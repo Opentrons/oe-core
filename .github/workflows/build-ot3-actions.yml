@@ -356,13 +356,21 @@ jobs:
           tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
           tag_name="${tag_ref#refs/tags/}"
           echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
+      - name: 'Determine webhook URL'
+        id: webhook
+        run: |
+          if [[ "${{ needs.decide-refs.outputs.variant }}" == "release" ]]; then
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}" >> $GITHUB_OUTPUT
+          else
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
+          fi
       - name: 'Send success alert'
         uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
         with:
           status: 'success'
           workflow_name: 'Build Flex image on github workflows'
           tag_name: ${{ steps.tag-name.outputs.tag_name }}
-          webhook_url: ${{ secrets.OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL }}
+          webhook_url: ${{ steps.webhook.outputs.webhook_url }}
   notify-failure:
     name: 'Notify Build Failure'
     runs-on: 'ubuntu-latest'
@@ -380,13 +388,21 @@ jobs:
           tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
           tag_name="${tag_ref#refs/tags/}"
           echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
+      - name: 'Determine webhook URL'
+        id: webhook
+        run: |
+          if [[ "${{ needs.decide-refs.outputs.variant }}" == "release" ]]; then
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}" >> $GITHUB_OUTPUT
+          else
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
+          fi
       - name: 'Send failure alert'
         uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
         with:
           status: 'failure'
           workflow_name: 'Build Flex image on github workflows'
           tag_name: ${{ steps.tag-name.outputs.tag_name }}
-          webhook_url: ${{ secrets.OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL }}
+          webhook_url: ${{ steps.webhook.outputs.webhook_url }}
   notify-cancelled:
     name: 'Notify Build Cancelled'
     runs-on: 'ubuntu-latest'
@@ -404,10 +420,18 @@ jobs:
           tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
           tag_name="${tag_ref#refs/tags/}"
           echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
+      - name: 'Determine webhook URL'
+        id: webhook
+        run: |
+          if [[ "${{ needs.decide-refs.outputs.variant }}" == "release" ]]; then
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}" >> $GITHUB_OUTPUT
+          else
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
+          fi
       - name: 'Send cancelled alert'
         uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
         with:
           status: 'cancelled'
           workflow_name: 'Build Flex image on github workflows'
           tag_name: ${{ steps.tag-name.outputs.tag_name }}
-          webhook_url: ${{ secrets.OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL }}
+          webhook_url: ${{ steps.webhook.outputs.webhook_url }}
