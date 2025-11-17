@@ -17,6 +17,7 @@ ExecStart=/bin/sh -c 'ffmpeg \
         -video_size $RESOLUTION \
         -f v4l2 \
         -i $SOURCE \
+        -vf "crop=iw/1.33:ih/1.33:(iw-iw/1.33)/1.33:0, scale=$RESOLUTION, format=nv12" \
         -flags low_delay \
         -c:v h264_v4l2m2m \
         -b:v $BITRATE \
