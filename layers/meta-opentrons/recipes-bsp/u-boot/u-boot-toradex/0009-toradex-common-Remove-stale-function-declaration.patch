@@ -1,0 +1,30 @@
+From 0d4b692c807881253ec6954970ccbb0f717ae10a Mon Sep 17 00:00:00 2001
+From: Francesco Dolcini <francesco.dolcini@toradex.com>
+Date: Thu, 21 Jul 2022 15:17:35 +0200
+Subject: [PATCH 09/12] toradex: common: Remove stale function declaration
+
+Remove stale show_boot_logo() declaration, not used anywhere.
+
+Upstream-Status: Backport [0d4b692c807881253ec6954970ccbb0f717ae10a]
+Fixes: e6fd30dd9eef ("toradex: drop legacy show_boot_logo function and use splashscreen")
+Signed-off-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+---
+ board/toradex/common/tdx-common.h | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/board/toradex/common/tdx-common.h b/board/toradex/common/tdx-common.h
+index c96e8754e9e2..d446e9f1d5ca 100644
+--- a/board/toradex/common/tdx-common.h
++++ b/board/toradex/common/tdx-common.h
+@@ -12,8 +12,4 @@
+ int ft_common_board_setup(void *blob, struct bd_info *bd);
+ u32 get_board_revision(void);
+ 
+-#if defined(CONFIG_DM_VIDEO)
+-int show_boot_logo(void);
+-#endif
+-
+ #endif /* _TDX_COMMON_H */
+-- 
+2.25.1
+

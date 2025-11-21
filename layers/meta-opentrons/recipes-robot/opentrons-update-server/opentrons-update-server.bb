@@ -6,10 +6,10 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 
-RDEPENDS:${PN} += " bmap-tools libubootenv nginx python3-dbus python3-aiohttp python3-systemd"
+RDEPENDS:${PN} += " bmaptool libubootenv nginx python3-dbus python3-aiohttp python3-systemd"
 OT_PROJECT = 'update-server'
 
-inherit insane systemd get_ot_package_version
+inherit systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-update-server.service"
@@ -38,6 +38,9 @@ do_install:append() {
 
   # install the signing key, we decide if we keep it in the opentrons-ot3-image recipe
   install -m 600 ${WORKDIR}/opentrons-robot-signing-key.crt ${D}/opentrons_versions/opentrons-robot-signing-key.crt
+
+  # remove pycaches
+  rm -rf ${D}${PIPENV_APP_BUNDLE_DIR}/**/__pycache__
 }
 
 inherit pipenv_app_bundle

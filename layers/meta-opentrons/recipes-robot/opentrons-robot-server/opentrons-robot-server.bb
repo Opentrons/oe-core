@@ -12,7 +12,7 @@ OT_PACKAGE = "robot-server"
 # Rust python modules installed by pip get stripped outside OE infra
 INSANE_SKIP:${PN}:append = "already-stripped"
 
-inherit insane systemd get_ot_package_version
+inherit systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service"
@@ -55,6 +55,9 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/opentrons-ot3-canbus.service ${D}${systemd_system_unitdir}/opentrons-ot3-canbus.service
     install -d ${D}${sysconfdir}/udev/rules.d/
     install -m 0644 ${WORKDIR}/95-opentrons-udev.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-udev.rules
+
+    # remove pycaches
+    rm -rf ${D}${PIPENV_APP_BUNDLE_DIR}/**/__pycache__
 }
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d \

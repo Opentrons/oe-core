@@ -7,10 +7,6 @@ SRC_URI += " \
     file://logo-splash.script \
 "
 
-PACKAGECONFIG = "pango drm"
-
-EXTRA_OECONF += "--with-udev --with-runtimedir=/run"
-
 do_install:append () {
     install -m 0644 ${WORKDIR}/plymouthd.defaults ${D}${datadir}/plymouth/plymouthd.defaults
     install -d 0644 ${D}${datadir}/plymouth/themes/logo-splash
