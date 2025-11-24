@@ -28,6 +28,34 @@
 		regulator-boot-on;
 		regulator-name = "DSI_1_PWR_EN";
 	};
+    panel_lvds: panel-lvds {
+		compatible = "panel-lvds";
+		data-mapping = "vesa-24";
+		height-mm = <86>;
+		width-mm = <154>;
+		status = "okay";
+		backlight = <&backlight_verdin_dsi>;
+
+		port {
+			panel_in_lt170410: endpoint {
+				remote-endpoint = <&dsi_lvds_bridge_out>;
+			};
+		};
+
+		panel-timing {
+			clock-frequency = <51200000>;
+			hactive = <1024 1024 1024>;
+			hfront-porch = <16 160 216>;
+			hback-porch = <160 160 160>;
+			hsync-len = <1 70 140>;
+			vactive = <600 600 600>;
+			vfront-porch = <1 12 127>;
+			vback-porch = <23 23 23>;
+			vsync-len = <1 10 20>;
+			de-active = <1>;
+			pixelclk-active = <0>;
+		};
+	};
 };
 
 &backlight_verdin_dsi {
@@ -36,14 +64,6 @@
 	/* Verdin I2S_2_D_OUT (DSI_1_BKL_EN/DSI_1_BKL_EN_LVDS, SODIMM 46) */
 	enable-gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>;
 	pwms = <&pwm3 0 6666667 PWM_POLARITY_INVERTED>;
-};
-
-&gpu_2d {
-	status = "okay";
-};
-
-&gpu_3d {
-	status = "okay";
 };
 
 /* Verdin I2C_1 */
@@ -105,9 +125,10 @@
 };
 
 /* LCDIF to MIPI-DSI */
-&lcdif1 {
+&lcdif {
 	status = "okay";
 };
+
 
 &mipi_dsi {
 	#address-cells = <1>;
@@ -122,15 +143,6 @@
 	};
 };
 
-&mix_gpu_ml {
-	status = "okay";
-};
-
-&ml_vipsi {
-	status = "okay";
-};
-
-
 &vpu_g1 {
 	status = "okay";
 };
@@ -139,44 +151,9 @@
 	status = "okay";
 };
 
-&vpu_vc8000e {
-	status = "okay";
-};
 
 &vpu_v4l2 {
 	status = "okay";
-};
-
-
-&{/} {
-	panel_lvds: panel-lvds {
-		compatible = "panel-lvds";
-		data-mapping = "vesa-24";
-		height-mm = <86>;
-		width-mm = <154>;
-		status = "okay";
-		backlight = <&backlight_verdin_dsi>;
-
-		port {
-			panel_in_lt170410: endpoint {
-				remote-endpoint = <&dsi_lvds_bridge_out>;
-			};
-		};
-
-		panel-timing {
-			clock-frequency = <51200000>;
-			hactive = <1024 1024 1024>;
-			hfront-porch = <16 160 216>;
-			hback-porch = <160 160 160>;
-			hsync-len = <1 70 140>;
-			vactive = <600 600 600>;
-			vfront-porch = <1 12 127>;
-			vback-porch = <23 23 23>;
-			vsync-len = <1 10 20>;
-			de-active = <1>;
-			pixelclk-active = <0>;
-		};
-	};
 };
 
 
