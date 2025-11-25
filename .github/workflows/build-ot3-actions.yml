@@ -76,7 +76,10 @@ jobs:
       cancel-in-progress: false
     outputs:
       system_url: ${{ steps.upload-results.outputs.system_url }}
-      fullimage_url: ${{ steps.upload-results.output.fullimage_url }}
+      fullimage_url: ${{ steps.upload-results.outputs.fullimage_url }}
+      console_url: ${{ steps.upload-results.outputs.console_url }}
+      version_file_url: ${{ steps.upload-results.outputs.version_file_url }}
+      release_notes_file_url: ${{ steps.upload-results.outputs.release_notes_file_url }}
     steps:
       - name: Fetch initial sources for action
         uses: 'actions/checkout@v3'
@@ -339,99 +342,95 @@ jobs:
         if: ${{ failure() }}
         run: |
           rm -rf ${LOCAL_CACHE:-./cache}/*
-  notify-success:
-    name: 'Notify Build Success'
+  notify-tagged-success:
+    name: 'Notify Tagged Build Success'
     runs-on: 'ubuntu-latest'
     needs: [decide-refs, run-build]
-    if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success'
+    if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success' && needs.decide-refs.outputs.variant != ''
     steps:
-      - name: Fetch initial sources for action
-        uses: 'actions/checkout@v3'
-        with:
-          submodules: false
-          path: ./oe-core-for-workflow
-      - name: 'Extract tag name'
-        id: tag-name
-        run: |
-          tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
-          tag_name="${tag_ref#refs/tags/}"
-          echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
-      - name: 'Determine webhook URL'
-        id: webhook
-        run: |
-          if [[ "${{ needs.decide-refs.outputs.variant }}" == "release" ]]; then
-            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}" >> $GITHUB_OUTPUT
-          else
-            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
-          fi
+      - name: Checkout Repository
+        uses: actions/checkout@v3
       - name: 'Send success alert'
-        uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
+        uses: ./.github/actions/simple-build-alert
+        continue-on-error: true
         with:
           status: 'success'
           workflow_name: 'Build Flex image on github workflows'
-          tag_name: ${{ steps.tag-name.outputs.tag_name }}
-          webhook_url: ${{ steps.webhook.outputs.webhook_url }}
-  notify-failure:
-    name: 'Notify Build Failure'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL_TAGGED }}
+          console_url: ${{ needs.run-build.outputs.console_url }}
+          system_url: ${{ needs.run-build.outputs.system_url }}
+          fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
+          version_file_url: ${{ needs.run-build.outputs.version_file_url }}
+          release_notes_file_url: ${{ needs.run-build.outputs.release_notes_file_url }}
+          oe-core_ref: ${{ needs.decide-refs.outputs.oe-core }}
+          monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
+          firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
+  notify-tagged-failure:
+    name: 'Notify Tagged Build Failure'
     runs-on: 'ubuntu-latest'
     needs: [decide-refs, run-build]
     if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
     steps:
-      - name: Fetch initial sources for action
-        uses: 'actions/checkout@v3'
-        with:
-          submodules: false
-          path: ./oe-core-for-workflow
-      - name: 'Extract tag name'
-        id: tag-name
-        run: |
-          tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
-          tag_name="${tag_ref#refs/tags/}"
-          echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
-      - name: 'Determine webhook URL'
-        id: webhook
-        run: |
-          if [[ "${{ needs.decide-refs.outputs.variant }}" == "release" ]]; then
-            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}" >> $GITHUB_OUTPUT
-          else
-            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
-          fi
+      - name: Checkout Repository
+        uses: actions/checkout@v3
       - name: 'Send failure alert'
-        uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
+        uses: ./.github/actions/simple-build-alert
+        continue-on-error: true
         with:
           status: 'failure'
           workflow_name: 'Build Flex image on github workflows'
-          tag_name: ${{ steps.tag-name.outputs.tag_name }}
-          webhook_url: ${{ steps.webhook.outputs.webhook_url }}
-  notify-cancelled:
-    name: 'Notify Build Cancelled'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL_TAGGED }}
+          console_url: ${{ needs.run-build.outputs.console_url }}
+          system_url: ${{ needs.run-build.outputs.system_url }}
+          fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
+          version_file_url: ${{ needs.run-build.outputs.version_file_url }}
+          release_notes_file_url: ${{ needs.run-build.outputs.release_notes_file_url }}
+          oe-core_ref: ${{ needs.decide-refs.outputs.oe-core }}
+          monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
+          firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
+  notify-untagged-success:
+    name: 'Notify Untagged Build Success'
     runs-on: 'ubuntu-latest'
     needs: [decide-refs, run-build]
-    if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'cancelled'
+    if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success'
     steps:
-      - name: Fetch initial sources for action
-        uses: 'actions/checkout@v3'
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: 'Send success alert'
+        uses: ./.github/actions/simple-build-alert
+        continue-on-error: true
         with:
-          submodules: false
-          path: ./oe-core-for-workflow
-      - name: 'Extract tag name'
-        id: tag-name
-        run: |
-          tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
-          tag_name="${tag_ref#refs/tags/}"
-          echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
-      - name: 'Determine webhook URL'
-        id: webhook
-        run: |
-          if [[ "${{ needs.decide-refs.outputs.variant }}" == "release" ]]; then
-            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}" >> $GITHUB_OUTPUT
-          else
-            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
-          fi
-      - name: 'Send cancelled alert'
-        uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
-        with:
-          status: 'cancelled'
+          status: 'success'
           workflow_name: 'Build Flex image on github workflows'
-          tag_name: ${{ steps.tag-name.outputs.tag_name }}
-          webhook_url: ${{ steps.webhook.outputs.webhook_url }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          console_url: ${{ needs.run-build.outputs.console_url }}
+          system_url: ${{ needs.run-build.outputs.system_url }}
+          fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
+          version_file_url: ${{ needs.run-build.outputs.version_file_url }}
+          release_notes_file_url: ${{ needs.run-build.outputs.release_notes_file_url }}
+          oe-core_ref: ${{ needs.decide-refs.outputs.oe-core }}
+          monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
+          firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
+  notify-untagged-failure:
+    name: 'Notify Untagged Build Failure'
+    runs-on: 'ubuntu-latest'
+    needs: [decide-refs, run-build]
+    if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: 'Send failure alert'
+        uses: ./.github/actions/simple-build-alert
+        continue-on-error: true
+        with:
+          status: 'failure'
+          workflow_name: 'Build Flex image on github workflows'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          console_url: ${{ needs.run-build.outputs.console_url }}
+          system_url: ${{ needs.run-build.outputs.system_url }}
+          fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
+          version_file_url: ${{ needs.run-build.outputs.version_file_url }}
+          release_notes_file_url: ${{ needs.run-build.outputs.release_notes_file_url }}
+          oe-core_ref: ${{ needs.decide-refs.outputs.oe-core }}
+          monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
+          firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
