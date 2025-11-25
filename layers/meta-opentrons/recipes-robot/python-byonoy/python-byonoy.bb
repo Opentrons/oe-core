@@ -8,8 +8,6 @@ SRC_URI += "file://byonoy_devices.so \
 "
 FIRMWARE_DIR="${libdir}/firmware"
 
-inherit python_setuptools_build_meta
-
 COMPATIBLE_HOST = "aarch64.*-linux"
 
 # The following is needed for unversioned pre-built libraries
@@ -21,17 +19,19 @@ SOLIBS = ".so"
 FILES_SOLIBSDEV = ""
 
 do_install:append() {
-        # install the python library to /usr/lib/python3.10/site-packages
-        install -m 755 ${WORKDIR}/byonoy_devices.so ${D}${libdir}/python3.10/site-packages
+        # install the python library to the robot server directory
+        install -d ${D}/opt/opentrons-robot-server/
+        install -m 755 ${WORKDIR}/byonoy_devices.so ${D}/opt/opentrons-robot-server/
+        install -d ${D}${libdir}
         install -m 755 ${WORKDIR}/libbyonoy_device_library.so ${D}${libdir}
         # install the firmware files to /usr/lib/firmware
         install -d ${D}${FIRMWARE_DIR}
-        install -m 644 ${WORKDIR}/absorbance-96@v8.byoup ${D}${FIRMWARE_DIR}
+        install -m 644 ${WORKDIR}/absorbance-96@v8.byoup ${D}${FIRMWARE_DIR}/
 }
 
 RDEPENDS:${PN} += "hidapi"
 
-FILES:${PN} += "${libdir}/libbyony_device_library.so \
+FILES:${PN} += "${libdir}/libbyonoy_device_library.so \
                 ${libdir}/firmware/absorbance-96@v8.byoup \
-                ${libdir}/python3.10/site-packages/byonoy_devices.so \
+                /opt/opentrons-robot-server/byonoy_devices.so \
 "

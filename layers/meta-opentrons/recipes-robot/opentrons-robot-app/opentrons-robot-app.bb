@@ -7,8 +7,6 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 inherit features_check
 
-inherit insane
-
 do_configure(){
     npm install -g yarn
     cd ${S}

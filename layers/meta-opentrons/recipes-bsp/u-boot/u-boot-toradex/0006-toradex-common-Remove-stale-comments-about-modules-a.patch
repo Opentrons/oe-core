@@ -1,0 +1,63 @@
+From ea1dc32f318903340a5ddaa8dc655503d1b4599e Mon Sep 17 00:00:00 2001
+From: Francesco Dolcini <francesco.dolcini@toradex.com>
+Date: Thu, 21 Jul 2022 15:17:32 +0200
+Subject: [PATCH 06/12] toradex: common: Remove stale comments about modules
+ availability
+
+Remove comment "not currently on sale" on specific SKUs, this
+information does not belong to the code and will never be accurate.
+
+Upstream-Status: Backport [ea1dc32f318903340a5ddaa8dc655503d1b4599e]
+Signed-off-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+---
+ board/toradex/common/tdx-cfg-block.c | 4 ++--
+ board/toradex/common/tdx-cfg-block.h | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/board/toradex/common/tdx-cfg-block.c b/board/toradex/common/tdx-cfg-block.c
+index 53302925dc24..67d007827be6 100644
+--- a/board/toradex/common/tdx-cfg-block.c
++++ b/board/toradex/common/tdx-cfg-block.c
+@@ -87,7 +87,7 @@ const char * const toradex_modules[] = {
+ 	 [7] = "Colibri PXA300 208MHz XT",
+ 	 [8] = "Colibri PXA270 312MHz",
+ 	 [9] = "Colibri PXA270 520MHz",
+-	[10] = "Colibri VF50 128MB", /* not currently on sale */
++	[10] = "Colibri VF50 128MB",
+ 	[11] = "Colibri VF61 256MB",
+ 	[12] = "Colibri VF61 256MB IT",
+ 	[13] = "Colibri VF50 128MB IT",
+@@ -133,7 +133,7 @@ const char * const toradex_modules[] = {
+ 	[53] = "Apalis iMX8 QuadXPlus 2GB ECC IT",
+ 	[54] = "Apalis iMX8 DualXPlus 1GB",
+ 	[55] = "Verdin iMX8M Mini Quad 2GB Wi-Fi / BT IT",
+-	[56] = "Verdin iMX8M Nano Quad 1GB Wi-Fi / BT", /* not currently on sale */
++	[56] = "Verdin iMX8M Nano Quad 1GB Wi-Fi / BT",
+ 	[57] = "Verdin iMX8M Mini DualLite 1GB",
+ 	[58] = "Verdin iMX8M Plus Quad 4GB Wi-Fi / BT IT",
+ 	[59] = "Verdin iMX8M Mini Quad 2GB IT",
+diff --git a/board/toradex/common/tdx-cfg-block.h b/board/toradex/common/tdx-cfg-block.h
+index 79cd09c78d00..028e6b12735f 100644
+--- a/board/toradex/common/tdx-cfg-block.h
++++ b/board/toradex/common/tdx-cfg-block.h
+@@ -31,7 +31,7 @@ enum {
+ 	COLIBRI_PXA270_312MHZ,
+ 	COLIBRI_PXA270_520MHZ,
+ 	COLIBRI_VF50, /* 10 */
+-	COLIBRI_VF61, /* not currently on sale */
++	COLIBRI_VF61,
+ 	COLIBRI_VF61_IT,
+ 	COLIBRI_VF50_IT,
+ 	COLIBRI_IMX6S,
+@@ -62,7 +62,7 @@ enum {
+ 	COLIBRI_IMX7D_EMMC,
+ 	COLIBRI_IMX6ULL_WIFI_BT_IT, /* 40 */
+ 	COLIBRI_IMX7D_EPDC,
+-	APALIS_TK1_4GB, /* not currently on sale */
++	APALIS_TK1_4GB,
+ 	COLIBRI_T20_512MB_IT_SETEK,
+ 	COLIBRI_IMX6ULL_IT,
+ 	COLIBRI_IMX6ULL_WIFI_BT, /* 45 */
+-- 
+2.25.1
+

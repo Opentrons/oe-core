@@ -1,0 +1,41 @@
+From abe52f58bc54efa9a9849ad4246666ae0be94d38 Mon Sep 17 00:00:00 2001
+From: Francesco Dolcini <francesco.dolcini@toradex.com>
+Date: Thu, 21 Jul 2022 15:17:38 +0200
+Subject: [PATCH 12/12] toradex: common: Improve product/serial print during
+ boot
+
+Add product id print in show_board_info(), with an increasing number of
+Toradex SKUs available with small differences it makes sense to print it.
+
+Move serial number print to a dedicated line, this prevents the previous
+line with the product name to overflow the 80 columns with any
+reasonable product name length.
+
+Upstream-Status: Backport [abe52f58bc54efa9a9849ad4246666ae0be94d38]
+Signed-off-by: Francesco Dolcini <francesco.dolcini@toradex.com>
+---
+ board/toradex/common/tdx-common.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/board/toradex/common/tdx-common.c b/board/toradex/common/tdx-common.c
+index 2284fcddb510..fadbe455419c 100644
+--- a/board/toradex/common/tdx-common.c
++++ b/board/toradex/common/tdx-common.c
+@@ -115,10 +115,11 @@ int show_board_info(void)
+ 
+ 		env_set("serial#", tdx_serial_str);
+ 
+-		printf("Model: Toradex %s %s, Serial# %s\n",
++		printf("Model: Toradex %04d %s %s\n",
++		       tdx_hw_tag.prodid,
+ 		       toradex_modules[tdx_hw_tag.prodid].name,
+-		       tdx_board_rev_str,
+-		       tdx_serial_str);
++		       tdx_board_rev_str);
++		printf("Serial#: %s\n", tdx_serial_str);
+ #ifdef CONFIG_TDX_CFG_BLOCK_EXTRA
+ 		if (read_tdx_cfg_block_carrier()) {
+ 			printf("MISSING TORADEX CARRIER CONFIG BLOCKS\n");
+-- 
+2.25.1
+

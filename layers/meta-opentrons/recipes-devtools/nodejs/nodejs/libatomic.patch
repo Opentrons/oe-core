@@ -1,4 +1,4 @@
-From 15e751e4b79475fb34e4b32a3ca54119b20c564a Mon Sep 17 00:00:00 2001
+From 997cc2e3579f7d08e60d0005d822b1e9e8ca4922 Mon Sep 17 00:00:00 2001
 From: Hongxu Jia <hongxu.jia@windriver.com>
 Date: Sat, 17 Aug 2024 21:33:18 +0800
 Subject: [PATCH] link libatomic for clang conditionally
@@ -23,10 +23,10 @@ Signed-off-by: Hongxu Jia <hongxu.jia@windriver.com>
  2 files changed, 24 insertions(+), 4 deletions(-)
 
 diff --git a/node.gyp b/node.gyp
-index b425f443..f296f35c 100644
+index 195fe541..4aa214c6 100644
 --- a/node.gyp
 +++ b/node.gyp
-@@ -487,7 +487,18 @@
+@@ -518,7 +518,18 @@
          ],
        }],
        ['OS=="linux" and clang==1', {
@@ -47,10 +47,10 @@ index b425f443..f296f35c 100644
      ],
    },
 diff --git a/tools/v8_gypfiles/v8.gyp b/tools/v8_gypfiles/v8.gyp
-index b23263cf..dcabf4ca 100644
+index 09147465..ed565257 100644
 --- a/tools/v8_gypfiles/v8.gyp
 +++ b/tools/v8_gypfiles/v8.gyp
-@@ -1100,9 +1100,18 @@
+@@ -1246,9 +1246,18 @@
          # Platforms that don't have Compare-And-Swap (CAS) support need to link atomic library
          # to implement atomic memory access
          ['v8_current_cpu in ["mips64", "mips64el", "ppc", "arm", "riscv64", "loong64"]', {
@@ -72,5 +72,3 @@ index b23263cf..dcabf4ca 100644
          }],
        ],
      },  # v8_base_without_compiler
---
-2.35.5
