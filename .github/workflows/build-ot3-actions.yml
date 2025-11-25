@@ -52,6 +52,17 @@ jobs:
           monorepo: ${{ inputs.monorepo-ref }}
           oe-core: ${{ inputs.oe-core-ref }}
           ot3-firmware: ${{ inputs.ot3-firmware-ref }}
+      - name: Add refs to the summary
+        run: |
+          echo "### Decide refs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **oe-core** | ${{ steps.build-refs.outputs.oe-core }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **monorepo** | ${{ steps.build-refs.outputs.monorepo }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **ot3-firmware** | ${{ steps.build-refs.outputs.ot3-firmware }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **variant** | ${{ steps.build-refs.outputs.variant }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **build type** | ${{ steps.build-refs.outputs.build-type }} |" >> $GITHUB_STEP_SUMMARY
   run-build:
     needs: decide-refs
     strategy:
@@ -63,6 +74,9 @@ jobs:
     concurrency:
       group: ${{needs.decide-refs.outputs.monorepo}} ${{needs.decide-refs.outputs.oe-core}} ${{needs.decide-refs.outputs.ot3-firmware}} ${{needs.decide-refs.outputs.variant}} ${{needs.decide-refs.outputs.build-type}} ${{inputs.infra-stage}}
       cancel-in-progress: false
+    outputs:
+      system_url: ${{ steps.upload-results.outputs.system_url }}
+      fullimage_url: ${{ steps.upload-results.output.fullimage_url }}
     steps:
       - name: Fetch initial sources for action
         uses: 'actions/checkout@v3'
@@ -125,6 +139,9 @@ jobs:
           echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./build/conf/local.conf
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
           echo 'CONNECTIVITY_CHECK_URIS = "https://www.yoctoproject.org/connectivity.html"' >> ./build/conf/local.conf
+          echo 'OT_BUILD_TARGET = "odd"' >> ./build/conf/local.conf
+          echo 'OT_SENTRY_AUTH_TOKEN = "${{ secrets.OT_SENTRY_AUTH_TOKEN_OE_CORE }}"' >> ./build/conf/local.conf
+          echo 'OT_SENTRY_DSN = "${{ secrets.OT_ODD_SENTRY_DSN }}"' >> ./build/conf/local.conf
           cd ..
       - name: Apply internal-release variant CI config overrides
         if: needs.decide-refs.outputs.variant == 'internal-release'
@@ -345,3 +362,99 @@ jobs:
         if: ${{ failure() }}
         run: |
           rm -rf ${LOCAL_CACHE:-./cache}/*
+  notify-success:
+    name: 'Notify Build Success'
+    runs-on: 'ubuntu-latest'
+    needs: [decide-refs, run-build]
+    if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success'
+    steps:
+      - name: Fetch initial sources for action
+        uses: 'actions/checkout@v3'
+        with:
+          submodules: false
+          path: ./oe-core-for-workflow
+      - name: 'Extract tag name'
+        id: tag-name
+        run: |
+          tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
+          tag_name="${tag_ref#refs/tags/}"
+          echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
+      - name: 'Determine webhook URL'
+        id: webhook
+        run: |
+          if [[ "${{ needs.decide-refs.outputs.variant }}" == "release" ]]; then
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}" >> $GITHUB_OUTPUT
+          else
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
+          fi
+      - name: 'Send success alert'
+        uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
+        with:
+          status: 'success'
+          workflow_name: 'Build Flex image on github workflows'
+          tag_name: ${{ steps.tag-name.outputs.tag_name }}
+          webhook_url: ${{ steps.webhook.outputs.webhook_url }}
+  notify-failure:
+    name: 'Notify Build Failure'
+    runs-on: 'ubuntu-latest'
+    needs: [decide-refs, run-build]
+    if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
+    steps:
+      - name: Fetch initial sources for action
+        uses: 'actions/checkout@v3'
+        with:
+          submodules: false
+          path: ./oe-core-for-workflow
+      - name: 'Extract tag name'
+        id: tag-name
+        run: |
+          tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
+          tag_name="${tag_ref#refs/tags/}"
+          echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
+      - name: 'Determine webhook URL'
+        id: webhook
+        run: |
+          if [[ "${{ needs.decide-refs.outputs.variant }}" == "release" ]]; then
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}" >> $GITHUB_OUTPUT
+          else
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
+          fi
+      - name: 'Send failure alert'
+        uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
+        with:
+          status: 'failure'
+          workflow_name: 'Build Flex image on github workflows'
+          tag_name: ${{ steps.tag-name.outputs.tag_name }}
+          webhook_url: ${{ steps.webhook.outputs.webhook_url }}
+  notify-cancelled:
+    name: 'Notify Build Cancelled'
+    runs-on: 'ubuntu-latest'
+    needs: [decide-refs, run-build]
+    if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'cancelled'
+    steps:
+      - name: Fetch initial sources for action
+        uses: 'actions/checkout@v3'
+        with:
+          submodules: false
+          path: ./oe-core-for-workflow
+      - name: 'Extract tag name'
+        id: tag-name
+        run: |
+          tag_ref="${{ needs.decide-refs.outputs.monorepo }}"
+          tag_name="${tag_ref#refs/tags/}"
+          echo "tag_name=${tag_name}" >> $GITHUB_OUTPUT
+      - name: 'Determine webhook URL'
+        id: webhook
+        run: |
+          if [[ "${{ needs.decide-refs.outputs.variant }}" == "release" ]]; then
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}" >> $GITHUB_OUTPUT
+          else
+            echo "webhook_url=${{ secrets.SLACK_WEBHOOK_URL }}" >> $GITHUB_OUTPUT
+          fi
+      - name: 'Send cancelled alert'
+        uses: './oe-core-for-workflow/.github/actions/simple-build-alert'
+        with:
+          status: 'cancelled'
+          workflow_name: 'Build Flex image on github workflows'
+          tag_name: ${{ steps.tag-name.outputs.tag_name }}
+          webhook_url: ${{ steps.webhook.outputs.webhook_url }}
