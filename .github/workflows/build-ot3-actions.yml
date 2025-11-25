@@ -314,11 +314,19 @@ jobs:
           artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
+      - name: Determine ref type for Slack
+        id: ref-type
+        run: |
+          if [[ "${{ needs.decide-refs.outputs.monorepo }}" == refs/tags/* ]]; then
+            echo "ref_type=tag" >> $GITHUB_OUTPUT
+          else
+            echo "ref_type=branch" >> $GITHUB_OUTPUT
+          fi
       - name: Post results as internal-release
         if: ${{ matrix.build_env == 'stage-prod' && needs.decide-refs.outputs.variant=='internal-release' }}
         uses: slackapi/slack-github-action@v1.14.0
         with:
-          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ needs.decide-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ needs.decide-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ needs.decide-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
+          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"${{ steps.ref-type.outputs.ref_type }}\", \"reflike\":\"${{ needs.decide-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ needs.decide-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ needs.decide-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -326,7 +334,7 @@ jobs:
         if: ${{ matrix.build_env == 'stage-prod' && needs.decide-refs.outputs.variant== 'release' }}
         uses: slackapi/slack-github-action@v1.14.0
         with:
-          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ needs.decide-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ needs.decide-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ needs.decide-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
+          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"${{ steps.ref-type.outputs.ref_type }}\", \"reflike\":\"${{ needs.decide-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ needs.decide-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ needs.decide-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}
       - name: Remove build data
