@@ -47,14 +47,25 @@ def build_payload():
     if failed_jobs:
         fields.append({"type": "mrkdwn", "text": f"*Failed Jobs:* `{failed_jobs}`"})
 
+    # Helper function to strip refs/tags/ or refs/heads/ prefix
+    def strip_ref_prefix(ref):
+        if not ref:
+            return ref
+        ref = ref.replace('refs/tags/', '')
+        ref = ref.replace('refs/heads/', '')
+        return ref
+
     if oe_core_ref:
-        fields.append({"type": "mrkdwn", "text": f"*oe-core:* `{oe_core_ref}`"})
+        oe_core_display = strip_ref_prefix(oe_core_ref)
+        fields.append({"type": "mrkdwn", "text": f"*oe-core:* `{oe_core_display}`"})
 
     if monorepo_ref:
-        fields.append({"type": "mrkdwn", "text": f"*Monorepo:* `{monorepo_ref}`"})
+        monorepo_display = strip_ref_prefix(monorepo_ref)
+        fields.append({"type": "mrkdwn", "text": f"*Monorepo:* `{monorepo_display}`"})
 
     if firmware_ref:
-        fields.append({"type": "mrkdwn", "text": f"*Firmware:* `{firmware_ref}`"})
+        firmware_display = strip_ref_prefix(firmware_ref)
+        fields.append({"type": "mrkdwn", "text": f"*Firmware:* `{firmware_display}`"})
 
     # Build blocks array
     blocks = [
@@ -103,13 +114,11 @@ def build_payload():
         })
 
     # Build full payload
-    # Use blocks at top level for better compatibility with slackapi/slack-github-action
-    # Also include attachments for color/legacy support
+    # Match opentrons format: use attachments as main structure
     # Note: Channel is determined by the webhook URL, not included in payload
     payload = {
         "username": "GitHub Actions",
         "icon_emoji": ":robot_face:",
-        "blocks": blocks,
         "attachments": [
             {
                 "color": color,
@@ -123,5 +132,9 @@ def build_payload():
 
 
 if __name__ == '__main__':
-    build_payload()
+    try:
+        build_payload()
+    except Exception as e:
+        print(f"ERROR: Failed to build payload: {e}", file=sys.stderr)
+        sys.exit(1)
 
