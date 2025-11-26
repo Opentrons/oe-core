@@ -21,7 +21,6 @@ def build_payload():
     fullimage_url = os.environ.get('INPUT_FULLIMAGE_URL', '')
     version_file_url = os.environ.get('INPUT_VERSION_FILE_URL', '')
     release_notes_file_url = os.environ.get('INPUT_RELEASE_NOTES_FILE_URL', '')
-    channel = os.environ.get('CHANNEL', '#release-cycle')
     github_server_url = os.environ.get('GITHUB_SERVER_URL', '')
     github_repository = os.environ.get('GITHUB_REPOSITORY', '')
     github_run_id = os.environ.get('GITHUB_RUN_ID', '')
@@ -106,8 +105,8 @@ def build_payload():
     # Build full payload
     # Use blocks at top level for better compatibility with slackapi/slack-github-action
     # Also include attachments for color/legacy support
+    # Note: Channel is determined by the webhook URL, not included in payload
     payload = {
-        "channel": channel,
         "username": "GitHub Actions",
         "icon_emoji": ":robot_face:",
         "blocks": blocks,

@@ -11,9 +11,6 @@ inputs:
   failed_jobs:
     description: 'Comma-separated list of failed jobs (optional)'
     required: false
-  channel_override:
-    description: 'Override default channel (optional)'
-    required: false
   webhook_url:
     description: 'Slack webhook URL'
     required: true
@@ -45,20 +42,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 'Determine channel and webhook'
-      id: channel-config
-      shell: bash
-      run: |
-        # Use override if provided, otherwise default to release cycle
-        if [[ -n "${{ inputs.channel_override }}" ]]; then
-          echo "channel=${{ inputs.channel_override }}" >> $GITHUB_OUTPUT
-          echo "webhook_secret=OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL" >> $GITHUB_OUTPUT
-        else
-          # All tagged builds go to release cycle by default
-          echo "channel=#release-cycle" >> $GITHUB_OUTPUT
-          echo "webhook_secret=OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL" >> $GITHUB_OUTPUT
-        fi
-
     - name: 'Extract tag name'
       id: tag-name
       shell: bash
@@ -102,7 +85,6 @@ runs:
         INPUT_FULLIMAGE_URL: ${{ inputs.fullimage_url }}
         INPUT_VERSION_FILE_URL: ${{ inputs.version_file_url }}
         INPUT_RELEASE_NOTES_FILE_URL: ${{ inputs.release_notes_file_url }}
-        CHANNEL: ${{ steps.channel-config.outputs.channel }}
         GITHUB_SERVER_URL: ${{ github.server_url }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         GITHUB_RUN_ID: ${{ github.run_id }}
