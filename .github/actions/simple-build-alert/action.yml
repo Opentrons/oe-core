@@ -62,11 +62,6 @@ runs:
       shell: bash
       run: |
         set -e
-        # Debug: Show action path and verify script exists
-        echo "Action path: ${{ github.action_path }}"
-        echo "Current directory: $(pwd)"
-        ls -la "${{ github.action_path }}" || echo "Failed to list action directory"
-        
         # Verify Python script exists
         if [[ ! -f "${{ github.action_path }}/build_payload.py" ]]; then
           echo "ERROR: build_payload.py not found in ${{ github.action_path }}"
@@ -74,8 +69,6 @@ runs:
         fi
         
         # Use Python script to build JSON payload properly
-        # The script is in the same directory as action.yml
-        echo "Running build_payload.py..."
         payload_json=$(python3 "${{ github.action_path }}/build_payload.py" 2>&1)
         exit_code=$?
         
@@ -97,8 +90,6 @@ runs:
           echo "$payload_json"
           echo "EOF"
         } >> $GITHUB_OUTPUT
-        
-        echo "Payload built successfully (length: ${#payload_json} characters)"
       working-directory: ${{ github.action_path }}
       env:
         INPUT_STATUS: ${{ inputs.status }}
@@ -116,16 +107,6 @@ runs:
         GITHUB_SERVER_URL: ${{ github.server_url }}
         GITHUB_REPOSITORY: ${{ github.repository }}
         GITHUB_RUN_ID: ${{ github.run_id }}
-
-    - name: 'Debug: Show webhook URL status'
-      shell: bash
-      run: |
-        if [[ -z "${{ inputs.webhook_url }}" ]]; then
-          echo "ERROR: webhook_url is empty!"
-          exit 1
-        else
-          echo "Webhook URL is set (length: ${#{{ inputs.webhook_url }}} characters)"
-        fi
 
     - name: 'Send Slack Alert'
       uses: slackapi/slack-github-action@v2.1.1
