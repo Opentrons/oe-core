@@ -18,7 +18,6 @@ A lightweight GitHub Action that sends Slack notifications for tagged build fail
     status: 'failure' # success, failure, or cancelled
     workflow_name: 'App test, build, and deploy'
     failed_jobs: 'js-unit-test,build-app' # optional
-    channel_override: '#custom-channel' # optional
 ```
 
 ## Inputs
@@ -28,7 +27,6 @@ A lightweight GitHub Action that sends Slack notifications for tagged build fail
 | `status`           | ✅       | Build status: `success`, `failure`, or `cancelled`                   |
 | `workflow_name`    | ✅       | Name of the workflow that triggered the alert                        |
 | `failed_jobs`      | ❌       | Comma-separated list of failed jobs (e.g., `js-unit-test,build-app`) |
-| `channel_override` | ❌       | Override automatic channel selection (e.g., `#custom-channel`)       |
 
 ## Automatic Channel Routing
 
@@ -215,41 +213,9 @@ git tag protocol-designer-v1.0.0-test && git push origin protocol-designer-v1.0.
 git tag ai-client@v1.0.0-test && git push origin ai-client@v1.0.0-test
 ```
 
-### Test with Channel Override
-
-```yaml
-- name: 'Send alert to custom channel'
-  uses: ./.github/actions/simple-build-alert
-  with:
-    status: 'failure'
-    workflow_name: 'Test Workflow'
-    channel_override: '#alerts'
-```
-
 ## Customization
 
-### Adding New Tag Patterns
-
-To add support for new tag patterns, edit the channel detection logic in `action.yml`:
-
-```bash
-elif [[ "${{ github.ref_name }}" =~ ^your-new-pattern ]]; then
-  echo "channel=#your-channel" >> $GITHUB_OUTPUT
-  echo "webhook_secret=YOUR_WEBHOOK_SECRET" >> $GITHUB_OUTPUT
-```
-
-### Custom Channel Override
-
-You can override the automatic channel selection for any workflow:
-
-```yaml
-- name: 'Send to custom channel'
-  uses: ./.github/actions/simple-build-alert
-  with:
-    status: 'failure'
-    workflow_name: 'Special Workflow'
-    channel_override: '#special-alerts'
-```
+The channel is determined by the webhook URL you provide. Each webhook URL is configured to post to a specific Slack channel.
 
 ## Benefits
 

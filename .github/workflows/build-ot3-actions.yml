@@ -350,6 +350,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          ref: main
       - name: 'Send success alert'
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
@@ -373,6 +375,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          ref: main
       - name: 'Send failure alert'
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
@@ -396,6 +400,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          ref: main
       - name: 'Send success alert'
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
@@ -419,6 +425,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          ref: main
       - name: 'Send failure alert'
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
