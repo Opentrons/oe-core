@@ -13,11 +13,14 @@
   compatible = "toradex,verdin-imx8mm";
 };
 
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 
 &i2c4 {
       clock-frequency = <100000>;
       #address-cells = <1>;
       #size-cells = <0>;
+      status = "okay";
       gt911: touch@5d {
         compatible = "goodix,gt911";
         reg = <0x5d>;
@@ -25,11 +28,11 @@
         pinctrl-0 = <&pinctrl_gpio_9_dsi>, <&pinctrl_i2s_2_bclk_touch_reset>;
         // Verdin GPIO_9_DSI  - TOUCH_INT#, SODIMM 17, also routed to SN65dsi83 IRQ albeit currently unused
         interrupt-parent = <&gpio3>;
-        interrupts = <15 0>;
+        interrupts = <15 IRQ_TYPE_EDGE_FALLING>;
         irq-gpios = <&gpio3 15 0>;
         // Verdin I2S_2_BCLK - TOUCH_RESET#, SODIMM 42
         // 0b10110, GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN | GPIO_PULL_UP
-        reset-gpios = <&gpio3 23 0>;
+        reset-gpios = <&gpio3 23 GPIO_ACTIVE_LOW>;
         status = "okay";
-      };
-    };
+     };
+};

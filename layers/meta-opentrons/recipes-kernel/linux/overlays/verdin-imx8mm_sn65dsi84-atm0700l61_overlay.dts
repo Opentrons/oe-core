@@ -20,14 +20,6 @@
 #include "display-lt170410-dsi-lvds_overlay.dtsi"
 
 &{/} {
-	reg_dsi_lvds: regulator-dsi-lvds {
-		compatible = "regulator-fixed";
-		enable-active-high;
-		/* Verdin CTRL_SLEEP_MOCI# (SODIMM 256) */
-		gpio = <&gpio4 29 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
-		regulator-name = "DSI_1_PWR_EN";
-	};
     panel_lvds: panel-lvds {
 		compatible = "panel-lvds";
 		data-mapping = "vesa-24";
@@ -62,8 +54,12 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2s_2_d_out_dsi_1_bkl_en>;
 	/* Verdin I2S_2_D_OUT (DSI_1_BKL_EN/DSI_1_BKL_EN_LVDS, SODIMM 46) */
-	enable-gpios = <&gpio5 1 GPIO_ACTIVE_HIGH>;
+	enable-gpios = <&gpio3 24 GPIO_ACTIVE_HIGH>;
 	pwms = <&pwm3 0 6666667 PWM_POLARITY_INVERTED>;
+};
+
+&pwm3 {
+   status = "okay";
 };
 
 /* Verdin I2C_1 */
@@ -79,8 +75,8 @@
 		pinctrl-0 = <&pinctrl_gpio_10_dsi>;
 		/* Verdin GPIO_9_DSI (SN65DSI84 IRQ, SODIMM 17, unused) */
 		/* Verdin GPIO_10_DSI (SODIMM 21) */
-		enable-gpios = <&gpio4 28 GPIO_ACTIVE_HIGH>;
-		vcc-supply = <&reg_dsi_lvds>;
+		enable-gpios = <&gpio3 3 GPIO_ACTIVE_HIGH>;
+
 		status = "okay";
 
 		ports {
@@ -104,23 +100,6 @@
 				};
 			};
 		};
-	};
-
-	touch@4a {
-		compatible = "atmel,maxtouch";
-		reg = <0x4a>;
-		/*
-		 * Verdin GPIO_9_DSI
-		 * (TOUCH_INT#, SODIMM 17, also routed to SN65DSI84 IRQ albeit currently unused)
-		 */
-		interrupt-parent = <&gpio4>;
-		interrupts = <25 IRQ_TYPE_EDGE_FALLING>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_gpio_9_dsi>, <&pinctrl_i2s_2_bclk_touch_reset>;
-		/* Verdin I2S_2_BCLK (TOUCH_RESET#, SODIMM 42) */
-		reset-gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
-		vdd-supply = <&reg_dsi_lvds>;
-		status = "okay";
 	};
 };
 
@@ -167,3 +146,6 @@
 	status = "okay";
 };
 
+&gpu {
+    status = "okay";
+};
