@@ -348,7 +348,7 @@ def checkout_manifest_ref(
     # unlike our local repo's submodules, we don't have to fetch here because
     # we just downloaded this repo
     checkout_results = git(
-        ["checkout", f"origin/{reflike}"],
+        ["checkout", reflike],
         cwd=manifest_target_path,
         stdout=subprocess.PIPE,
         **quiet_proc(quiet),

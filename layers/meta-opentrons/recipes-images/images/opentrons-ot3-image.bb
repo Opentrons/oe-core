@@ -1,7 +1,7 @@
 SUMMARY = "Opentrons OT3 Image"
 DESCRIPTION = "Opentrons OT3 Robot Image"
 
-LICENSE = "apache-2"
+LICENSE = "Apache-2"
 
 inherit core-image image_type_tezi
 
@@ -34,21 +34,16 @@ SYSTEMD_DEFAULT_TARGET = "graphical.target"
 #"
 EXTRA_IMAGE_FEATURES += " debug-tweaks"
 
-IMAGE_INSTALL += " \
+IMAGE_INSTALL:append = " \
     packagegroup-boot \
     packagegroup-basic \
-    packagegroup-base-tdx-cli \
     packagegroup-tdx-cli \
-    packagegroup-machine-tdx-cli \
-    packagegroup-wifi-tdx-cli \
-    packagegroup-wifi-fw-tdx-cli \
-    packagegroup-tdx-graphical \
     packagegroup-fsl-isp \
-    udev-extraconf \
+    udev udev-extraconf \
     v4l-utils dfu-util \
     source-han-sans-cn-fonts \
     bash coreutils makedevs mime-support util-linux \
-    timestamp-service networkmanager crda ch341ser \
+    timestamp-service networkmanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
     plymouth mosquitto hidapi \
@@ -65,10 +60,10 @@ IMAGE_INSTALL += " \
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
 # port. Luckily, they are only recommended so it is easy to filter them out.
-PACKAGE_EXCLUDE = "libusbgx libusbgx-examples gpsd"
+PACKAGE_EXCLUDE:append := "libusbgx libusbgx-examples gpsd "
 
 # exclude Toradex hostapd-example as this causes mDNS discovery issues when interface uap0 connects/disconnects.
-PACKAGE_EXCLUDE += " hostapd-example"
+PACKAGE_EXCLUDE:append := " hostapd-example"
 
 ROBOT_TYPE = "OT-3 Standard"
 
@@ -170,6 +165,7 @@ do_make_rootfs_changes() {
 
     # cleanup
     rm -rf ${IMAGE_ROOTFS}/opentrons_versions
+
 }
 ROOTFS_POSTPROCESS_COMMAND += "do_make_rootfs_changes; "
 
@@ -293,7 +289,7 @@ fakeroot do_create_tezi_ot3() {
 # create the opentrons ot3 image
 do_create_opentrons_ot3() {
     cd ${DEPLOY_DIR_IMAGE}/
-    ln -f opentrons-ot3-image-verdin-imx8mm.ext4.xz systemfs.xz
+    ln -f opentrons-ot3-image-verdin-imx8mm.rootfs.ext4.xz systemfs.xz
 
     # compute the sha256sum
     sha256sum systemfs.xz | cut -d " " -f 1 > systemfs.xz.sha256
@@ -310,11 +306,18 @@ do_create_opentrons_ot3() {
     zip ot3-system.zip systemfs.xz systemfs.xz.sha256 $signed_rootfs VERSION.json
 }
 
+# create a standin tagged firmware; this is for uuu, which we don't use, but putting it in the filesystem is
+# for some reason not optional
+do_create_dummy_bootloader() {
+    echo "surprise" > ${DEPLOY_DIR_IMAGE}/flash.bin.tagged
+}
+
 do_create_filesystem[depends] += "virtual/fakeroot-native:do_populate_sysroot"
 do_create_tezi_manifest[prefuncs] += "do_image_teziimg"
 
 do_create_tezi_ot3[depends] += "virtual/fakeroot-native:do_populate_sysroot"
 do_create_tezi_ot3[prefuncs] += "do_image_teziimg do_create_filesystem"
+do_image_wic[prefuncs] += "do_create_dummy_bootloader"
 
 addtask do_create_filesystem after do_image_complete before do_populate_lic_deploy
 addtask do_create_tezi_manifest after do_create_filesystem before do_populate_lic_deploy

@@ -6,6 +6,8 @@ SRC_URI = "\
     file://oe-npm-cache \
 "
 
+FILESEXTRAPATHS:prepend := "${THISDIR}/nodejs:"
+
 inherit native
 
 S = "${UNPACKDIR}"
