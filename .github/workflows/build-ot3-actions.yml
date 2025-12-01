@@ -348,10 +348,6 @@ jobs:
     needs: [decide-refs, run-build]
     if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success' && needs.decide-refs.outputs.variant != ''
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          ref: main
       - name: 'Send success alert'
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
@@ -373,10 +369,6 @@ jobs:
     needs: [decide-refs, run-build]
     if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          ref: main
       - name: 'Send failure alert'
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
@@ -398,10 +390,6 @@ jobs:
     needs: [decide-refs, run-build]
     if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success'
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          ref: main
       - name: 'Send success alert'
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
@@ -423,10 +411,6 @@ jobs:
     needs: [decide-refs, run-build]
     if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          ref: main
       - name: 'Send failure alert'
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
