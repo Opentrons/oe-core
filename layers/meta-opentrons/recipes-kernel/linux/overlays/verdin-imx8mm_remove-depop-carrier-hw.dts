@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2
+/*
+ * Copyright 2020-2021 Opentrons
+ */
+
+// Remove hardware in the imx8mm-verdin-dev.dtsi tree that isn't on our custom board;
+// done here to avoid having to modify the kernel repo.
+
+/dts-v1/;
+/plugin/;
+
+/ {
+  compatible = "toradex,verdin-imx8mm";
+};
+
+// Verdin I2C_4 - nothing on this
+&i2c3 {
+      status = "disabled";
+};
+
+// Verdin I2C_1 - no audio
+&nau8822_1a {
+     status = "disabled";
+};
