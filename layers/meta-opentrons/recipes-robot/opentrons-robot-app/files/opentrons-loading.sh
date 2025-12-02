@@ -6,7 +6,13 @@
 # set the splash screen accordingly.
 
 # Get the brightness set as early as possibly to prevent flickers
-echo 1 > /sys/class/backlight/backlight/brightness
+if [ -f /sys/class/backlight/backlight/brightness ] ; then
+   echo 1 > /sys/class/backlight/backlight/brightness
+elif [ -f /sys/class/backlight/backlight-verdin-dsi/brightness ] ; then
+   echo 1 > /sys/class/backlight/backlight-verdin-dsi/brightness
+else
+   echo "Cannot set brightness because brightness hooks don't exist"
+fi
 
 # Graceful cleanup upon CTRL-C
 trap "gstd-client pipeline_delete p; exit" SIGHUP SIGINT SIGTERM
