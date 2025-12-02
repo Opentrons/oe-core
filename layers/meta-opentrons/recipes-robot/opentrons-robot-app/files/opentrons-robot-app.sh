@@ -8,7 +8,7 @@ if test -z "$XDG_RUNTIME_DIR"; then
 fi
 
 # wait for weston
-while [ ! -e  $XDG_RUNTIME_DIR/wayland-0 ] ; do sleep 0.1; done
+while [ ! -e  $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY ] ; do sleep 0.1; done
 sleep 1
 
 /opt/opentrons-app/opentrons \
