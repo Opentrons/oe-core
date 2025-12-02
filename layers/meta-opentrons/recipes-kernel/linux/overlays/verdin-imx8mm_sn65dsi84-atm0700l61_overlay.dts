@@ -55,11 +55,6 @@
 	pinctrl-0 = <&pinctrl_i2s_2_d_out_dsi_1_bkl_en>;
 	/* Verdin I2S_2_D_OUT (DSI_1_BKL_EN/DSI_1_BKL_EN_LVDS, SODIMM 46) */
 	enable-gpios = <&gpio3 24 GPIO_ACTIVE_HIGH>;
-	pwms = <&pwm3 0 6666667 PWM_POLARITY_INVERTED>;
-};
-
-&pwm3 {
-   status = "okay";
 };
 
 /* Verdin I2C_1 */
@@ -141,10 +136,6 @@
 	status = "okay";
 };
 
-/* Verdin PWM_3_DSI */
-&pwm1 {
-	status = "okay";
-};
 
 &gpu {
     status = "okay";
