@@ -15,7 +15,7 @@ else
 fi
 
 # Graceful cleanup upon CTRL-C
-trap "gstd-client pipeline_delete p; exit" SIGHUP SIGINT SIGTERM
+trap "gstd-client pipeline_delete opentronsloading; exit" SIGHUP SIGINT SIGTERM
 
 # check the environment file exists, otherside just default to opentrons loading screen
 system_env_file="/var/lib/opentrons-system-server/system.env"

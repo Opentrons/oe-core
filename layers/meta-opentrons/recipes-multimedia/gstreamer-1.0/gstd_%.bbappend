@@ -1,5 +1,7 @@
 inherit systemd
 
+DEPENDS:append = " gstreamer1.0-plugins-good "
+
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += "\
