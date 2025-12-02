@@ -5,7 +5,7 @@ Requires=weston.service
 
 [Service]
 Type=notify
-Environment="WAYLAND_DISPLAY=wayland-0"
+Environment="WAYLAND_DISPLAY=wayland-1"
 Environment="XDG_RUNTIME_DIR=/run/user/0"
 Environment="DISPLAY=:0:0"
 Environment="XDG_SESSION_TYPE=wayland"
@@ -19,6 +19,7 @@ TimeoutStopSec=10
 ExitType=cgroup
 NotifyAccess=all
 Restart=always
+KillSignal=SIGKILL
 
 [Install]
 WantedBy=multi-user.target
