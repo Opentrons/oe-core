@@ -5,9 +5,14 @@ Requires=weston.service
 Before=multi-user.target
 
 [Service]
-Type=forking
+Type=simple
 ExecStart=/usr/bin/gstd
-Environment="DISPLAY=:0:0" "XDG_SESSION_TYPE=wayland" "XDG_SESSION_DESKTOP=kiosk" "XDG_RUNTIME_DIR=/%t/user/%U"
+Environment=DISPLAY=:0:0
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_SESSION_DESKTOP=kiosk
+Environment=XDG_RUNTIME_DIR=/%t/user/%U
+Environment=WAYLAND_DISPLAY=/run/wayland-0
+KillSignal=SIGKILL
 
 [Install]
 WantedBy=basic.target
