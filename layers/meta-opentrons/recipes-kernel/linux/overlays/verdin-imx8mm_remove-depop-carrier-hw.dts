@@ -22,3 +22,8 @@
 &nau8822_1a {
      status = "disabled";
 };
+
+// this gpio expander is on the dev board but not our board
+&gpio_expander_21 {
+   status = "disabled";
+};
