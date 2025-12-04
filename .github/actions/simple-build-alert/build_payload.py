@@ -113,18 +113,14 @@ def build_payload():
             }
         })
 
-    # Build full payload
-    # Match opentrons format: use attachments as main structure
-    # Note: Channel is determined by the webhook URL, not included in payload
+    # Build full payload using Block Kit format
+    # Note: Channel is determined by the webhook URL, not set in payload
+    # Using pure Block Kit format (blocks at top level) ensures links render properly
+    # The status emoji (✅, ❌, ⚠️) already provides visual indication
     payload = {
         "username": "GitHub Actions",
         "icon_emoji": ":robot_face:",
-        "attachments": [
-            {
-                "color": color,
-                "blocks": blocks
-            }
-        ]
+        "blocks": blocks
     }
 
     # Output JSON
@@ -132,9 +128,5 @@ def build_payload():
 
 
 if __name__ == '__main__':
-    try:
-        build_payload()
-    except Exception as e:
-        print(f"ERROR: Failed to build payload: {e}", file=sys.stderr)
-        sys.exit(1)
+    build_payload()
 
