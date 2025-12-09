@@ -199,10 +199,11 @@ jobs:
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
           ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          tmp_mount="type=tmpfs,dst=/tmp"
+          tmp_mount="/tmp:rw,exec"
           sudo mount -o remount,exec /tmp
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch
+          sudo mount | grep tmp
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
         run: |
           here=$(pwd)
@@ -211,9 +212,9 @@ jobs:
           ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
           sudo mount -o remount,exec /tmp
-          tmp_mount="type=tmpfs,dst=/tmp"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image
+          tmp_mount="/tmp:rw,exec"
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af
