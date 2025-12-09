@@ -1,5 +1,5 @@
-# pipenv_app_bundle.bbclass: Install python applications described by
-# pipenv projects as directories in /opt (or anywhere, really)
+# opentrons_app_bundle.bbclass: Install python applications described by
+# various package managers as directories in /opt (or anywhere, really)
 
 CARGO_DISABLE_BITBAKE_VENDORING := "1"
 
@@ -11,9 +11,11 @@ RDEPENDS:${PN} += " python3 python3-modules"
 # directory for version file output
 SYSROOT_DIRS += "/opentrons_versions"
 
-# Whether pipenv or poetry is the appropriate underlying dependency manager
+# Whether pipenv, poetry, or uv is the appropriate underlying dependency manager
 # parse
-PIPENV_APP_BUNDLE_PACKAGE_SOURCE ??= "pipenv"
+OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE ??= "pipenv"
+# If using uv, this is the dependency group that should be used
+OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP ??= "robot"
 
 # This should contain a list of python dependencies that should not be
 # installed in the separate directory.  This should be done for packages
@@ -21,16 +23,16 @@ PIPENV_APP_BUNDLE_PACKAGE_SOURCE ??= "pipenv"
 # in openembedded's build system, like numpy. These packages should be
 # marked by the recipe as dependencies separately, and their versions will
 # have to be handled manually at that level.
-PIPENV_APP_BUNDLE_USE_GLOBAL ??= ""
+OPENTRONS_APP_BUNDLE_USE_GLOBAL ??= ""
 # Add extra packages that might not be captured by the Pipfile.lock (for the
-# same reason behind PIPENV_APP_BUNDLE_USE_GLOBAL) and should be injected
+# same reason behind OPENTRONS_APP_BUNDLE_USE_GLOBAL) and should be injected
 # into the requirements
-PIPENV_APP_BUNDLE_EXTRAS ??= ""
+OPENTRONS_APP_BUNDLE_EXTRAS ??= ""
 # This is where the root of the project (i.e. the directory of the Pipfile)
 # is
-PIPENV_APP_BUNDLE_PROJECT_ROOT ??= "${S}"
+OPENTRONS_APP_BUNDLE_PROJECT_ROOT ??= "${S}"
 # The install directory on the target
-PIPENV_APP_BUNDLE_DIR ??= "/opt/${PN}"
+OPENTRONS_APP_BUNDLE_DIR ??= "/opt/${PN}"
 # The version of pipenv with which the current lockfiles were generated
 # does not capture certain transitive dependencies. When we use micropipenv
 # to generate a pip requirements file from a lockfile, it will (unless we
@@ -42,11 +44,11 @@ PIPENV_APP_BUNDLE_DIR ??= "/opt/${PN}"
 # Until any given subproject's Pipfile.lock is regenerated with a modern Pipenv
 # (the current version counts) the problem will continue, and recipes using
 # those lockfiles should set this to "yes".
-PIPENV_APP_BUNDLE_STRIP_HASHES ??= "no"
-PIPENV_APP_BUNDLE_SOURCE_VENV := "${B}/build-venv"
+OPENTRONS_APP_BUNDLE_STRIP_HASHES ??= "no"
+OPENTRONS_APP_BUNDLE_SOURCE_VENV := "${B}/build-venv"
 
 # Extra environment args to pass to pip when building local packages
-PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL ??= ""
+OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL ??= ""
 
 PIP_ENVARGS := " \
    STAGING_INCDIR=${STAGING_INCDIR} \
@@ -75,7 +77,7 @@ python do_rewrite_requirements() {
         else:
             working += line.strip()[:-1] + ' '
     if working: condensed.append(working)
-    extras = d.getVar("PIPENV_APP_BUNDLE_EXTRAS")
+    extras = d.getVar("OPENTRONS_APP_BUNDLE_EXTRAS")
     if extras:
         if ' ' in extras:
             condensed.extend(extras.split(' '))
@@ -107,14 +109,14 @@ python do_rewrite_requirements() {
             if not (working.startswith('./') or working.startswith('../')):
                 bb.debug(1, 'Skipping {}'.format(line))
                 continue
-            working = d.getVar('PIPENV_APP_BUNDLE_PROJECT_ROOT') + '/' + working
+            working = d.getVar('OPENTRONS_APP_BUNDLE_PROJECT_ROOT') + '/' + working
             local.append(working)
             bb.debug(1, 'Rewrote local path to ' + working)
         elif not (line.startswith('.') or line.startswith('../')) and not '://' in line:
             # This is a package from pypi; check if it's global
             first_nonalpha = [c for c in line if c in '=~^<>']
             pkgname = line.split(first_nonalpha[0])[0] if first_nonalpha else line
-            if pkgname in d.getVar('PIPENV_APP_BUNDLE_USE_GLOBAL'):
+            if pkgname in d.getVar('OPENTRONS_APP_BUNDLE_USE_GLOBAL'):
                 bb.debug(1, 'Using global version of {}'.format(pkgname))
                 continue
             else:
@@ -129,25 +131,39 @@ python do_rewrite_requirements() {
          local_outfile_obj.write('\n'.join(local) + '\n')
 }
 
-do_rewrite_requirements[vardeps] += " PIPENV_APP_BUNDLE_USE_GLOBAL PIPENV_APP_BUNDLE_EXTRAS "
+do_rewrite_requirements[vardeps] += " OPENTRONS_APP_BUNDLE_USE_GLOBAL OPENTRONS_APP_BUNDLE_EXTRAS "
 
 addtask do_rewrite_requirements after do_configure before do_compile
 
 do_configure:prepend () {
    mkdir -p ${B}/pip-buildenv
-   cd ${PIPENV_APP_BUNDLE_PROJECT_ROOT}
-   bbplain "Running micropipenv in ${PIPENV_APP_BUNDLE_PROJECT_ROOT}"
-   if [[ "${PIPENV_APP_BUNDLE_STRIP_HASHES}" = "no" ]] ; then
+   cd ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}
+   bbplain "Running micropipenv in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
+   if [[ "${OPENTRONS_APP_BUNDLE_STRIP_HASHES}" = "no" ]] ; then
        HASHES=
    else
        HASHES="--no-hashes"
    fi
-   ${PYTHON} -m micropipenv requirements --method ${PIPENV_APP_BUNDLE_PACKAGE_SOURCE} --no-dev ${HASHES} > ${B}/requirements-unfiltered.txt
+   if [[ "${OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE}" -eq "uv" ]] ; then
+      ${HOSTTOOLS_DIR}/uv export \
+          --format requirements.txt \
+          --group ${OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP} \
+          --all-extras \
+          --no-annotate \
+          ${HASHES} \
+          --frozen \
+          -o ${B}/requirements-unfiltered.txt
+   else
+      ${PYTHON} -m micropipenv requirements \
+          --method ${OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE} \
+          --no-dev ${HASHES} \
+      > ${B}/requirements-unfiltered.txt
+   fi
    python_pyo3_do_configure
    cargo_common_do_configure
 }
 
-do_configure[vardeps] += "PIPENV_APP_BUNDLE_STRIP_HASHES PIPENV_APP_BUNDLE_PROJECT_ROOT"
+do_configure[vardeps] += "OPENTRONS_APP_BUNDLE_STRIP_HASHES OPENTRONS_APP_BUNDLE_PROJECT_ROOT"
 
 PIP_ARGS := "--no-compile \
              --no-binary :all: \
@@ -155,7 +171,7 @@ PIP_ARGS := "--no-compile \
              --force-reinstall \
              --no-deps \
              --no-build-isolation \
-             -t ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
+             -t ${OPENTRONS_APP_BUNDLE_SOURCE_VENV}"
 
 do_compile () {
    mkdir -p ${B}/pip-buildenv
@@ -182,32 +198,32 @@ do_compile () {
 
    bbnote "Building and installing local packages"
 
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
       -r ${B}/local.txt \
       ${PIP_ARGS} \
 
 
    bbnote "Building and installing true source packages"
 
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
-      ${PIPENV_APP_BUNDLE_PROJECT_ROOT} \
+   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+      ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT} \
       ${PIP_ARGS} \
 
 
    bbnote "Done installing python packages"
 }
 
-do_compile[vardeps] += "PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL"
-do_compile[dirs] += " ${PIPENV_APP_BUNDLE_SOURCE_VENV}"
+do_compile[vardeps] += "OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL"
+do_compile[dirs] += " ${OPENTRONS_APP_BUNDLE_SOURCE_VENV}"
 
 do_install () {
-   cd ${PIPENV_APP_BUNDLE_SOURCE_VENV}
-   install -d ${D}${PIPENV_APP_BUNDLE_DIR}
+   cd ${OPENTRONS_APP_BUNDLE_SOURCE_VENV}
+   install -d ${D}${OPENTRONS_APP_BUNDLE_DIR}
    find . -type d -not -wholename ./bin* -not -wholename ./Misc*  \
-        -exec install -d "${D}${PIPENV_APP_BUNDLE_DIR}/{}" \;
+        -exec install -d "${D}${OPENTRONS_APP_BUNDLE_DIR}/{}" \;
    find . -type f -not -wholename ./bin/**/* -not -wholename ./Misc/**/* \
-        -exec install "{}" "${D}${PIPENV_APP_BUNDLE_DIR}/{}" \;
+        -exec install "{}" "${D}${OPENTRONS_APP_BUNDLE_DIR}/{}" \;
 }
 
 
-FILES:${PN} = "${PIPENV_APP_BUNDLE_DIR} opentrons_versions"
+FILES:${PN} = "${OPENTRONS_APP_BUNDLE_DIR} opentrons_versions"

@@ -3,7 +3,7 @@
 # bookworm is the latest tested debian version for scarthgap per
 # https://docs.yoctoproject.org/5.0.12/ref-manual/system-requirements.html
 FROM python:3.12-bookworm
-
+COPY --from=ghcr.io/astral-sh/uv:0.9.16-python3.12-bookworm /uv /uvx /bin/
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
 
