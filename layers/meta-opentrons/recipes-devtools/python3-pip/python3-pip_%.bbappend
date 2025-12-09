@@ -20,5 +20,5 @@ do_install:append() {
 FILES:${PN} += "\
 	${sysconfdir}/pip.conf \
 	${libdir}/python3.12/site-packages/user-packages.pth \
-    ${libdir}/python3.12/site-packages/user-packages-legacy.pth
+    ${libdir}/python3.12/site-packages/user-packages-legacy.pth \
 	"
