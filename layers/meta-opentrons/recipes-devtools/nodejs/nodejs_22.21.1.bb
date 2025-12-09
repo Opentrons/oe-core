@@ -1,7 +1,7 @@
 DESCRIPTION = "nodeJS Evented I/O for V8 JavaScript"
 HOMEPAGE = "http://nodejs.org"
 LICENSE = "MIT & ISC & BSD-2-Clause & BSD-3-Clause & Artistic-2.0 & Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=0bd28a461eccad39f85a29e33e8f879f"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=1fdf4f79da4006c3b5183fddc768f1c8"
 
 CVE_PRODUCT = "nodejs node.js"
 
@@ -18,15 +18,19 @@ COMPATIBLE_MACHINE:mips64 = "(!.*mips64).*"
 COMPATIBLE_HOST:riscv64 = "null"
 COMPATIBLE_HOST:riscv32 = "null"
 COMPATIBLE_HOST:powerpc = "null"
+COMPATIBLE_HOST:powerpc64le = "null"
 
-SRC_URI = "http://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
+SRC_URI = "https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
+           file://0001-Do-not-use-glob-in-deps.patch \
            file://0001-Disable-running-gyp-files-for-bundled-deps.patch \
            file://0004-v8-don-t-override-ARM-CFLAGS.patch \
+           file://system-c-ares.patch \
            file://0001-liftoff-Correct-function-signatures.patch \
            file://libatomic.patch \
            file://0001-deps-disable-io_uring-support-in-libuv.patch \
            file://0001-positional-args.patch \
            file://0001-custom-env.patch \
+           file://0001-build-remove-redundant-mXX-flags-for-V8.patch \
            file://run-ptest \
            "
 SRC_URI:append:class-target = " \
@@ -35,14 +39,18 @@ SRC_URI:append:class-target = " \
 SRC_URI:append:toolchain-clang:powerpc64le = " \
            file://0001-ppc64-Do-not-use-mminimal-toc-with-clang.patch \
            "
-SRC_URI[sha256sum] = "fe1bc4be004dc12721ea2cb671b08a21de01c6976960ef8a1248798589679e16"
+SRC_URI[sha256sum] = "487d73fd4db00dc2420d659a8221b181a7937fbc5bc73f31c30b1680ad6ded6a"
 
-S = "${WORKDIR}/node-v${PV}"
+S = "${UNPACKDIR}/node-v${PV}"
 
 CVE_PRODUCT += "node.js"
 
 # v8 errors out if you have set CCACHE
 CCACHE = ""
+
+# Use '-flax-vector-conversions' to permit conversions between vectors
+# with differing element types or numbers of subparts
+CFLAGS:append:toolchain-gcc:arm = " -flax-vector-conversions"
 
 def map_nodejs_arch(a, d):
     import re
