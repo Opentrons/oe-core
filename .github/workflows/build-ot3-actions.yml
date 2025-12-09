@@ -134,37 +134,37 @@ jobs:
       - name: Apply unconditional CI config overrides
         run: |
           cd oe-core
-          echo "" >> ./build/conf/local.conf
-          echo 'DL_DIR = "/volumes/cache/downloads"' >> ./build/conf/local.conf
-          echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
-          echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
-          echo 'OT_BUILD_TYPE = "${{needs.decide-refs.outputs.build-type}}"' >> ./build/conf/local.conf
-          echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./build/conf/local.conf
-          echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
-          echo 'CONNECTIVITY_CHECK_URIS = "https://www.yoctoproject.org/connectivity.html"' >> ./build/conf/local.conf
-          echo 'OT_BUILD_TARGET = "odd"' >> ./build/conf/local.conf
-          echo 'OT_SENTRY_AUTH_TOKEN = "${{ secrets.OT_SENTRY_AUTH_TOKEN_OE_CORE }}"' >> ./build/conf/local.conf
-          echo 'OT_SENTRY_DSN = "${{ secrets.OT_ODD_SENTRY_DSN }}"' >> ./build/conf/local.conf
+          echo "" >> ./conf/local.conf
+          echo 'DL_DIR = "/volumes/cache/downloads"' >> ./conf/local.conf
+          echo 'GITDIR = "/volumes/cache/git"' >> ./conf/local.conf
+          echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./conf/local.conf
+          echo 'OT_BUILD_TYPE = "${{needs.decide-refs.outputs.build-type}}"' >> ./conf/local.conf
+          echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./conf/local.conf
+          echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./conf/local.conf
+          echo 'CONNECTIVITY_CHECK_URIS = "https://www.yoctoproject.org/connectivity.html"' >> ./conf/local.conf
+          echo 'OT_BUILD_TARGET = "odd"' >> ./conf/local.conf
+          echo 'OT_SENTRY_AUTH_TOKEN = "${{ secrets.OT_SENTRY_AUTH_TOKEN_OE_CORE }}"' >> ./conf/local.conf
+          echo 'OT_SENTRY_DSN = "${{ secrets.OT_ODD_SENTRY_DSN }}"' >> ./conf/local.conf
           cd ..
       - name: Apply internal-release variant CI config overrides
         if: needs.decide-refs.outputs.variant == 'internal-release'
         run: |
           cd oe-core
-          echo 'OPENTRONS_PROJECT = "ot3"' >> ./build/conf/local.conf
+          echo 'OPENTRONS_PROJECT = "ot3"' >> ./conf/local.conf
           cd ..
       - name: Apply release variant CI config overrides
         if: needs.decide-refs.outputs.variant == 'release'
         run: |
           cd oe-core
-          echo 'OPENTRONS_PROJECT = "robot-stack"' >> ./build/conf/local.conf
+          echo 'OPENTRONS_PROJECT = "robot-stack"' >> ./conf/local.conf
           cd ..
       - name: Apply release-build-only CI config overrides
         if: needs.decide-refs.outputs.build-type == 'release'
         run: |
           cd oe-core
-          echo 'MIXPANEL_ID = "${{ secrets.MIXPANEL_ID }}"' >> ./build/conf/local.conf
+          echo 'MIXPANEL_ID = "${{ secrets.MIXPANEL_ID }}"' >> ./conf/local.conf
           # setup signing key
-          echo 'SIGNING_KEY = "${TOPDIR}/.signing-key"' >> ./build/conf/local.conf
+          echo 'SIGNING_KEY = "${TOPDIR}/.signing-key"' >> ./conf/local.conf
           cat <<EOF >./build/.signing-key
           ${{secrets.ROBOT_SIGNING_KEY}}
           EOF
