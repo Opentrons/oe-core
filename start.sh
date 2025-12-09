@@ -43,6 +43,9 @@ EOF
     chmod a-w "./build/conf/$(basename ${conf_fi})"
 done
 
+# in CI tmp is mounted noexec for some reason
+sudo mount -o remount,exec /tmp
+
 export BITBAKEDIR=${THISDIR}/tools/bitbake
 . layers/openembedded-core/oe-init-build-env ${THISDIR}/build
 
