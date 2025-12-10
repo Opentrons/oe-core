@@ -14,7 +14,7 @@ do_install:append() {
 	# install pth file so python knows where to find user installed packages
     install -d ${D}/${libdir}
 	install -m 644 ${WORKDIR}/user-packages.pth ${D}/${libdir}/python3.12/site-packages/
-    install -m 644 ${WORKDIR}/user-packages-legacy.pth ${D}/${libdir}/python3.10/site-packages/
+    install -m 644 ${WORKDIR}/user-packages-legacy.pth ${D}/${libdir}/python3.12/site-packages/
 }
 
 FILES:${PN} += "\
