@@ -124,6 +124,13 @@ jobs:
           secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
           region: us-east-2
           stage: ${{ matrix.build_env }}
+      - name: Apply CI runner customizations
+        run: |
+          sudo sysctl -w fs.file-max=100000
+          sudo mount -o remount,exec /tmp
+          sudo mount | grep tmp
+          sudo sysctl fs.inotify.max_user_instances=256
+          sudo sysctl fs.inotify.max_user_watches=16384
       - name: Build container
         run: |
           cd oe-core
@@ -200,8 +207,6 @@ jobs:
           ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
           tmp_mount="/tmp:rw,exec"
-          sudo mount -o remount,exec /tmp
-          sudo mount | grep tmp
           echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
           docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
