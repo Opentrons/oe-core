@@ -1,4 +1,4 @@
-From 12ae440ae2debfea6de4de915fb18922405a8ba9 Mon Sep 17 00:00:00 2001
+From 33393507ba8209f0d6b85b391c525b4c70807275 Mon Sep 17 00:00:00 2001
 From: Khem Raj <raj.khem@gmail.com>
 Date: Mon, 3 Jul 2023 12:33:16 +0000
 Subject: [PATCH] Correct function signatures
