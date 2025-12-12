@@ -100,13 +100,15 @@ python do_rewrite_requirements() {
         bb.debug(1, 'Checking ' + plainname)
 
         if line.startswith('--index-url'): pypi.append(line)
-        elif line.startswith('--editable') or (line.startswith('./') or line.startswith('../')):
+        elif line.startswith('-e') or line.startswith('--editable') or (line.startswith('./') or line.startswith('../')):
             # an editable probably-local package
             if line.startswith('--editable'):
                 working = line.split('--editable')[-1].strip()
+            elif line.startswith('-e'):
+                working = line.split('-e')[-1].strip()
             else:
                 working = line.strip()
-            if not (working.startswith('./') or working.startswith('../')):
+            if not working.startswith('.'):
                 bb.debug(1, 'Skipping {}'.format(line))
                 continue
             working = d.getVar('OPENTRONS_APP_BUNDLE_PROJECT_ROOT') + '/' + working
@@ -138,22 +140,25 @@ addtask do_rewrite_requirements after do_configure before do_compile
 do_configure:prepend () {
    mkdir -p ${B}/pip-buildenv
    cd ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}
-   bbplain "Running micropipenv in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
+   bbplain "Getting dependencies in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
    if [[ "${OPENTRONS_APP_BUNDLE_STRIP_HASHES}" = "no" ]] ; then
        HASHES=
    else
        HASHES="--no-hashes"
    fi
    if [[ "${OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE}" -eq "uv" ]] ; then
+      bbplain "Running uv export for group ${OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP} in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
       ${HOSTTOOLS_DIR}/uv export \
           --format requirements.txt \
           --group ${OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP} \
+          --no-dev \
           --all-extras \
           --no-annotate \
           ${HASHES} \
           --frozen \
           -o ${B}/requirements-unfiltered.txt
    else
+      bbplain "Running micropipenv requirements in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
       ${PYTHON} -m micropipenv requirements \
           --method ${OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE} \
           --no-dev ${HASHES} \
