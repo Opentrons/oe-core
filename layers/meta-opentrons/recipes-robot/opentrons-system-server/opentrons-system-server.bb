@@ -19,11 +19,12 @@ SYSTEMD_SERVICE:${PN} = "opentrons-system-server.service"
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
 SRC_URI:append = " file://opentrons-system-server.service"
 
-PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/system-server"
-PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-system-server"
-PIPENV_APP_BUNDLE_USE_GLOBAL = "systemd-python "
-PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
-PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
+OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/system-server"
+OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-system-server"
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python "
+OPENTRONS_APP_BUNDLE_STRIP_HASHES = "yes"
+OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
+OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 
 do_compile:append() {
 }
@@ -47,4 +48,4 @@ RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd"
 
 DEPENDS += " cargo-native "
 
-inherit pipenv_app_bundle
+inherit opentrons_app_bundle

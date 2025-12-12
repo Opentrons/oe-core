@@ -19,16 +19,17 @@ SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.ser
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
 SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules"
 
-PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
-PIPENV_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
-PIPENV_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq mosquitto"
-PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
-PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
+OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
+OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq mosquitto"
+OPENTRONS_APP_BUNDLE_STRIP_HASHES = "yes"
+OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
+OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 
 
 do_compile:append() {
     # dont include scripts
-    rm -rf ${PIPENV_APP_BUNDLE_SOURCE_VENV}/opentrons/resources/scripts
+    rm -rf ${OPENTRONS_APP_BUNDLE_SOURCE_VENV}/opentrons/resources/scripts
 }
 
 addtask do_write_systemd_dropfile after do_compile before do_install
@@ -57,7 +58,7 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/95-opentrons-udev.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-udev.rules
 
     # remove pycaches
-    rm -rf ${D}${PIPENV_APP_BUNDLE_DIR}/**/__pycache__
+    rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
 }
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d \
@@ -69,4 +70,4 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d
 RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy python3-pyusb "
 DEPENDS += " cargo-native "
 
-inherit pipenv_app_bundle
+inherit opentrons_app_bundle

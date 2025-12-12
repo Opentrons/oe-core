@@ -20,12 +20,13 @@ SRC_URI:append = " file://opentrons-usb-bridge.service"
 S = "${WORKDIR}/git"
 B = "${WORKDIR}/build"
 
-PIPENV_APP_BUNDLE_PROJECT_ROOT = "${S}/usb-bridge"
-PIPENV_APP_BUNDLE_DIR = "/opt/ot3usb"
-PIPENV_APP_BUNDLE_STRIP_HASHES = "yes"
-PIPENV_APP_BUNDLE_EXTRAS = ""
-PIPENV_APP_BUNDLE_USE_GLOBAL = "pyudev pyserial"
-PIPENV_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
+OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/usb-bridge"
+OPENTRONS_APP_BUNDLE_DIR = "/opt/ot3usb"
+OPENTRONS_APP_BUNDLE_STRIP_HASHES = "yes"
+OPENTRONS_APP_BUNDLE_EXTRAS = ""
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "pyudev pyserial"
+OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
+OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 
 do_install:append() {
   # create json file to be used in VERSION.json
@@ -36,4 +37,4 @@ do_install:append() {
   install -m 0644 ${WORKDIR}/opentrons-usb-bridge.service ${D}/${systemd_system_unitdir}/opentrons-usb-bridge.service
 }
 
-inherit pipenv_app_bundle
+inherit opentrons_app_bundle
