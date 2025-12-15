@@ -15,16 +15,16 @@
 	url = https://github.com/meta-qt5/meta-qt5.git
 [submodule "layers/meta-toradex-bsp-common"]
 	path = layers/meta-toradex-bsp-common
-	url = https://git.toradex.com/meta-toradex-bsp-common.git
+	url = git://git.toradex.com/meta-toradex-bsp-common.git
 [submodule "layers/meta-toradex-demos"]
 	path = layers/meta-toradex-demos
-	url = https://git.toradex.com/meta-toradex-demos.git
+	url = git://git.toradex.com/meta-toradex-demos.git
 [submodule "layers/meta-toradex-distro"]
 	path = layers/meta-toradex-distro
-	url = https://git.toradex.com/meta-toradex-distro.git
+	url = git://git.toradex.com/meta-toradex-distro.git
 [submodule "layers/meta-toradex-nxp"]
 	path = layers/meta-toradex-nxp
-	url = https://git.toradex.com/meta-toradex-nxp.git
+	url = git://git.toradex.com/meta-toradex-nxp.git
 [submodule "layers/meta-yocto"]
 	path = layers/meta-yocto
 	url = https://git.yoctoproject.org/git/meta-yocto
