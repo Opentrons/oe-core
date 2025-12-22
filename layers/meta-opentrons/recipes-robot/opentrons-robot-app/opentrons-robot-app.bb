@@ -47,6 +47,9 @@ do_compile(){
 
     cd ${S}/app-shell-odd
 
+    # Remove incompatible Sentry CLI binaries that cause objcopy failures
+    find -path "*/node_modules/@sentry/cli-*/bin/*" -type f -delete
+
     OT_BUILD_TARGET="${OT_BUILD_TARGET}" \
     OT_SENTRY_AUTH_TOKEN="${OT_SENTRY_AUTH_TOKEN_OE_CORE}" \
     OT_SENTRY_DSN="${OT_SENTRY_DSN}" \
@@ -68,8 +71,6 @@ fakeroot do_install(){
     # @see https://github.com/nodejs/node-gyp/pull/2721
     find -type d -name node_gyp_bins -prune -exec rm -rf "{}" \;
 
-    # Remove incompatible Sentry CLI binaries that cause objcopy failures
-    find -path "*/node_modules/@sentry/cli-*/bin/*" -type f -delete
 
     find -type d -exec install -o root -g root -Dm 755 "{}" "${DESTDIR}/{}" \;
     find -type f -exec install -o root -g root -Dm 755 "{}" "${DESTDIR}/{}" \;
