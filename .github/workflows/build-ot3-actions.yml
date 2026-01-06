@@ -241,6 +241,7 @@ jobs:
               echo "Refreshed cache in $(cat elapsed)" || 0
               TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
               echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
+              rm -f ${localzip} || 0
           done
       - name: Gather results
         id: artifacts
