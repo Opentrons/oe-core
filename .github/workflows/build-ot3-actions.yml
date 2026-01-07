@@ -183,45 +183,51 @@ jobs:
           # fetch cache if the size is less than 20GB, so we have enough space to build image.
           sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
+          cachedir=${LOCAL_CACHE:-./cache}
           if [[ sizeInGigabytes -gt 50 ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
+              rm -rf ${cachedir}
+              for cachetype in downloads sstate git ; do
+                  mkdir -p ${cachedir}/persistent/${cachetype}
+              done
+              mkdir -p ${cachedir}/homecache
           else
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
-              cachedir=${LOCAL_CACHE:-./cache}
               for cachetype in downloads sstate git ; do
-                  localzip=$(realpath ${cachedir}/../${cachetype}.zip)
-                  thiscache=${cachedir}/${cachetype}
+                  localzip=$(realpath ${cachedir}/${cachetype}.zip)
+                  thiscache=${cachedir}/persistent/${cachetype}
                   echo "Fetching cache for ${cachetype} to ${localzip}"
                   mkdir -p ${thiscache}
                   TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
                   echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
                   echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
-                  # Remove zip file after extraction to free disk space
-                  rm -f ${localzip} || true
               done
+              rm -rf ${cachedir}/homecache
+              mkdir -p ${cachedir}/homecache
           fi
       - name: Download sources
         run: |
           here=$(pwd)
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
-          ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
-          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          tmp_mount="/home/opentrons-ci/.cache/pip:rw,exec"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch
+          ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache}/persistent,dst=/volumes/cache,consistency=delegated"
+          tmp_mount="/tmp:rw,exec"
+          home_cache_mount="type=bind,src=${LOCAL_CACHE:-./cache}/homecache,dst=/home/opentrons-ci/.cache,consistency=delegated
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $home_cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $home_cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch
       - name: Build image
         run: |
           here=$(pwd)
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
           ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
-          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
+          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache/persistent,consistency=delegated"
           sudo mount -o remount,exec /tmp
-          tmp_mount="/home/opentrons-ci/.cache/pip:rw,exec"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
+          tmp_mount="/tmp:rw,exec"
+          home_cache_mount="type=bind,src=${LOCAL_CACHE:-./cache}/homecache,dst=/home/opentrons-ci/.cache,consistency=delegated
+          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $home_cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
+          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $home_cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af
@@ -233,15 +239,14 @@ jobs:
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
               df -h
-              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
-              thiscache=${cachedir}/${cachetype}
+              localzip=$(realpath ${cachedir}/${cachetype}.zip)
+              thiscache=${cachedir}/persistent/${cachetype}
               cd ${thiscache}
               echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
               TIME="%E" time zip -q -r --filesync --symlinks  ${localzip} ./* 2>elapsed
               echo "Refreshed cache in $(cat elapsed)" || 0
               TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
               echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
-              rm -f ${localzip} || 0
           done
       - name: Gather results
         id: artifacts

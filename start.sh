@@ -26,6 +26,7 @@ shift
 trap cleanup EXIT
 
 sudo chown -hR $USER_NAME:$USER_NAME /volumes && chmod -R ug+rw /volumes
+sudo chown -hR $USER_NAME:$USER_NAME ~/.cache && chmod -R ug+rw ~/.cache
 
 pushd ${THISDIR}
 
