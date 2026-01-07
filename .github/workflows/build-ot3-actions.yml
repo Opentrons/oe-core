@@ -192,7 +192,7 @@ jobs:
           cachedir=${LOCAL_CACHE:-./cache}
           if [[ sizeInGigabytes -gt 50 ]] || [[ "${{ inputs.force-clear-cache }}" = "true" ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
-              rm -rf ${cachedir}
+              rm -rf ${cachedir}/*
               for cachetype in downloads sstate git ; do
                   mkdir -p ${cachedir}/persistent/${cachetype}
               done
