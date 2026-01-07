@@ -54,8 +54,7 @@ export BITBAKEDIR=${THISDIR}/tools/bitbake
 # for now just create a symlink from /volumes/cache to ~/.cache which is
 # externally mounted to S3.
 mkdir -p /volumes/cache/
-mkdir -p ~/.cache/
-ln -sf /volumes/cache ~/.cache
+
 
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
