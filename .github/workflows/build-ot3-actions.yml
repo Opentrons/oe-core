@@ -247,7 +247,7 @@ jobs:
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
           ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
-          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache/persistent,consistency=delegated"
+          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache}/persistent,dst=/volumes/cache,consistency=delegated"
           sudo mount -o remount,exec /tmp
           tmp_mount="/tmp:rw,exec"
           home_cache_mount="type=bind,src=${LOCAL_CACHE:-./cache}/homecache,dst=/home/opentrons-ci/.cache,consistency=delegated"

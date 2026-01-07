@@ -53,9 +53,12 @@ export BITBAKEDIR=${THISDIR}/tools/bitbake
 # Download locations are being ignored and we are running out of space, so
 # for now just create a symlink from /volumes/cache to ~/.cache which is
 # externally mounted to S3.
+# NOTE: In CI, ~/.cache is already bind-mounted from the host, so skip symlink if it exists
 mkdir -p /volumes/cache/
-mkdir -p ~/.cache/
-ln -sf /volumes/cache ~/.cache
+if [ ! -e ~/.cache ]; then
+    mkdir -p ~/.cache/
+    ln -sf /volumes/cache ~/.cache
+fi
 
 BB_NUMBER_THREADS=$(nproc) bitbake ${TARGET} "$@"
 exit $?
