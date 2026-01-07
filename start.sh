@@ -56,7 +56,7 @@ export BITBAKEDIR=${THISDIR}/tools/bitbake
 # NOTE: In CI, ~/.cache is already bind-mounted from the host, so skip symlink if it exists
 mkdir -p /volumes/cache/
 if [ ! -e ~/.cache ]; then
-    mkdir -p ~/.cache/
+    # Create symlink directly (don't mkdir first, as that would prevent symlink creation)
     ln -sf /volumes/cache ~/.cache
 fi
 
