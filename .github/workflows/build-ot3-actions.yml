@@ -200,8 +200,10 @@ jobs:
                   mkdir -p ${thiscache}
                   TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
                   echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
+                  df -h
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
                   echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
+                  df -h
               done
               mkdir -p ${cachedir}/homecache
               rm -rf ${cachedir}/homecache/*
