@@ -131,25 +131,28 @@ jobs:
           sudo mount | grep tmp
           sudo sysctl fs.inotify.max_user_instances=256
           sudo sysctl fs.inotify.max_user_watches=16384
-      - name: Set up cache directory
+      - name: Set up cache on larger volume
         run: |
-          # Check where workspace is and what filesystem it's on
-          echo "Current working directory: $(pwd)"
-          echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE:-not set}"
+          # Check filesystem info
+          echo "Filesystem info for root (/):"
+          df -h /
+          echo ""
           echo "Filesystem info for workspace:"
-          df -h $(pwd) || true
+          df -h $(pwd)
+          echo ""
           echo "Filesystem info for /home/ec2-user/actions-runner:"
-          df -h /home/ec2-user/actions-runner || true
-          
-          # Use /home/ec2-user/actions-runner/cache for cache storage (has plenty of space)
-          # This ensures cache is on the larger drive, regardless of where workspace is
-          echo "LOCAL_CACHE=/home/ec2-user/actions-runner/cache" >> $GITHUB_ENV
-          LOCAL_CACHE=/home/ec2-user/actions-runner/cache
-          mkdir -p ${LOCAL_CACHE}/persistent/{downloads,sstate,git}
-          mkdir -p ${LOCAL_CACHE}/homecache
-          echo "Cache directory set to: ${LOCAL_CACHE}"
-          echo "Filesystem info for cache directory:"
-          df -h ${LOCAL_CACHE}
+          df -h /home/ec2-user/actions-runner
+          echo ""
+          # Ensure cache is on the larger volume (/dev/nvme2n1) by using absolute path
+          # Workspace is on /dev/nvme2n1, so use workspace-relative cache path
+          workspace_dir=$(pwd)
+          cache_dir="${workspace_dir}/cache"
+          echo "LOCAL_CACHE=${cache_dir}" >> $GITHUB_ENV
+          mkdir -p ${cache_dir}/persistent/{downloads,sstate,git}
+          mkdir -p ${cache_dir}/homecache
+          echo "Cache directory set to: ${cache_dir}"
+          echo "Filesystem for cache directory:"
+          df -h ${cache_dir}
       - name: Build container
         run: |
           cd oe-core
