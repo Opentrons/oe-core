@@ -204,6 +204,7 @@ jobs:
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
                   echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
                   df -h
+                  rm -f ${localzip}
               done
               mkdir -p ${cachedir}/homecache
               rm -rf ${cachedir}/homecache/*
@@ -249,6 +250,7 @@ jobs:
               echo "Refreshed cache in $(cat elapsed)" || 0
               TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
               echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
+              rm -f ${localzip}
           done
       - name: Gather results
         id: artifacts
