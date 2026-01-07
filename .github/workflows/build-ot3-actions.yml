@@ -131,6 +131,25 @@ jobs:
           sudo mount | grep tmp
           sudo sysctl fs.inotify.max_user_instances=256
           sudo sysctl fs.inotify.max_user_watches=16384
+      - name: Set up cache directory
+        run: |
+          # Check where workspace is and what filesystem it's on
+          echo "Current working directory: $(pwd)"
+          echo "GITHUB_WORKSPACE: ${GITHUB_WORKSPACE:-not set}"
+          echo "Filesystem info for workspace:"
+          df -h $(pwd) || true
+          echo "Filesystem info for /home/ec2-user/actions-runner:"
+          df -h /home/ec2-user/actions-runner || true
+          
+          # Use /home/ec2-user/actions-runner/cache for cache storage (has plenty of space)
+          # This ensures cache is on the larger drive, regardless of where workspace is
+          echo "LOCAL_CACHE=/home/ec2-user/actions-runner/cache" >> $GITHUB_ENV
+          LOCAL_CACHE=/home/ec2-user/actions-runner/cache
+          mkdir -p ${LOCAL_CACHE}/persistent/{downloads,sstate,git}
+          mkdir -p ${LOCAL_CACHE}/homecache
+          echo "Cache directory set to: ${LOCAL_CACHE}"
+          echo "Filesystem info for cache directory:"
+          df -h ${LOCAL_CACHE}
       - name: Build container
         run: |
           cd oe-core
