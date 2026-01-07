@@ -1,0 +1,13 @@
+[Unit]
+Requires=nginx.service
+After=nginx.service
+
+[Service]
+# Begin the Opentrons Pyro5 Nameserver
+ExecStart=/bin/sh -c 'pyro5-ns'   
+
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
