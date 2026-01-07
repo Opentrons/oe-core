@@ -27,6 +27,12 @@ on:
           - 'stage-prod'
           - 'stage-dev'
         default: 'stage-prod'
+      force-clear-cache:
+        description: |
+          Build without caches.
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   decide-refs:
@@ -184,7 +190,7 @@ jobs:
           sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
           cachedir=${LOCAL_CACHE:-./cache}
-          if [[ sizeInGigabytes -gt 50 ]]; then
+          if [[ sizeInGigabytes -gt 50 ]] || [[ "${{ inputs.force-clear-cache }}" = "true" ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
               rm -rf ${cachedir}
               for cachetype in downloads sstate git ; do
