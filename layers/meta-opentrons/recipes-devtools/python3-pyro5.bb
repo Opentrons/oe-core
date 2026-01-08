@@ -15,6 +15,6 @@ inherit pypi setuptools3
 
 PYPI_PACKAGE = "Pyro5"
 
-RDEPENDS:${PN} += "python3-logging python3-ssl python3-threading"
+RDEPENDS:${PN} += "python3-logging python3-threading"
 
 BBCLASSEXTEND = "native nativesdk"
