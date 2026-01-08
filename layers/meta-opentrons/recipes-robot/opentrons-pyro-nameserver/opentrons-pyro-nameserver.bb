@@ -17,7 +17,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 do_install:append () {
     install -d ${D}${systemd_unitdir}/system/ ${D}${systemd_unitdir}/system/opentrons-pyro-nameserver/
-    install -m 0644 ${WORKDIR}/opentrons-live-stream.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/opentrons-pyro-nameserver.service ${D}${systemd_unitdir}/system
 }
 
 FILES:${PN} += " ${systemd_unitdir}/system/opentrons-pyro-nameserver.service \
