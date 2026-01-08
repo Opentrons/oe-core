@@ -11,6 +11,7 @@ DEPENDS += "rsync-native zip-native \
     opentrons-usb-bridge \
     opentrons-system-server \
     opentrons-mcu-firmware \
+    opentrons-pyro-nameserver \
     opentrons-live-stream \
     ffmpeg \
     "
@@ -53,7 +54,7 @@ IMAGE_INSTALL:append = " \
     opentrons-usb-bridge opentrons-jupyter-notebook \
     opentrons-system-server opentrons-mcu-firmware \
     opentrons-user-environment opentrons-module-firmware \
-    opentrons-systemd-units opentrons-ssh-keys opentrons-live-stream \
+    opentrons-systemd-units opentrons-ssh-keys opentrons-live-stream opentrons-pyro-nameserver \
     libjpeg-turbo avrdude ffmpeg rtl88x2bu zip \
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-imx gstreamer1.0 gstd openh264 \
  "
