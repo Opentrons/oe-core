@@ -16,6 +16,7 @@ SRC_URI = " \
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 do_install:append () {
+    install -d ${D}${systemd_unitdir}/system/
     install -m 0644 ${WORKDIR}/opentrons-pyro-nameserver.service ${D}${systemd_unitdir}/system
 }
 
