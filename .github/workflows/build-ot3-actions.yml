@@ -172,6 +172,7 @@ jobs:
           echo 'MIXPANEL_ID = "${{ secrets.MIXPANEL_ID }}"' >> ./conf/local.conf
           # setup signing key
           echo 'SIGNING_KEY = "${TOPDIR}/.signing-key"' >> ./conf/local.conf
+          mkdir -p ./build
           cat <<EOF >./build/.signing-key
           ${{secrets.ROBOT_SIGNING_KEY}}
           EOF
