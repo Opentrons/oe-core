@@ -6,14 +6,20 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c1c9ccd5f4ca5d0f5057c0e690a0153d"
 
 PV = "5.16"
-inherit python3native python3-setuptools
-
 PYPI_PACKAGE = "Pyro5"
 SRC_URI[sha256sum] = "d40418ed2acee0d9093daf5023ed0b0cb485a6b62342934adb9e801956f5738b"
 
 S = "${WORKDIR}/${PYPI_PACKAGE}-${PV}"
 
+inherit pypi python_setuptools_build_meta
+
+DEPENDS += "python3-setuptools-scm-native python3-wheel-native"
+
 RDEPENDS:${PN} += " \
     python3-serpent \
+    python3-setuptools \
+    python3-setuptools-scm \
     python3-wheel \
 "
+
+BBCLASSEXTEND = "native nativesdk"
