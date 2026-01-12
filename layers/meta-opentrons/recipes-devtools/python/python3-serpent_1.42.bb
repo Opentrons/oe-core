@@ -7,7 +7,7 @@ PV = "1.42"
 
 PYPI_PACKAGE = "serpent"
 SRC_URI = "https://files.pythonhosted.org/packages/07/24/73031e6bd25d8f94811b3752b0b217efbdb20a67b65c6838c9af4e50c2e2/serpent-1.42-py3-none-any.whl"
-SRC_URI[sha256sum] = "a02f5a4fcf3b41ee6204b36c3cf026bf0433ffe15b6a7fc8a37e0bff74d87575"
+SRC_URI[sha256sum] = "8ea082b01f8ba07ecd74e34a9118ac4521bc4594938d912b808c89f1da425506"
 
 S = "${WORKDIR}/${PYPI_PACKAGE}-${PV}"
 
