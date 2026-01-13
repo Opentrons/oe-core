@@ -316,7 +316,13 @@ do_create_filesystem[depends] += "virtual/fakeroot-native:do_populate_sysroot"
 do_create_tezi_manifest[prefuncs] += "do_image_teziimg"
 
 do_create_tezi_ot3[depends] += "virtual/fakeroot-native:do_populate_sysroot"
-do_create_tezi_ot3[prefuncs] += "do_image_teziimg do_create_filesystem"
+do_create_tezi_ot3[prefuncs] += "do_image_teziimg do_create_filesystem do_cleanup_image_json"
+
+# Clean up image-json directory before fakeroot task to avoid Pseudo path mismatch issues
+do_cleanup_image_json() {
+    # Remove image-json directory outside of fakeroot to avoid Pseudo symlink path issues
+    rm -rf ${WORKDIR}/image-json
+}
 do_image_wic[prefuncs] += "do_create_dummy_bootloader"
 
 addtask do_create_filesystem after do_image_complete before do_populate_lic_deploy
