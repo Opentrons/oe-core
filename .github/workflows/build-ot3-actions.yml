@@ -141,6 +141,7 @@ jobs:
       - name: Apply unconditional CI config overrides
         run: |
           cd oe-core
+          mkdir -p ./conf
           echo "" >> ./conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./conf/local.conf
           echo 'GITDIR = "/volumes/cache/git"' >> ./conf/local.conf
