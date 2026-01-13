@@ -184,7 +184,7 @@ jobs:
           # fetch cache if the size is less than 20GB, so we have enough space to build image.
           sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
-          if [[ sizeInGigabytes -gt 50 ]]; then
+          if [[ $sizeInGigabytes -gt 50 ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
           else
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
@@ -198,7 +198,33 @@ jobs:
                   echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
                   echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
+                  # Remove zip file immediately after extraction to free up space
+                  rm -f ${localzip}
+                  echo "Removed ${localzip} to free up space"
               done
+          fi
+      - name: Cleanup before build
+        run: |
+          cachedir=${LOCAL_CACHE:-./cache}
+          echo "Checking disk space before build..."
+          df -h ${cachedir} || df -h .
+          # Clean up pip cache if it exists and is large
+          if [ -d "${cachedir}/pip" ]; then
+              pip_size=$(du -sm ${cachedir}/pip 2>/dev/null | cut -f1 || echo "0")
+              if [ "$pip_size" -gt 5000 ]; then
+                  echo "Pip cache is ${pip_size}MB, cleaning up..."
+                  find ${cachedir}/pip -type f -mtime +7 -delete 2>/dev/null || true
+                  echo "Cleaned up old pip cache files"
+              fi
+          fi
+          # Clean up old downloads if space is low
+          if [ -d "${cachedir}/downloads" ]; then
+              available=$(df -m ${cachedir} | tail -1 | awk '{print $4}')
+              if [ "$available" -lt 5000 ]; then
+                  echo "Low disk space (${available}MB available), cleaning old downloads..."
+                  find ${cachedir}/downloads -type f -mtime +30 -delete 2>/dev/null || true
+                  echo "Cleaned up old download files"
+              fi
           fi
       - name: Download sources
         run: |
