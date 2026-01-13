@@ -1,7 +1,7 @@
 SUMMARY = "Serialization library for Python to be used with remote objects"
 HOMEPAGE = "https://github.com/irmen/Serpent"
 LICENSE = "MIT"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=8f3b1c4e4e2f2b1766d6a3f4b0e0e0e8"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=d7c28f460fafe7be454fcdcac0b60263"
 
 PV = "1.42"
 
