@@ -4,7 +4,7 @@ After=nginx.service
 
 [Service]
 # Begin the Opentrons Pyro5 Nameserver
-ExecStart=/bin/sh -c 'pyro5-ns'   
+ExecStart=/bin/pyro5-ns 
 
 Restart=on-failure
 RestartSec=3
