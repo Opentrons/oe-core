@@ -48,7 +48,7 @@ IMAGE_INSTALL:append = " \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
     plymouth mosquitto hidapi \
-    python3 python3-misc python3-modules python3-pip python3-serpent python3-pyro5 \
+    python3 python3-misc python3-modules python3-pip \
     robot-app-wayland-launch opentrons-robot-app \
     opentrons-robot-server opentrons-update-server \
     opentrons-usb-bridge opentrons-jupyter-notebook \
