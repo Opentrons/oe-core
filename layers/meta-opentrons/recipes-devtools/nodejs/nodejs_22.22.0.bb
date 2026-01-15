@@ -41,7 +41,7 @@ SRC_URI:append:toolchain-clang:powerpc64le = " \
            "
 SRC_URI[sha256sum] = "4c138012bb5352f49822a8f3e6d1db71e00639d0c36d5b6756f91e4c6f30b683"
 
-S = "${UNPACKDIR}/node-v${PV}"
+S = "${WORKDIR}/node-v${PV}"
 
 # v8 errors out if you have set CCACHE
 CCACHE = ""
