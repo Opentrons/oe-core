@@ -19,6 +19,8 @@ To change what a recipe checks out, cd into that recipe and change the branch or
 
 ## Building
 
+See [.github/workflows](.github/workflows) for details on how to trigger the automated builds.
+
 Do not try to build this on anything other than a linux machine that is extremely beefy. It requires docker, which will make it incredibly slow on osx, and uses bind mounts, which will make it incredibly incredibly slow on osx, and it uses bash and default paths outside the container, which will make it not work on windows. Try and use something that has like 6C/12T and at least 32GiB RAM. Or rely on the automated builds.
 
 ### ot3Image.sh
