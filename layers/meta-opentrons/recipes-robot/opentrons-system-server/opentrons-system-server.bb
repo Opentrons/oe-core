@@ -22,7 +22,6 @@ SRC_URI:append = " file://opentrons-system-server.service"
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/system-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-system-server"
 OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python "
-OPENTRONS_APP_BUNDLE_STRIP_HASHES = "yes"
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 

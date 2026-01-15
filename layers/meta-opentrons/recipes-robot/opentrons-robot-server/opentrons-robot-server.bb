@@ -22,7 +22,6 @@ SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-ca
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
 OPENTRONS_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq mosquitto"
-OPENTRONS_APP_BUNDLE_STRIP_HASHES = "yes"
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 

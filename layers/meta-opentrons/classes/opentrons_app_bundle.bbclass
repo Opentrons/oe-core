@@ -33,18 +33,6 @@ OPENTRONS_APP_BUNDLE_EXTRAS ??= ""
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT ??= "${S}"
 # The install directory on the target
 OPENTRONS_APP_BUNDLE_DIR ??= "/opt/${PN}"
-# The version of pipenv with which the current lockfiles were generated
-# does not capture certain transitive dependencies. When we use micropipenv
-# to generate a pip requirements file from a lockfile, it will (unless we
-# ask it not to) add the hashes from the lockfile. If the transitive
-# dependencies aren't _in_ the lockfile, they won't be in the requirements,
-# and pip will install them at runtime, but they won't have hashes or pinned
-# versions, and since pip either installs everything in hashes mode or nothing
-# in hashes mode, it breaks install.
-# Until any given subproject's Pipfile.lock is regenerated with a modern Pipenv
-# (the current version counts) the problem will continue, and recipes using
-# those lockfiles should set this to "yes".
-OPENTRONS_APP_BUNDLE_STRIP_HASHES ??= "no"
 OPENTRONS_APP_BUNDLE_SOURCE_VENV := "${B}/build-venv"
 
 # Extra environment args to pass to pip when building local packages
@@ -168,7 +156,7 @@ do_configure:prepend () {
    cargo_common_do_configure
 }
 
-do_configure[vardeps] += "OPENTRONS_APP_BUNDLE_STRIP_HASHES OPENTRONS_APP_BUNDLE_PROJECT_ROOT"
+do_configure[vardeps] += "OPENTRONS_APP_BUNDLE_PROJECT_ROOT"
 
 PIP_ARGS := "--no-compile \
              --no-binary :all: \
