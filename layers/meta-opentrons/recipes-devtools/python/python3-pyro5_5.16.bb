@@ -11,6 +11,6 @@ SRC_URI[sha256sum] = "d40418ed2acee0d9093daf5023ed0b0cb485a6b62342934adb9e801956
 
 inherit pypi python_setuptools_build_meta
 
-PYPI_PACKAGE="Pyro5"
+PYPI_PACKAGE="pyro5"
 
 RDEPENDS:${PN} += " python3-serpent "
