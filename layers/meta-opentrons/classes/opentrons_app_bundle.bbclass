@@ -129,11 +129,6 @@ do_configure:prepend () {
    mkdir -p ${B}/pip-buildenv
    cd ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}
    bbplain "Getting dependencies in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
-   if [[ "${OPENTRONS_APP_BUNDLE_STRIP_HASHES}" = "no" ]] ; then
-       HASHES=
-   else
-       HASHES="--no-hashes"
-   fi
    if [[ "${OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE}" -eq "uv" ]] ; then
       bbplain "Running uv export for group ${OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP} in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
       ${HOSTTOOLS_DIR}/uv export \
@@ -142,7 +137,6 @@ do_configure:prepend () {
           --no-dev \
           --all-extras \
           --no-annotate \
-          ${HASHES} \
           --frozen \
           -o ${B}/requirements-unfiltered.txt
    else
