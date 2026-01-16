@@ -110,7 +110,7 @@ python do_create_opentrons_manifest() {
     expected_opentrons_versions = [
         "opentrons-api-version.json",
         "opentrons-auth-server-version.json",
-        "opentrons-firmware-version.json"
+        "opentrons-firmware-version.json",
         "opentrons-robot-server-version.json",
         "opentrons-system-server-version.json",
         "opentrons-update-server-version.json",
