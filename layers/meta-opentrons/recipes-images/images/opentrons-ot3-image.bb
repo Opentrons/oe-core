@@ -6,6 +6,7 @@ LICENSE = "Apache-2"
 inherit core-image image_type_tezi
 
 DEPENDS += "rsync-native zip-native \
+    opentrons-auth-server \
     opentrons-robot-server \
     opentrons-update-server \
     opentrons-usb-bridge \
@@ -49,11 +50,13 @@ IMAGE_INSTALL:append = " \
     plymouth mosquitto hidapi \
     python3 python3-misc python3-modules python3-pip \
     robot-app-wayland-launch opentrons-robot-app \
-    opentrons-robot-server opentrons-update-server \
+    opentrons-auth-server opentrons-robot-server opentrons-system-server opentrons-update-server \
     opentrons-usb-bridge opentrons-jupyter-notebook \
-    opentrons-system-server opentrons-mcu-firmware \
-    opentrons-user-environment opentrons-module-firmware \
-    opentrons-systemd-units opentrons-ssh-keys opentrons-live-stream \
+    opentrons-mcu-firmware opentrons-module-firmware \
+    opentrons-user-environment \
+    opentrons-systemd-units \
+    opentrons-ssh-keys \
+    opentrons-live-stream \
     libjpeg-turbo avrdude ffmpeg rtl88x2bu zip \
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-imx gstreamer1.0 gstd openh264 \
  "
@@ -104,12 +107,15 @@ python do_create_opentrons_manifest() {
     }
 
     # check that we have the expected version files and write them to the VERSION.json
-    expected_opentrons_versions = ["opentrons-robot-server-version.json", \
-                                   "opentrons-update-server-version.json", \
-                                   "opentrons-system-server-version.json", \
-                                   "opentrons-api-version.json", \
-                                   "opentrons-usb-bridge-version.json", \
-                                   "opentrons-firmware-version.json"]
+    expected_opentrons_versions = [
+        "opentrons-api-version.json",
+        "opentrons-auth-server-version.json",
+        "opentrons-firmware-version.json"
+        "opentrons-robot-server-version.json",
+        "opentrons-system-server-version.json",
+        "opentrons-update-server-version.json",
+        "opentrons-usb-bridge-version.json",
+    ]
 
     opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')
     version_files_present = os.listdir(opentrons_versions_dir)
