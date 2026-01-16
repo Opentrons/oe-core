@@ -6,11 +6,15 @@ The main workflow that does the build is [build-ot3-actions.yml](build-ot3-actio
 
 ## Triggers
 
+> [!NOTE]
 > Builds are costly and take at least an hour. We want to avoid running them unnecessarily. Soon we will move to ephemeral runners that are dynamically requested, but currently we are limited to one run per "channel".
 
-- Builds triggered by this repository itself are controlled by [build-branches.yml](build-branches.yml)
-- <https://github.com/Opentrons/opentrons> triggers the majority of builds. The most common triggers are pushes to its `edge` branch and tagging of releases.
-- <https://github.com/Opentrons/ot3-firmware> triggers builds on pushes to its `main` branch.
+Builds are triggered:
+
+- When something in this repository itself changes. This is controlled by [build-branches.yml](build-branches.yml).
+- When something in <https://github.com/Opentrons/opentrons> changes. This triggers the majority of builds. The most common triggers are pushes to its `edge` branch and tagging of releases.
+- When something in <https://github.com/Opentrons/ot3-firmware> changes. It triggers builds on pushes to its `main` branch.
+- When you manually start a build. This lets you select an arbitrary combination of `oe-core`, `opentrons`, and `ot3-firmware` refs, and is useful for testing a synchronized change.
 
 ## Nuances of caching
 
