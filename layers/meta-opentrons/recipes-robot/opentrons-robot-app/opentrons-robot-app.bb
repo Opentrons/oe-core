@@ -8,19 +8,20 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 inherit features_check
 
 do_configure(){
-    npm install -g yarn
+    npm install -g pnpm@10
     cd ${S}
 
     # Move the yarn package configs to a mapped location when running in container
-    if [ ! -z "${YARN_CACHE_DIR}" ]; then
-        bbnote "Seting the yarn cache location to - ${YARN_CACHE_DIR}"
-        yarn config set cache-folder "${YARN_CACHE_DIR}"
+    if [ ! -z "${PNPM_CACHE_DIR}" ]; then
+        bbnote "Seting the yarn cache location to - ${PNPM_CACHE_DIR}"
+        pnpm config set cache-folder "${PNPM_CACHE_DIR}"
         export electron_config_cache="${ELECTRON_CACHE_DIR}"
     fi
 
-    yarn
+    export CI=true
+    pnpm install
     cd ${S}/app-shell-odd
-    yarn electron-rebuild --arch=arm64
+    pnpm exec electron-rebuild --arch=arm64
     cd ${S}
     # we removed setup-js from shared-data recently so let's allow it to fail so we
     # can handle both the is-there and the is-not-there case
@@ -32,7 +33,8 @@ do_compile(){
     export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
     export NODE_OPTIONS=--openssl-legacy-provider
     export OPENSSL_MODULES=${STAGING_LIBDIR_NATIVE}/ossl-modules
-
+    export CI=true
+    
     OT_SENTRY_DSN="${OT_SENTRY_DSN}" \
     OT_SENTRY_AUTH_TOKEN="${OT_SENTRY_AUTH_TOKEN_OE_CORE}" \
     OT_APP_MIXPANEL_ID="${MIXPANEL_ID}" \
@@ -57,7 +59,7 @@ do_compile(){
     OPENTRONS_PROJECT="${OPENTRONS_PROJECT}" \
     NODE_ENV=production \
     NO_PYTHON=true \
-    yarn run electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
+    pnpm exec electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
 
 fakeroot do_install(){
