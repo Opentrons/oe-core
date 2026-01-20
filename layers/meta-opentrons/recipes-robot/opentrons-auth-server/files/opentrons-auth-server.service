@@ -5,7 +5,7 @@ After=nginx.service
 
 [Service]
 Type=notify
-ExecStart=python3 -m uvicorn auth_server.app:app --uds /run/opentrons-auth-server.sock
+ExecStart=python3 -m auth_server --uds /run/opentrons-auth-server.sock
 StateDirectory=opentrons-auth-server
 Environment=PYTHONPATH=/opt/opentrons-auth-server:/usr/lib/python3.10/site-packages
 Restart=on-failure
