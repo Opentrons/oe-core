@@ -11,10 +11,12 @@ The main workflow that does the build is [build-ot3-actions.yml](build-ot3-actio
 
 Builds are triggered:
 
-- When something in this repository itself changes. This is controlled by [build-branches.yml](build-branches.yml).
-- When something in <https://github.com/Opentrons/opentrons> changes. This triggers the majority of builds. The most common triggers are pushes to its `edge` branch and tagging of releases.
-- When something in <https://github.com/Opentrons/ot3-firmware> changes. It triggers builds on pushes to its `main` branch.
-- When you manually start a build. This lets you select an arbitrary combination of `oe-core`, `opentrons`, and `ot3-firmware` refs, and is useful for testing a synchronized change.
+- When something in this repository itself changes. This is controlled by a workflow in this repository: [build-branches.yml](build-branches.yml).
+- When you [manually start a build from this repository][manually-run]. This lets you select an arbitrary combination of `oe-core`, `opentrons`, and `ot3-firmware` refs, and is useful for testing a synchronized change.
+- When something in <https://github.com/Opentrons/opentrons> changes. This is controlled by a workflow in that repository. The most common triggers are pushes to its `edge` branch and tagging of releases. This triggers the majority of builds.
+- When something in <https://github.com/Opentrons/ot3-firmware> changes. This is controlled by a workflow in that repository, watching for pushes to its `main` branch.
+
+[manually-run]: https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow#running-a-workflow
 
 ## Nuances of caching
 
