@@ -1,0 +1,13 @@
+[Unit]
+Description=System service for the Python Remote Objects Nameserver
+Before=opentrons-robot-server.service
+
+[Service]
+# Begin the Opentrons Pyro5 Nameserver
+ExecStart=/bin/pyro5-ns 
+
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
