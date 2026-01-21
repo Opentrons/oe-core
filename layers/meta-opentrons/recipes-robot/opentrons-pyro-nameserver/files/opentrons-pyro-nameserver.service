@@ -1,6 +1,6 @@
 [Unit]
-Requires=nginx.service
-After=nginx.service
+Description=System service for the Python Remote Objects Nameserver
+Before=opentrons-robot-server.service
 
 [Service]
 # Begin the Opentrons Pyro5 Nameserver
