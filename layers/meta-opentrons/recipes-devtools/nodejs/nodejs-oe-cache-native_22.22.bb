@@ -8,7 +8,7 @@ SRC_URI = "\
 
 inherit native
 
-S = "${UNPACKDIR}"
+S = "${WORKDIR}/node-v${PV}"
 
 B = "${WORKDIR}/build"
 
