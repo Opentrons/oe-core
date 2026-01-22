@@ -1,6 +1,6 @@
 [Unit]
 Description=Opentrons Robot HTTP Server
-Requires=nginx.service opentrons-pyro-nameserver.service
+Wants=nginx.service opentrons-pyro-nameserver.service
 After=nginx.service opentrons-pyro-nameserver.service
 After=opentrons-ot3-canbus
 Wants=opentrons-ot3-canbus
