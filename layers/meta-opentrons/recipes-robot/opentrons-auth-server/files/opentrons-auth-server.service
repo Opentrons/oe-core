@@ -1,0 +1,15 @@
+[Unit]
+Description=Opentrons Auth HTTP Server
+Requires=nginx.service
+After=nginx.service
+
+[Service]
+Type=notify
+ExecStart=python3 -m auth_server --uds /run/opentrons-auth-server.sock
+StateDirectory=opentrons-auth-server
+Environment=PYTHONPATH=/opt/opentrons-auth-server
+Restart=on-failure
+TimeoutStartSec=3min
+
+[Install]
+WantedBy=multi-user.target

@@ -2,7 +2,7 @@
 
 
 This OpenEmbedded metalayer adds support for the opentrons ot3, including
-- Recipes for the opentrons robot server from https://github.com/Opentrons/opentrons
+- Recipes for the opentrons robot server, and other servers, from https://github.com/Opentrons/opentrons
 - Recipes for non-upstreamed dependencies of the above
 - Image recipes and configuration
 

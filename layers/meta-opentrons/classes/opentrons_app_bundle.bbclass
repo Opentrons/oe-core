@@ -24,12 +24,12 @@ OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP ??= "robot"
 # marked by the recipe as dependencies separately, and their versions will
 # have to be handled manually at that level.
 OPENTRONS_APP_BUNDLE_USE_GLOBAL ??= ""
-# Add extra packages that might not be captured by the Pipfile.lock (for the
+# Add extra packages that might not be captured by the project's lockfile (for the
 # same reason behind OPENTRONS_APP_BUNDLE_USE_GLOBAL) and should be injected
 # into the requirements
 OPENTRONS_APP_BUNDLE_EXTRAS ??= ""
-# This is where the root of the project (i.e. the directory of the Pipfile)
-# is
+# This is where the root of the project (i.e. the directory of the Pipfile or
+# pyproject.toml) is
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT ??= "${S}"
 # The install directory on the target
 OPENTRONS_APP_BUNDLE_DIR ??= "/opt/${PN}"
