@@ -112,8 +112,42 @@ jobs:
           echo "| **ot3-firmware** | ${{ steps.build-refs.outputs.ot3-firmware }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **variant** | ${{ steps.build-refs.outputs.variant }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **build type** | ${{ steps.build-refs.outputs.build-type }} |" >> $GITHUB_STEP_SUMMARY
+  request-ephemeral-runner:
+    name: request ephemeral runner
+    needs: decide-refs
+    runs-on: ubuntu-latest
+    outputs:
+      runner_label: ${{ steps.req.outputs.runner_label }}
+    steps:
+      - id: req
+        env:
+          # Set these repo secrets:
+          # - EPHEMERAL_RUNNER_API_URL_PROD
+          # - EPHEMERAL_RUNNER_API_URL_DEV
+          API_URL: ${{ inputs.infra-stage == 'stage-dev' && secrets.EPHEMERAL_RUNNER_API_URL_DEV || secrets.EPHEMERAL_RUNNER_API_URL_PROD }}
+          INFRA_STAGE: ${{ inputs.infra-stage }}
+          VARIANT: ${{ needs.decide-refs.outputs.variant }}
+          RUNNER_LABEL: ephemeral-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${API_URL:-}" ]]; then
+            echo "Missing EPHEMERAL_RUNNER_API_URL_* secret for infra-stage=${INFRA_STAGE}" >&2
+            exit 1
+          fi
+
+          echo "runner_label=${RUNNER_LABEL}" >> "$GITHUB_OUTPUT"
+
+          # Request an ephemeral runner that matches the existing build job labels
+          # plus a unique label so only THIS workflow run can claim it.
+          LABELS_JSON=$(python3 -c 'import json,os; print(json.dumps(["x64","linux-x64","sb-x64", os.environ["INFRA_STAGE"], os.environ["VARIANT"], os.environ["RUNNER_LABEL"]]))')
+
+          curl -fsS -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"labels\":${LABELS_JSON},\"workflow_run_id\":\"${GITHUB_RUN_ID}\",\"repository\":\"${GITHUB_REPOSITORY}\"}" \
+            "${API_URL%/}/request-runner"
   run-build:
-    needs: [decide-refs, lint-bitbake]
+    needs: [decide-refs, request-ephemeral-runner, lint-bitbake]
     strategy:
       matrix:
         build_env: ["${{ inputs.infra-stage }}"]
@@ -121,9 +155,10 @@ jobs:
     timeout-minutes: 480
     runs-on:
       [
-        "self-hosted",
-        "${{matrix.build_env}}",
-        "${{needs.decide-refs.outputs.variant}}",
+        'self-hosted',
+        '${{ matrix.build_env }}',
+        '${{ needs.decide-refs.outputs.variant }}',
+        '${{ needs.request-ephemeral-runner.outputs.runner_label }}',
       ]
     concurrency:
       group: ${{needs.decide-refs.outputs.monorepo}} ${{needs.decide-refs.outputs.oe-core}} ${{needs.decide-refs.outputs.ot3-firmware}} ${{needs.decide-refs.outputs.variant}} ${{needs.decide-refs.outputs.build-type}} ${{inputs.infra-stage}}
