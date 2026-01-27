@@ -1,0 +1,185 @@
+name: 'Build OT3 image on ephemeral runner'
+run-name: 'ephemeral image: mono ${{ inputs.monorepo-ref }}, core ${{ inputs.oe-core-ref }}, fw ${{ inputs.ot3-firmware-ref }}'
+
+on:
+  workflow_dispatch:
+    inputs:
+      monorepo-ref:
+        description: |
+          Ref of https://github.com/opentrons/opentrons to build. Use full refs like refs/heads/edge or refs/tags/v7.5.0-alpha.1 or '-' to indicate not-specified.
+        required: true
+        default: '-'
+      oe-core-ref:
+        description: |
+          Ref of https://github.com/opentrons/oe-core to build. Use full refs like refs/heads/main or refs/tags/v0.6.4 or '-' to indicate not-specified.
+        required: true
+        default: '-'
+      ot3-firmware-ref:
+        description: |
+          Ref of https://github.com/opentrons/ot3-firmware to build. Use full refs like refs/heads/main or refs/tags/v52 or '-' to indicate not-specified.
+        required: false
+        default: '-'
+      infra-stage:
+        description: |
+          Which infra stage to run on (also used as a required runner label).
+        required: true
+        type: choice
+        options:
+          - 'stage-prod'
+          - 'stage-dev'
+        default: 'stage-prod'
+
+jobs:
+  decide-refs:
+    runs-on: ubuntu-latest
+    outputs:
+      oe-core: ${{ steps.build-refs.outputs.oe-core }}
+      monorepo: ${{ steps.build-refs.outputs.monorepo }}
+      ot3-firmware: ${{ steps.build-refs.outputs.ot3-firmware }}
+      variant: ${{ steps.build-refs.outputs.variant }}
+      build-type: ${{ steps.build-refs.outputs.build-type }}
+    name: 'deciding refs to build'
+    steps:
+      - name: Fetch initial sources for action
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+          path: ./oe-core-for-workflow
+
+      - name: Decide refs to build
+        id: build-refs
+        uses: ./oe-core-for-workflow/.github/actions/build-refs
+        with:
+          token: ${{ github.token }}
+          monorepo: ${{ inputs.monorepo-ref }}
+          oe-core: ${{ inputs.oe-core-ref }}
+          ot3-firmware: ${{ inputs.ot3-firmware-ref }}
+
+  request-ephemeral-runner:
+    name: request ephemeral runner
+    needs: decide-refs
+    runs-on: ubuntu-latest
+    outputs:
+      runner_label: ${{ steps.req.outputs.runner_label }}
+    steps:
+      - id: req
+        env:
+          # Set these repo secrets:
+          # - EPHEMERAL_RUNNER_API_URL_PROD
+          # - EPHEMERAL_RUNNER_API_URL_DEV
+          API_URL: ${{ inputs.infra-stage == 'stage-dev' && secrets.EPHEMERAL_RUNNER_API_URL_DEV || secrets.EPHEMERAL_RUNNER_API_URL_PROD }}
+          INFRA_STAGE: ${{ inputs.infra-stage }}
+          VARIANT: ${{ needs.decide-refs.outputs.variant }}
+          RUNNER_LABEL: ephemeral-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${API_URL:-}" ]]; then
+            echo "Missing EPHEMERAL_RUNNER_API_URL_* secret for infra-stage=${INFRA_STAGE}" >&2
+            exit 1
+          fi
+
+          echo "runner_label=${RUNNER_LABEL}" >> "$GITHUB_OUTPUT"
+
+          # Request an ephemeral runner that matches the existing build job labels
+          # plus a unique label so only THIS workflow run can claim it.
+          LABELS_JSON=$(python3 -c 'import json,os; print(json.dumps(["x64","linux-x64","sb-x64", os.environ["INFRA_STAGE"], os.environ["VARIANT"], os.environ["RUNNER_LABEL"]]))')
+
+          curl -fsS -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"labels\":${LABELS_JSON},\"workflow_run_id\":\"${GITHUB_RUN_ID}\",\"repository\":\"${GITHUB_REPOSITORY}\"}" \
+            "${API_URL%/}/request-runner"
+
+  run-build:
+    needs: [decide-refs, request-ephemeral-runner]
+    strategy:
+      matrix:
+        build_env: ['${{ inputs.infra-stage }}']
+    name: Building ${{ needs.decide-refs.outputs.variant }} images on ${{ matrix.build_env }} (ephemeral)
+    timeout-minutes: 480
+    runs-on:
+      [
+        self-hosted,
+        '${{ matrix.build_env }}',
+        '${{ needs.decide-refs.outputs.variant }}',
+        '${{ needs.request-ephemeral-runner.outputs.runner_label }}',
+      ]
+    steps:
+      - name: Fetch initial sources for action
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+          fetch-depth: 0
+          path: ./oe-core-for-workflow
+
+      - name: Fetch oe-core source
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+          fetch-depth: 0
+          ref: ${{ needs.decide-refs.outputs.oe-core }}
+          path: ./oe-core
+
+      - name: Fetch monorepo source
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.decide-refs.outputs.monorepo }}
+          repository: Opentrons/opentrons
+          path: ./opentrons
+
+      - name: Fetch ot3-firmware source
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
+          repository: Opentrons/ot3-firmware
+          path: ./ot3-firmware
+
+      - name: Sync oe-core submodules
+        run: |
+          chown -R "$(whoami)" oe-core
+          chown -R "$(whoami)" opentrons
+          chown -R "$(whoami)" ot3-firmware
+          cd oe-core
+          ./update.sh
+          cd ..
+
+      - name: Build Docker image
+        run: |
+          set -euo pipefail
+          cd oe-core
+          tmp_dir=$(mktemp -d -t ci-XXXXXXX)
+          cp start.sh "$tmp_dir"/
+          docker build -f ./Dockerfile --tag "ot3-image:latest" "$tmp_dir"
+
+      - name: Configure cache paths in oe-core local.conf
+        run: |
+          set -euo pipefail
+          cd oe-core
+          echo 'DL_DIR = "/volumes/cache/downloads"' >> ./conf/local.conf
+          echo 'GITDIR = "/volumes/cache/git"' >> ./conf/local.conf
+          echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./conf/local.conf
+          echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./conf/local.conf
+          echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./conf/local.conf
+
+      - name: Run bitbake (opentrons-ot3-image)
+        run: |
+          set -euo pipefail
+          here="$(pwd)"
+          oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
+          monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
+          ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
+          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
+          tmp_mount="dst=/tmp,tmpfs-size=20g"
+
+          mkdir -p "${LOCAL_CACHE:-./cache}"
+
+          docker run --rm \
+            --mount "$oe_mount" \
+            --mount "$monorepo_mount" \
+            --mount "$ot3_firmware_mount" \
+            --mount "$cache_mount" \
+            --tmpfs "$tmp_mount" \
+            ot3-image:latest \
+            opentrons-ot3-image
