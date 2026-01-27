@@ -279,7 +279,7 @@ jobs:
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
               for cachetype in downloads sstate git ; do
-                  localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+                  localzip="${cachedir}/../${cachetype}.zip"
                   thiscache=${cachedir}/${cachetype}
                   echo "Fetching cache for ${cachetype} to ${localzip}"
                   mkdir -p ${thiscache}
@@ -347,7 +347,7 @@ jobs:
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
               df -h
-              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+              localzip="${cachedir}/../${cachetype}.zip"
               thiscache=${cachedir}/${cachetype}
               cd ${thiscache}
               echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
