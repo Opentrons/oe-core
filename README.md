@@ -38,6 +38,30 @@ If you also don't want to use `start.sh` (please consider adding the capability 
 
 You'll get moved to `build`. Then you can run `bitbake`. To check recipe errors you can try `bitbake --setscene-only RECIPENAME`.
 
+## Linting BitBake Recipes
+
+This repository uses [oelint-adv](https://github.com/priv-kweihmann/oelint-adv) to lint BitBake recipes. The linter runs automatically in CI, but you can also run it locally.
+
+### Installation
+
+```bash
+pip install oelint-adv
+```
+
+### Running the Linter
+
+From the repository root, run:
+
+```bash
+oelint-adv --quiet --relpaths \
+  $(find layers/meta-opentrons -type f \( -name "*.bb" -o -name "*.bbappend" -o -name "*.bbclass" -o -name "*.inc" \)) \
+  $(find layers/meta-opentrons conf -type f -name "*.conf")
+```
+
+The linter will automatically pick up the configuration from `.oelint.cfg` and the custom variable definitions from `oelint-constants.json`.
+
+If there are no issues, the command produces no output. Otherwise, it will list the warnings and errors found.
+
 ## Updating from upstream
 
 If you want to update to the latest upstream release from toradex, use `scripts/set-refs-from-tdx-manifest.py`. Run it with `uv` to install its dependencies.

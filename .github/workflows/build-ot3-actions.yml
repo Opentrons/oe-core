@@ -1,5 +1,5 @@
-name: 'Build Flex image on github workflows'
-run-name: 'image: mono ${{ inputs.monorepo-ref }}, core ${{ inputs.oe-core-ref }}, fw ${{ inputs.ot3-firmware-ref }}'
+name: "Build Flex image on github workflows"
+run-name: "image: mono ${{ inputs.monorepo-ref }}, core ${{ inputs.oe-core-ref }}, fw ${{ inputs.ot3-firmware-ref }}"
 on:
   workflow_dispatch:
     inputs:
@@ -7,46 +7,95 @@ on:
         description: |
           Ref of https://github.com/opentrons/opentrons to build. ONLY use a tag ref if you are trying to actually release!!! This MUST be a full ref, e.g. refs/heads/edge or refs/tags/v7.5.0-alpha.1 or '-' to indicate not-specified. If not specified, will be determined from the oe-core ref if specified, and then default to edge.
         required: true
-        default: '-'
+        default: "-"
       oe-core-ref:
         description: |
           Ref of https://github.com/opentrons/oe-core to build. This is different from the ref specified in the github api/webUI when starting this workflow - that ref is what contains this workflow, this ref specifies what gets built. ONLY use a tag ref if you are trying to actually release!!! It MUST be a full ref, e.g. refs/heads/main or refs/tags/v0.6.4 or '-' to indicate not-specified. If not specified, will be decided based on the monorepo ref; if that isn't specified, will be main.
         required: true
-        default: '-'
+        default: "-"
       ot3-firmware-ref:
         description: |
           Ref of https://github.com/opentrons/ot3-firmware to build. ONLY use a tag ref if you are trying to actually release!!! It MUST be a full ref, e.g. refs/heads/main or refs/tags/v52 or '-' to indicate not-specified. If not specified, will be decided based on the monorepo ref; if that isn't specified, will be main.
         required: false
-        default: '-'
+        default: "-"
       infra-stage:
         description: |
           What infra stage to run on. This should almost always be prod; dev is useful when you explicitly want to test or prod is busy.
         required: true
         type: choice
         options:
-          - 'stage-prod'
-          - 'stage-dev'
-        default: 'stage-prod'
+          - "stage-prod"
+          - "stage-dev"
+        default: "stage-prod"
 
 jobs:
+  lint-bitbake:
+    runs-on: "ubuntu-latest"
+    name: "Lint BitBake recipes"
+    steps:
+      - name: Checkout oe-core
+        uses: actions/checkout@v3
+        with:
+          submodules: false
+          fetch-depth: 1
+      - name: Install oelint-adv
+        run: pip install oelint-adv
+      - name: Run BitBake linting
+        id: lint
+        env:
+          OELINT_CONFIG: ${{ github.workspace }}/.oelint.cfg
+        run: |
+          echo "## BitBake Lint Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Verify config file exists
+          if [ -f "$OELINT_CONFIG" ]; then
+            echo "Using config: $OELINT_CONFIG"
+          else
+            echo "Warning: Config file not found at $OELINT_CONFIG"
+          fi
+
+          # Avoid linting 3rd party layers
+          bb_files=$(find layers/meta-opentrons -type f \( -name "*.bb" -o -name "*.bbappend" -o -name "*.bbclass" -o -name "*.inc" \))
+          conf_files=$(find layers/meta-opentrons conf -type f -name "*.conf")
+
+          set +e
+          lint_output=$(timeout 120 oelint-adv --quiet --relpaths $bb_files $conf_files 2>&1)
+          lint_exit_code=$?
+          set -e
+
+          if [ $lint_exit_code -eq 0 ]; then
+            echo "No linting issues found." >> $GITHUB_STEP_SUMMARY
+            echo "No linting issues found."
+          else
+            echo "Linting issues found:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$lint_output" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+
+            echo "$lint_output"
+            exit 1
+          fi
+
   decide-refs:
-    runs-on: ubuntu-latest
+    runs-on: "ubuntu-latest"
     outputs:
       oe-core: ${{ steps.build-refs.outputs.oe-core }}
       monorepo: ${{ steps.build-refs.outputs.monorepo }}
       ot3-firmware: ${{ steps.build-refs.outputs.ot3-firmware }}
       variant: ${{ steps.build-refs.outputs.variant }}
       build-type: ${{ steps.build-refs.outputs.build-type }}
-    name: 'deciding refs to build'
+    name: "deciding refs to build"
     steps:
       - name: Fetch initial sources for action
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           submodules: false
           path: ./oe-core-for-workflow
       - name: Decide refs to build
         id: build-refs
-        uses: './oe-core-for-workflow/.github/actions/build-refs'
+        uses: ./oe-core-for-workflow/.github/actions/build-refs
         with:
           token: ${{ github.token }}
           monorepo: ${{ inputs.monorepo-ref }}
@@ -64,13 +113,18 @@ jobs:
           echo "| **variant** | ${{ steps.build-refs.outputs.variant }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **build type** | ${{ steps.build-refs.outputs.build-type }} |" >> $GITHUB_STEP_SUMMARY
   run-build:
-    needs: decide-refs
+    needs: [decide-refs, lint-bitbake]
     strategy:
       matrix:
-        build_env: [ '${{ inputs.infra-stage }}' ]
-    name: 'Building ${{needs.decide-refs.outputs.variant}} images on ${{ matrix.build_env }}'
+        build_env: ["${{ inputs.infra-stage }}"]
+    name: "Building ${{needs.decide-refs.outputs.variant}} images on ${{ matrix.build_env }}"
     timeout-minutes: 480
-    runs-on: ['self-hosted', '${{matrix.build_env}}', '${{needs.decide-refs.outputs.variant}}']
+    runs-on:
+      [
+        "self-hosted",
+        "${{matrix.build_env}}",
+        "${{needs.decide-refs.outputs.variant}}",
+      ]
     concurrency:
       group: ${{needs.decide-refs.outputs.monorepo}} ${{needs.decide-refs.outputs.oe-core}} ${{needs.decide-refs.outputs.ot3-firmware}} ${{needs.decide-refs.outputs.variant}} ${{needs.decide-refs.outputs.build-type}} ${{inputs.infra-stage}}
       cancel-in-progress: false
@@ -82,27 +136,27 @@ jobs:
       release_notes_file_url: ${{ steps.upload-results.outputs.release_notes_file_url }}
     steps:
       - name: Fetch initial sources for action
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           submodules: false
           fetch-depth: 0
           path: ./oe-core-for-workflow
       - name: Fetch oe-core source
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           submodules: false
           fetch-depth: 0
           ref: ${{needs.decide-refs.outputs.oe-core}}
           path: ./oe-core
       - name: Fetch monorepo source
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: ${{ needs.decide-refs.outputs.monorepo }}
           repository: Opentrons/opentrons
           path: ./opentrons
       - name: Fetch ot3-firmware source
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
@@ -117,7 +171,7 @@ jobs:
           ./update.sh
           cd ..
       - name: Configure AWS Credentials
-        uses: './oe-core-for-workflow/.github/actions/aws-credentials'
+        uses: ./oe-core-for-workflow/.github/actions/aws-credentials
         id: aws
         with:
           access_key_id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
@@ -305,7 +359,7 @@ jobs:
       - name: Handle Release
         if: ${{ needs.decide-refs.outputs.build-type == 'release' }}
         shell: bash
-        id: 'handle-release'
+        id: "handle-release"
         run: |
           pushd oe-core/scripts
           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json releases.json
@@ -316,7 +370,7 @@ jobs:
           popd
       - name: Upload results to S3
         shell: bash
-        id: 'upload-results'
+        id: "upload-results"
         run: |
           pushd ${{ steps.artifacts.outputs.artifact_root }}
           aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive ${{ steps.artifacts.outputs.artifact_unversioned_subdir }} s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
@@ -329,7 +383,7 @@ jobs:
           popd
       - name: Upload system zip to monorepo release
         if: needs.decide-refs.outputs.build-type == 'release'
-        uses: 'ncipollo/release-action@v1.12.0'
+        uses: ncipollo/release-action@v1.12.0
         with:
           allowUpdates: true
           omitBody: true
@@ -343,7 +397,7 @@ jobs:
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       - name: Upload fullimage tar to monorepo release
         if: needs.decide-refs.outputs.build-type == 'release'
-        uses: 'ncipollo/release-action@v1.12.0'
+        uses: ncipollo/release-action@v1.12.0
         with:
           allowUpdates: true
           omitBody: true
@@ -357,7 +411,7 @@ jobs:
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       - name: Upload version json to monorepo release
         if: needs.decide-refs.outputs.build-type == 'release'
-        uses: 'ncipollo/release-action@v1.12.0'
+        uses: ncipollo/release-action@v1.12.0
         with:
           allowUpdates: true
           omitBody: true
@@ -378,19 +432,19 @@ jobs:
         run: |
           rm -rf ${LOCAL_CACHE:-./cache}/*
   notify-tagged-success:
-    name: 'Notify Tagged Build Success'
-    runs-on: 'ubuntu-latest'
+    name: "Notify Tagged Build Success"
+    runs-on: "ubuntu-latest"
     needs: [decide-refs, run-build]
     if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success' && needs.decide-refs.outputs.variant != ''
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-      - name: 'Send success alert'
+      - name: "Send success alert"
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
         with:
-          status: 'success'
-          workflow_name: 'Build Flex image on github workflows'
+          status: "success"
+          workflow_name: "Build Flex image on github workflows"
           webhook_url: ${{ secrets.SLACK_WEBHOOK_URL_TAGGED }}
           console_url: ${{ needs.run-build.outputs.console_url }}
           system_url: ${{ needs.run-build.outputs.system_url }}
@@ -401,19 +455,19 @@ jobs:
           monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
           firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
   notify-tagged-failure:
-    name: 'Notify Tagged Build Failure'
-    runs-on: 'ubuntu-latest'
+    name: "Notify Tagged Build Failure"
+    runs-on: "ubuntu-latest"
     needs: [decide-refs, run-build]
     if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-      - name: 'Send failure alert'
+      - name: "Send failure alert"
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
         with:
-          status: 'failure'
-          workflow_name: 'Build Flex image on github workflows'
+          status: "failure"
+          workflow_name: "Build Flex image on github workflows"
           webhook_url: ${{ secrets.SLACK_WEBHOOK_URL_TAGGED }}
           console_url: ${{ needs.run-build.outputs.console_url }}
           system_url: ${{ needs.run-build.outputs.system_url }}
@@ -424,19 +478,19 @@ jobs:
           monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
           firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
   notify-untagged-success:
-    name: 'Notify Untagged Build Success'
-    runs-on: 'ubuntu-latest'
+    name: "Notify Untagged Build Success"
+    runs-on: "ubuntu-latest"
     needs: [decide-refs, run-build]
     if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-      - name: 'Send success alert'
+      - name: "Send success alert"
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
         with:
-          status: 'success'
-          workflow_name: 'Build Flex image on github workflows'
+          status: "success"
+          workflow_name: "Build Flex image on github workflows"
           webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
           console_url: ${{ needs.run-build.outputs.console_url }}
           system_url: ${{ needs.run-build.outputs.system_url }}
@@ -447,19 +501,19 @@ jobs:
           monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
           firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
   notify-untagged-failure:
-    name: 'Notify Untagged Build Failure'
-    runs-on: 'ubuntu-latest'
+    name: "Notify Untagged Build Failure"
+    runs-on: "ubuntu-latest"
     needs: [decide-refs, run-build]
     if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
-      - name: 'Send failure alert'
+      - name: "Send failure alert"
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
         with:
-          status: 'failure'
-          workflow_name: 'Build Flex image on github workflows'
+          status: "failure"
+          workflow_name: "Build Flex image on github workflows"
           webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
           console_url: ${{ needs.run-build.outputs.console_url }}
           system_url: ${{ needs.run-build.outputs.system_url }}
