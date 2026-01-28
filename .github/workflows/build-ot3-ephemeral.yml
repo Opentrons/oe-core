@@ -163,6 +163,50 @@ jobs:
           echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./conf/local.conf
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./conf/local.conf
 
+      - name: Pull shared S3 cache (best-effort, ~24h)
+        shell: bash
+        continue-on-error: true
+        env:
+          INFRA_STAGE: ${{ inputs.infra-stage }}
+          VARIANT: ${{ needs.decide-refs.outputs.variant }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${S3_CACHE_ARN:-}" ]]; then
+            echo "S3_CACHE_ARN is not set on this runner; skipping shared cache pull."
+            exit 0
+          fi
+
+          bucket="${S3_CACHE_ARN#arn:aws:s3:::}"
+          prefix="ephemeral-cache/${INFRA_STAGE}/${VARIANT}"
+          cutoff="$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)"
+
+          cachedir="${LOCAL_CACHE:-./cache}"
+          aws_s3="aws s3"
+          aws_s3api="aws s3api"
+
+          for cachetype in downloads sstate git ; do
+            key="$($aws_s3api list-objects-v2 \
+              --bucket "$bucket" \
+              --prefix "${prefix}/${cachetype}/" \
+              --query "reverse(sort_by(Contents[?LastModified>=\\`${cutoff}\\`], &LastModified))[0].Key" \
+              --output text 2>/dev/null || true)"
+
+            if [[ -z "$key" || "$key" == "None" ]]; then
+              echo "No recent shared cache found for ${cachetype} (within 24h)."
+              continue
+            fi
+
+            localzip="${cachedir}/../${cachetype}.zip"
+            thiscache="${cachedir}/${cachetype}"
+            mkdir -p "${thiscache}"
+
+            echo "Fetching shared cache for ${cachetype}: s3://${bucket}/${key}"
+            $aws_s3 cp --no-progress "s3://${bucket}/${key}" "${localzip}"
+            unzip -q -u -o "${localzip}" -d "${thiscache}"
+            rm -f "${localzip}"
+          done
+
       - name: Run bitbake (opentrons-ot3-image)
         run: |
           set -euo pipefail
@@ -183,3 +227,42 @@ jobs:
             --tmpfs "$tmp_mount" \
             ot3-image:latest \
             opentrons-ot3-image
+
+      - name: Push shared S3 cache (best-effort, expires ~24h)
+        if: ${{ success() }}
+        shell: bash
+        continue-on-error: true
+        env:
+          INFRA_STAGE: ${{ inputs.infra-stage }}
+          VARIANT: ${{ needs.decide-refs.outputs.variant }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${S3_CACHE_ARN:-}" ]]; then
+            echo "S3_CACHE_ARN is not set on this runner; skipping shared cache push."
+            exit 0
+          fi
+
+          bucket="${S3_CACHE_ARN#arn:aws:s3:::}"
+          prefix="ephemeral-cache/${INFRA_STAGE}/${VARIANT}"
+          ts="$(date -u +%Y%m%dT%H%M%SZ)"
+
+          cachedir="${LOCAL_CACHE:-./cache}"
+          aws_s3="aws s3"
+
+          for cachetype in downloads sstate git ; do
+            thiscache="${cachedir}/${cachetype}"
+            if [[ ! -d "${thiscache}" ]]; then
+              echo "Cache dir missing for ${cachetype} (${thiscache}); skipping."
+              continue
+            fi
+
+            localzip="${cachedir}/../${cachetype}.zip"
+            echo "Zipping cache for ${cachetype} from ${thiscache}"
+            (cd "${thiscache}" && zip -q -r --filesync --symlinks "${localzip}" ./*) || continue
+
+            key="${prefix}/${cachetype}/${ts}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.zip"
+            echo "Uploading shared cache for ${cachetype}: s3://${bucket}/${key}"
+            $aws_s3 cp --no-progress "${localzip}" "s3://${bucket}/${key}"
+            rm -f "${localzip}"
+          done
