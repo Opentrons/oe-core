@@ -2,6 +2,10 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += "file://opentrons-dropbear.default"
 
+do_configure:append() {
+  echo "#define DEBUG_TRACE 1" >> ${B}/localoptions.h
+}
+
 do_install:append() {
    # create a symlink to store rsa host keys in read-write /var/lib/dropbear dir.
    install -d ${D}/var/lib/dropbear
