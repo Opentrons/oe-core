@@ -2,15 +2,15 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI += "file://opentrons-dropbear.default"
 
-do_configure:append() {
-  echo "#define DEBUG_TRACE 1" >> ${B}/localoptions.h
-}
 
 do_install:append() {
    # create a symlink to store rsa host keys in read-write /var/lib/dropbear dir.
    install -d ${D}/var/lib/dropbear
    rm -rf ${D}/${sysconfdir}/dropbear
    ln -sf /var/lib/dropbear ${D}/${sysconfdir}/dropbear
+
+   # create a symlink to the "real" homedir
+   ln -sf /home/root/.ssh /root/.ssh
 
    # install dropbear config if release
    if [[ "${OT_BUILD_TYPE}" =~ "release" ]]; then
