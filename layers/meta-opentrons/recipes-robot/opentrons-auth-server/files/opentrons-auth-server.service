@@ -5,6 +5,7 @@ After=nginx.service
 
 [Service]
 Type=notify
+NotifyAccess=all
 ExecStart=python3 -m auth_server --uds /run/opentrons-auth-server.sock
 StateDirectory=opentrons-auth-server
 Environment=PYTHONPATH=/opt/opentrons-auth-server
