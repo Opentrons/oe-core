@@ -19,3 +19,5 @@ do_install:append() {
       install -m 0644 ${WORKDIR}/opentrons-dropbear.default ${D}${sysconfdir}/default/dropbear
    fi
 }
+
+FILES:${PN} += " /root /root/.ssh "
