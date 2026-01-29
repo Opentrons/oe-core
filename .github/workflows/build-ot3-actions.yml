@@ -158,8 +158,9 @@ jobs:
         'self-hosted',
         '${{ needs.request-ephemeral-runner.outputs.runner_label }}',
       ]
+    # Unique group per run so multiple workflow runs can execute in parallel (each gets its own ephemeral runner).
     concurrency:
-      group: ${{needs.decide-refs.outputs.monorepo}} ${{needs.decide-refs.outputs.oe-core}} ${{needs.decide-refs.outputs.ot3-firmware}} ${{needs.decide-refs.outputs.variant}} ${{needs.decide-refs.outputs.build-type}} ${{inputs.infra-stage}}
+      group: build-${{ github.run_id }}-${{ github.run_attempt }}
       cancel-in-progress: false
     outputs:
       system_url: ${{ steps.upload-results.outputs.system_url }}
