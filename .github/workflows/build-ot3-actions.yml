@@ -140,7 +140,7 @@ jobs:
 
           # Request an ephemeral runner that matches the existing build job labels
           # plus a unique label so only THIS workflow run can claim it.
-          LABELS_JSON=$(python3 -c 'import json,os; print(json.dumps(["x64","linux-x64","sb-x64", os.environ["INFRA_STAGE"], os.environ["VARIANT"], os.environ["RUNNER_LABEL"]]))')
+          LABELS_JSON=$(python3 -c 'import json,os; print(json.dumps(["x64","linux-x64","sb-x64","oe-core", os.environ["INFRA_STAGE"], os.environ["VARIANT"], os.environ["RUNNER_LABEL"]]))')
 
           curl -fsS -X POST \
             -H "Content-Type: application/json" \
