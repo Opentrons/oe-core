@@ -9,8 +9,9 @@ do_install:append() {
    rm -rf ${D}/${sysconfdir}/dropbear
    ln -sf /var/lib/dropbear ${D}/${sysconfdir}/dropbear
 
+   install -d -m 0644 ${D}/root
    # create a symlink to the "real" homedir
-   ln -sf /home/root/.ssh /root/.ssh
+   ln -sf /home/root/.ssh ${D}/root/.ssh
 
    # install dropbear config if release
    if [[ "${OT_BUILD_TYPE}" =~ "release" ]]; then
