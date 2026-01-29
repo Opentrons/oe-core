@@ -1,6 +1,6 @@
 [Unit]
 Description=Opentrons System HTTP Server
-Requires=nginx.service
+Wants=nginx.service
 After=nginx.service
 
 [Service]

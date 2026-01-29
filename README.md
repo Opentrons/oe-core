@@ -12,12 +12,14 @@ For instance, a tagged version of this subrepo _must_ have every submodule point
 
 While git (as of 2.22) supports having a submodule that tracks an upstream branch, it does this by changing the way that you call `git submodule update` and this applies to _all_ submodules, even those you don't want to track an upstream. For that reason, there's an `update.sh` script that just does the right submodule commands. 
 
-**MAKE SURE TO RUN `./update` AFTER YOU SWITCH BRANCHES AND AFTER CLONING.**
+**MAKE SURE TO RUN `./update.sh` AFTER YOU SWITCH BRANCHES AND AFTER CLONING.**
 
 To change what a recipe checks out, cd into that recipe and change the branch or the commit.
 
 
 ## Building
+
+See [.github/workflows](.github/workflows) for details on how to trigger the automated builds.
 
 Do not try to build this on anything other than a linux machine that is extremely beefy. It requires docker, which will make it incredibly slow on osx, and uses bind mounts, which will make it incredibly incredibly slow on osx, and it uses bash and default paths outside the container, which will make it not work on windows. Try and use something that has like 6C/12T and at least 32GiB RAM. Or rely on the automated builds.
 
@@ -35,6 +37,30 @@ If you also don't want to use `start.sh` (please consider adding the capability 
 `BITBAKEDIR=$(pwd)/tools/bitbake . ./layers/openembedded-core/oe-init-build-env`
 
 You'll get moved to `build`. Then you can run `bitbake`. To check recipe errors you can try `bitbake --setscene-only RECIPENAME`.
+
+## Linting BitBake Recipes
+
+This repository uses [oelint-adv](https://github.com/priv-kweihmann/oelint-adv) to lint BitBake recipes. The linter runs automatically in CI, but you can also run it locally.
+
+### Installation
+
+```bash
+pip install oelint-adv
+```
+
+### Running the Linter
+
+From the repository root, run:
+
+```bash
+oelint-adv --quiet --relpaths \
+  $(find layers/meta-opentrons -type f \( -name "*.bb" -o -name "*.bbappend" -o -name "*.bbclass" -o -name "*.inc" \)) \
+  $(find layers/meta-opentrons conf -type f -name "*.conf")
+```
+
+The linter will automatically pick up the configuration from `.oelint.cfg` and the custom variable definitions from `oelint-constants.json`.
+
+If there are no issues, the command produces no output. Otherwise, it will list the warnings and errors found.
 
 ## Updating from upstream
 

@@ -1,0 +1,29 @@
+{
+  "variables": {
+    "known": [
+      "OT_PACKAGE",
+      "DEST_SYSTEMD_DROPFILE",
+      "MONOREPO_ROOT_PATH",
+      "OT_SYSTEM_VERSION",
+      "OPENTRONS_APP_BUNDLE_USE_GLOBAL",
+      "target_is_armv7",
+      "llvm_features_from_tune",
+      "llvm_features",
+      "llvm_cpu",
+      "rust_gen_target",
+      "CRATE_CC_FLAGS",
+      "rustlib_src",
+      "rustlib",
+      "GLIBC_GENERATE_LOCALES",
+      "COPY_LIC_MANIFEST",
+      "COPY_LIC_DIRS",
+      "ROBOT_TYPE",
+      "do_image_wic",
+      "ARM_INSTRUCTION_SET",
+      "USE_NONFREE",
+      "OT_PROJECT",
+      "AUTHOR",
+      "SPDX_S"
+    ]
+  }
+}
