@@ -7,6 +7,7 @@ Wants=opentrons-ot3-canbus
 
 [Service]
 Type=notify
+NotifyAccess=all
 ExecStart=python3 -m uvicorn robot_server.app:app --uds /run/aiohttp.sock --ws wsproto
 StateDirectory=opentrons-robot-server
 Environment=OT_API_FF_enableOT3HardwareController=true

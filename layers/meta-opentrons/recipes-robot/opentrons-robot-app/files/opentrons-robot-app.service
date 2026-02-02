@@ -5,6 +5,7 @@ Requires=weston.service
 
 [Service]
 Type=notify
+NotifyAccess=all
 Environment="WAYLAND_DISPLAY=wayland-1"
 Environment="XDG_RUNTIME_DIR=/run/user/0"
 Environment="DISPLAY=:0:0"
