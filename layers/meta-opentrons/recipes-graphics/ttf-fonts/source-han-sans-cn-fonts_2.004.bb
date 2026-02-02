@@ -9,7 +9,6 @@ SRC_URI = " \
     file://SourceHanSansCN-VF.ttf \
     file://44-source-han-sans-cn.conf \
 "
-SRC_URI[md5sum] = "80056a18882059d0f7d5616a929ca8a8"
 SRC_URI[sha256sum] = "e7ed74bc82eddfb62bc9a09b7e850731ea40da8e8a1b530318c3fe395045ae6d"
 
 do_install() {
