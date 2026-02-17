@@ -4,4 +4,5 @@ SRC_URI += " \
         file://SPI-CAN.cfg \
         file://hidraw.cfg \
         file://0001-pmdomain-imx-scu-pd-clear-is_off.patch \
+        file://devicemapper.cfg \
         "
