@@ -20,3 +20,6 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ef24", ATTRS{idVen
 
 # system camera
 KERNEL=="video[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="9230", ATTRS{idVendor}=="32e4", ATTR{index}=="0", SYMLINK+="ot_system_camera"
+
+# vacuum module
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ef40", ATTRS{idVendor}=="0483", SYMLINK+="ot_module_vacuummodule%n"
