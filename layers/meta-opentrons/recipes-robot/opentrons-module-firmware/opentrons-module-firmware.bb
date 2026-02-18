@@ -26,6 +26,11 @@ FLEX-STACKER_MODULE_SOURCE="flex-stacker@${FLEX-STACKER_MODULE_VERSION}.bin"
 FLEX-STACKER_MODULE_URL="flex-stacker/${FLEX-STACKER_MODULE_VERSION}/${FLEX-STACKER_MODULE_SOURCE}"
 SRC_URI += "${BASE_URL}/${FLEX-STACKER_MODULE_URL};sha256sum=deefa816c133c97ed0aa2f696da4c6ab8a8110a0b4456b703e6d20287d128270"
 
+VACUUM_MODULE_VERSION="v0.0.1"
+VACUUM_MODULE_SOURCE="vacuum-module@${VACUUM_MODULE_VERSION}.bin"
+VACUUM_MODULE_URL="vacuum-module/${VACUUM_MODULE_VERSION}/${VACUUM_MODULE_SOURCE}"
+SRC_URI += "${BASE_URL}/${VACUUM_MODULE_URL};sha256sum=1dc521ba54819de0c1835cf49c2dddd063a58c6310e230392ad7e2e9a1c1d77e"
+
 FIRMWARE_DIR="${libdir}/firmware"
 
 S = "${WORKDIR}"
@@ -37,9 +42,11 @@ do_install(){
     install ${S}/${THERMOCYCLER-GEN2_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
     install ${S}/${HEATER-SHAKER_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
     install ${S}/${FLEX-STACKER_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
+    install ${S}/${VACUUM_MODULE_SOURCE} -m 0644 ${D}${FIRMWARE_DIR}/
 }
 
 FILES:${PN} += "${libdir}/firmware/${TEMPERATURE_MODULE_FILENAME} \
                 ${libdir}/firmware/${THERMOCYCLER-GEN2_MODULE_SOURCE} \
                 ${libdir}/firmware/${HEATER-SHAKER_MODULE_SOURCE} \
-                ${libdir}/firmware/${FLEX-STACKER_MODULE_SOURCE} \"
+                ${libdir}/firmware/${FLEX-STACKER_MODULE_SOURCE} \
+                ${libdir}/firmware/${VACUUM_MODULE_SOURCE} \"
