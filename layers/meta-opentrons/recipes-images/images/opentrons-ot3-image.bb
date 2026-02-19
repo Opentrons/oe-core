@@ -61,7 +61,7 @@ IMAGE_INSTALL:append = " \
     opentrons-pyro-nameserver \
     libjpeg-turbo avrdude ffmpeg rtl88x2bu zip \
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-imx gstreamer1.0 gstd openh264 \
-    keyctl-caam keyutils \
+    keyctl-caam keyutils lvm2 \
  "
 
 # We do NOT want the toradex libusbgx packages that autoconfigure the OTG USB
