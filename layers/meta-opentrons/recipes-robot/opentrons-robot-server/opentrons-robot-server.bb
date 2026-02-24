@@ -12,7 +12,12 @@ OT_PACKAGE = "robot-server"
 # Rust python modules installed by pip get stripped outside OE infra
 INSANE_SKIP:${PN}:append = "already-stripped"
 
-inherit systemd get_ot_package_version
+inherit systemd get_ot_package_version useradd
+
+USERADD_PACKAGES = "${PN}"
+USERADD_PARAM:${PN} = "--system --home /run/ot-protocol \
+                       --no-create-home --shell /bin/false \
+                       --user-group ot-protocol"
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service"
