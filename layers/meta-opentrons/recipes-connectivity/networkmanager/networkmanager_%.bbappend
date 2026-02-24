@@ -31,6 +31,8 @@ do_install:append() {
     install -m 600 ${WORKDIR}/wired-end0.nmconnection ${D}/usr/share/default-connections/wired-end0.nmconnection
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-init-systemconnections.service ${D}${systemd_system_unitdir}/opentrons-init-systemconnections.service
+    install -d ${D}${systemd_system_unitdir}/NetworkManager.service.wants
+    ln -s ../opentrons-init-systemconnections.service ${D}${systemd_system_unitdir}/NetworkManager.service.wants/opentrons-init-systemconnections.service
     install -d ${D}/etc/NetworkManager/dispatcher.d
     install -m 744 ${WORKDIR}/dispatch-bounce-mlan0.sh ${D}/etc/NetworkManager/dispatcher.d/bounce-mlan0.sh
 }
