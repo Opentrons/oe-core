@@ -142,10 +142,24 @@ jobs:
           # plus a unique label so only THIS workflow run can claim it.
           LABELS_JSON=$(python3 -c 'import json,os; print(json.dumps(["x64","linux-x64","sb-x64","oe-core", os.environ["INFRA_STAGE"], os.environ["VARIANT"], os.environ["RUNNER_LABEL"]]))')
 
-          curl -fsS -X POST \
-            -H "Content-Type: application/json" \
-            -d "{\"labels\":${LABELS_JSON},\"workflow_run_id\":\"${GITHUB_RUN_ID}\",\"repository\":\"${GITHUB_REPOSITORY}\"}" \
-            "${API_URL%/}/request-runner"
+          max_attempts=5
+          attempt=1
+          while true; do
+            if curl -fsS -X POST \
+              -H "Content-Type: application/json" \
+              -d "{\"labels\":${LABELS_JSON},\"workflow_run_id\":\"${GITHUB_RUN_ID}\",\"repository\":\"${GITHUB_REPOSITORY}\"}" \
+              "${API_URL%/}/request-runner"; then
+              echo "Runner request succeeded on attempt ${attempt}"
+              break
+            fi
+            if [[ $attempt -ge $max_attempts ]]; then
+              echo "Runner request failed after ${max_attempts} attempts" >&2
+              exit 1
+            fi
+            echo "Runner request attempt ${attempt} failed, retrying in $((attempt * 10))s..."
+            sleep $((attempt * 10))
+            attempt=$((attempt + 1))
+          done
   run-build:
     needs: [decide-refs, request-ephemeral-runner, lint-bitbake]
     strategy:
@@ -277,15 +291,29 @@ jobs:
           else
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
+              s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
               for cachetype in downloads sstate git ; do
                   localzip="${cachedir}/../${cachetype}.zip"
                   thiscache=${cachedir}/${cachetype}
                   echo "Fetching cache for ${cachetype} to ${localzip}"
                   mkdir -p ${thiscache}
-                  TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
-                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
+                  max_attempts=3
+                  attempt=1
+                  while true; do
+                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.zip ${localzip} 2>elapsed; then
+                      break
+                    fi
+                    if [[ $attempt -ge $max_attempts ]]; then
+                      echo "S3 fetch for ${cachetype} failed after ${max_attempts} attempts, skipping cache for this type"
+                      continue 2
+                    fi
+                    echo "S3 fetch attempt ${attempt} failed, retrying in $((attempt * 15))s..."
+                    sleep $((attempt * 15))
+                    attempt=$((attempt + 1))
+                  done
+                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || true
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
-                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
+                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || true
                   # Remove zip file immediately after extraction to free up space
                   rm -f ${localzip}
                   echo "Removed ${localzip} to free up space"
