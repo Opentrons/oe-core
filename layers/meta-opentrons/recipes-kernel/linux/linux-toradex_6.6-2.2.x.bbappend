@@ -5,5 +5,5 @@ SRC_URI += " \
         file://hidraw.cfg \
         file://0001-pmdomain-imx-scu-pd-clear-is_off.patch \
         file://devicemapper.cfg \
-        file://disable-vt-sysrq.cfg \
+        file://disable-sysrq.cfg \
         "
