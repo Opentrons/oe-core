@@ -5,6 +5,8 @@ SRC_URI += "file://system-connections-location.conf \
             file://disable-uap0.conf \
             file://wired-linklocal.nmconnection \
             file://wired.nmconnection \
+            file://wired-end0-linklocal.nmconnection \
+            file://wired-end0.nmconnection \
             file://opentrons-init-systemconnections.service\
             file://dispatch-bounce-mlan0.sh \
 "
