@@ -1,0 +1,8 @@
+# Disable Ctrl+Alt+F1..F8 except F7.
+control alt keycode 59 = VoidSymbol
+control alt keycode 60 = VoidSymbol
+control alt keycode 61 = VoidSymbol
+control alt keycode 62 = VoidSymbol
+control alt keycode 63 = VoidSymbol
+control alt keycode 64 = VoidSymbol
+control alt keycode 66 = VoidSymbol
