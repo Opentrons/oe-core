@@ -301,16 +301,6 @@ jobs:
           tmp_mount="/tmp:rw,exec"
           echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
           docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
-      - name: Dump opentrons-robot-app do_configure log
-        if: failure()
-        run: |
-          logfile=$(find oe-core/build/tmp/work -path "*opentrons-robot-app*temp/log.do_configure.*" -type f | head -n 1)
-          if [ -z "${logfile}" ]; then
-            echo "log.do_configure for opentrons-robot-app was not found"
-            exit 0
-          fi
-          echo "Showing ${logfile}"
-          cat "${logfile}"
       - name: Prune images
         if: always()
         run: docker image prune -af
