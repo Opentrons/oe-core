@@ -1,48 +1,48 @@
-name: 'Simple Build Alert'
-description: 'Sends Slack alerts for tagged build failures with clear links'
+name: "Simple Build Alert"
+description: "Sends Slack alerts for tagged build failures with clear links"
 
 inputs:
   status:
-    description: 'Build status: success, failure, or cancelled'
+    description: "Build status: success, failure, or cancelled"
     required: true
   workflow_name:
-    description: 'Name of the workflow'
+    description: "Name of the workflow"
     required: true
   failed_jobs:
-    description: 'Comma-separated list of failed jobs (optional)'
+    description: "Comma-separated list of failed jobs (optional)"
     required: false
   webhook_url:
-    description: 'Slack webhook URL'
+    description: "Slack webhook URL"
     required: true
   console_url:
-    description: 'S3 console URL (optional)'
+    description: "S3 console URL (optional)"
     required: false
   system_url:
-    description: 'System update zip URL (optional)'
+    description: "System update zip URL (optional)"
     required: false
   fullimage_url:
-    description: 'Full image zip URL (optional)'
+    description: "Full image zip URL (optional)"
     required: false
   version_file_url:
-    description: 'Version file URL (optional)'
+    description: "Version file URL (optional)"
     required: false
   release_notes_file_url:
-    description: 'Release notes file URL (optional)'
+    description: "Release notes file URL (optional)"
     required: false
   oe-core_ref:
-    description: 'oe-core ref (optional)'
+    description: "oe-core ref (optional)"
     required: false
   monorepo_ref:
-    description: 'Monorepo ref (optional)'
+    description: "Monorepo ref (optional)"
     required: false
   firmware_ref:
-    description: 'Firmware ref (optional)'
+    description: "Firmware ref (optional)"
     required: false
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
-    - name: 'Prepare refs for payload'
+    - name: "Prepare refs for payload"
       id: prepare-refs
       shell: bash
       run: |
@@ -51,17 +51,17 @@ runs:
         oe_core_display="${oe_core_display#refs/tags/}"
         oe_core_display="${oe_core_display#refs/heads/}"
         echo "oe-core=${oe_core_display}" >> $GITHUB_OUTPUT
-        
+
         monorepo_display="${{ inputs.monorepo_ref }}"
         monorepo_display="${monorepo_display#refs/tags/}"
         monorepo_display="${monorepo_display#refs/heads/}"
         echo "monorepo=${monorepo_display}" >> $GITHUB_OUTPUT
-        
+
         firmware_display="${{ inputs.firmware_ref }}"
         firmware_display="${firmware_display#refs/tags/}"
         firmware_display="${firmware_display#refs/heads/}"
         echo "firmware=${firmware_display}" >> $GITHUB_OUTPUT
-        
+
         # Determine type
         if [[ "${{ inputs.monorepo_ref }}" == refs/tags/* ]]; then
           echo "ref_type=tag" >> $GITHUB_OUTPUT
@@ -69,10 +69,10 @@ runs:
           echo "ref_type=branch" >> $GITHUB_OUTPUT
         fi
 
-    - name: 'Send Slack Alert'
-      uses: slackapi/slack-github-action@v1.14.0
+    - name: "Send Slack Alert"
+      uses: slackapi/slack-github-action@v2.1.1
       with:
-        payload: "{\"s3-url\":\"${{ inputs.console_url }}/\",\"type\":\"${{ steps.prepare-refs.outputs.ref_type }}\",\"reflike\":\"${{ steps.prepare-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.prepare-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.prepare-refs.outputs.firmware }}\",\"full-image\":\"${{ inputs.fullimage_url }}\",\"system-update\":\"${{ inputs.system_url }}\",\"version-file\":\"${{ inputs.version_file_url }}\",\"release-notes\":\"${{ inputs.release_notes_file_url }}\"}"
+        payload: '{"s3-url":"${{ inputs.console_url }}/","type":"${{ steps.prepare-refs.outputs.ref_type }}","reflike":"${{ steps.prepare-refs.outputs.oe-core }}","monorepo-reflike":"${{ steps.prepare-refs.outputs.monorepo }}","firmware-reflike":"${{ steps.prepare-refs.outputs.firmware }}","full-image":"${{ inputs.fullimage_url }}","system-update":"${{ inputs.system_url }}","version-file":"${{ inputs.version_file_url }}","release-notes":"${{ inputs.release_notes_file_url }}"}'
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.webhook_url }}
       continue-on-error: false
