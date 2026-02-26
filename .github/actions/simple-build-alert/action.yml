@@ -72,7 +72,7 @@ runs:
     - name: 'Send Slack Alert'
       uses: slackapi/slack-github-action@v2.1.1
       with:
+        webhook: ${{ inputs.webhook_url }}
+        webhook-type: incoming-webhook
         payload: "{\"s3-url\":\"${{ inputs.console_url }}/\",\"type\":\"${{ steps.prepare-refs.outputs.ref_type }}\",\"reflike\":\"${{ steps.prepare-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.prepare-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.prepare-refs.outputs.firmware }}\",\"full-image\":\"${{ inputs.fullimage_url }}\",\"system-update\":\"${{ inputs.system_url }}\",\"version-file\":\"${{ inputs.version_file_url }}\",\"release-notes\":\"${{ inputs.release_notes_file_url }}\"}"
-      env:
-        SLACK_WEBHOOK_URL: ${{ inputs.webhook_url }}
       continue-on-error: false
