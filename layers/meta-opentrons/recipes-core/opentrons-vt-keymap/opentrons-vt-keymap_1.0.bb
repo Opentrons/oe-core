@@ -13,6 +13,12 @@ RDEPENDS:${PN} += "kbd"
 
 # Provide keymap + vconsole default so systemd-vconsole-setup loads it at boot.
 do_install() {
+    # systemd-vconsole-setup invokes "loadkeys ${KEYMAP}" and loadkeys searches
+    # /usr/share/keymaps on this target.
+    install -d ${D}${datadir}/keymaps
+    install -m 0644 ${WORKDIR}/opentrons-no-vt.map ${D}${datadir}/keymaps/opentrons-no-vt.map
+
+    # Keep a copy in the kbd-specific path for compatibility.
     install -d ${D}${datadir}/kbd/keymaps
     install -m 0644 ${WORKDIR}/opentrons-no-vt.map ${D}${datadir}/kbd/keymaps/opentrons-no-vt.map
 
@@ -21,6 +27,7 @@ do_install() {
 }
 
 FILES:${PN} += " \
+    ${datadir}/keymaps/opentrons-no-vt.map \
     ${datadir}/kbd/keymaps/opentrons-no-vt.map \
     ${sysconfdir}/vconsole.conf \
 "
