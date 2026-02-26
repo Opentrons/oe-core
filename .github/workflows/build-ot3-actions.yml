@@ -27,6 +27,18 @@ on:
           - "stage-prod"
           - "stage-dev"
         default: "stage-prod"
+      runner-request-max-attempts:
+        description: |
+          Maximum number of retries when requesting an ephemeral runner after 429 capacity responses.
+        required: false
+        default: 120
+        type: number
+      runner-request-retry-seconds:
+        description: |
+          Seconds to wait between ephemeral runner request retries on 429 capacity responses.
+        required: false
+        default: 60
+        type: number
 
 jobs:
   lint-bitbake:
@@ -128,8 +140,13 @@ jobs:
           INFRA_STAGE: ${{ inputs.infra-stage }}
           VARIANT: ${{ needs.decide-refs.outputs.variant }}
           RUNNER_LABEL: ephemeral-${{ github.run_id }}-${{ github.run_attempt }}
+          MAX_ATTEMPTS: ${{ inputs.runner-request-max-attempts }}
+          RETRY_SECONDS: ${{ inputs.runner-request-retry-seconds }}
         run: |
           set -euo pipefail
+          request_start_epoch="$(date +%s)"
+          retries_on_429=0
+          final_attempt=0
 
           if [[ -z "${API_URL:-}" ]]; then
             echo "Missing EPHEMERAL_RUNNER_API_URL_* secret for infra-stage=${INFRA_STAGE}" >&2
@@ -141,28 +158,64 @@ jobs:
           # Request an ephemeral runner that matches the existing build job labels
           # plus a unique label so only THIS workflow run can claim it.
           LABELS_JSON=$(python3 -c 'import json,os; print(json.dumps(["x64","linux-x64","sb-x64","oe-core", os.environ["INFRA_STAGE"], os.environ["VARIANT"], os.environ["RUNNER_LABEL"]]))')
+          emit_request_summary() {
+            local status="$1"
+            local now_epoch elapsed_seconds waited_seconds
+            now_epoch="$(date +%s)"
+            elapsed_seconds="$((now_epoch - request_start_epoch))"
+            waited_seconds="$((retries_on_429 * RETRY_SECONDS))"
+            {
+              echo "### Runner Request Metrics"
+              echo ""
+              echo "| Field | Value |"
+              echo "|---|---|"
+              echo "| Status | ${status} |"
+              echo "| Final HTTP status | ${http_code:-n/a} |"
+              echo "| Attempts used | ${final_attempt}/${MAX_ATTEMPTS} |"
+              echo "| 429 retries | ${retries_on_429} |"
+              echo "| Retry wait seconds | ${waited_seconds} |"
+              echo "| Total elapsed seconds | ${elapsed_seconds} |"
+              echo "| Runner label | ${RUNNER_LABEL} |"
+              echo "| Infra stage | ${INFRA_STAGE} |"
+              echo "| Variant | ${VARIANT} |"
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+          }
 
-          max_attempts=5
-          attempt=1
-          while true; do
-            if curl -fsS -X POST \
-              -H "Content-Type: application/json" \
-              -d "{\"labels\":${LABELS_JSON},\"workflow_run_id\":\"${GITHUB_RUN_ID}\",\"repository\":\"${GITHUB_REPOSITORY}\"}" \
-              "${API_URL%/}/request-runner"; then
-              echo "Runner request succeeded on attempt ${attempt}"
+          requested=false
+          for attempt in $(seq 1 "${MAX_ATTEMPTS}"); do
+            final_attempt="${attempt}"
+            http_code="$(
+              curl -sS -o /tmp/request-runner-response.json -w "%{http_code}" -X POST \
+                -H "Content-Type: application/json" \
+                -d "{\"labels\":${LABELS_JSON},\"workflow_run_id\":\"${GITHUB_RUN_ID}\",\"repository\":\"${GITHUB_REPOSITORY}\"}" \
+                "${API_URL%/}/request-runner"
+            )"
+            if [[ "${http_code}" == "200" ]]; then
+              requested=true
               break
             fi
-            if [[ $attempt -ge $max_attempts ]]; then
-              echo "Runner request failed after ${max_attempts} attempts" >&2
-              exit 1
+            if [[ "${http_code}" == "429" ]]; then
+              retries_on_429="$((retries_on_429 + 1))"
+              echo "Runner capacity full (429), waiting ${RETRY_SECONDS}s before retry (${attempt}/${MAX_ATTEMPTS})..."
+              sleep "${RETRY_SECONDS}"
+              continue
             fi
-            echo "Runner request attempt ${attempt} failed, retrying in $((attempt * 10))s..."
-            sleep $((attempt * 10))
-            attempt=$((attempt + 1))
+            emit_request_summary "failed"
+            echo "Runner request failed with HTTP ${http_code}" >&2
+            cat /tmp/request-runner-response.json >&2 || true
+            exit 1
           done
+          if [[ "${requested}" != "true" ]]; then
+            emit_request_summary "timed_out"
+            echo "Timed out waiting for ephemeral runner capacity after ${MAX_ATTEMPTS} attempts." >&2
+            exit 1
+          fi
+          emit_request_summary "success"
   run-build:
     needs: [decide-refs, request-ephemeral-runner, lint-bitbake]
     strategy:
+      max-parallel: 4
       matrix:
         build_env: ["${{ inputs.infra-stage }}"]
     name: "Building ${{needs.decide-refs.outputs.variant}} images on ${{ matrix.build_env }}"
