@@ -9,7 +9,6 @@ ExecStart=python3 -m system_server
 StateDirectory=opentrons-system-server
 Environment=PYTHONPATH=/opt/opentrons-system-server:/usr/lib/python3.10/site-packages
 Environment=OT_SYSTEM_SERVER_persistence_directory=/var/lib/opentrons-system-server
-Environment=OT_SYSTEM_SERVER_dot_env_path=/var/lib/opentrons-system-server/system.env
 Restart=on-failure
 TimeoutStartSec=3min
 
