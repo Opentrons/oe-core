@@ -126,7 +126,7 @@ jobs:
           echo "| **build type** | ${{ steps.build-refs.outputs.build-type }} |" >> $GITHUB_STEP_SUMMARY
   request-ephemeral-runner:
     name: request ephemeral runner
-    needs: decide-refs
+    needs: [decide-refs, lint-bitbake]
     runs-on: ubuntu-latest
     outputs:
       runner_label: ${{ steps.req.outputs.runner_label }}
