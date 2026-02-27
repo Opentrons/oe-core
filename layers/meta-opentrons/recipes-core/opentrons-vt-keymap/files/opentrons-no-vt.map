@@ -1,4 +1,14 @@
-# Disable Ctrl+Alt+F1..F8 except F7.
+# Disable VT switching on F1..F8 except F7.
+# On Linux console, VT switch is driven by Alt+Fn mappings.
+alt keycode 59 = VoidSymbol
+alt keycode 60 = VoidSymbol
+alt keycode 61 = VoidSymbol
+alt keycode 62 = VoidSymbol
+alt keycode 63 = VoidSymbol
+alt keycode 64 = VoidSymbol
+alt keycode 66 = VoidSymbol
+
+# Also block Ctrl+Alt+Fn explicitly.
 control alt keycode 59 = VoidSymbol
 control alt keycode 60 = VoidSymbol
 control alt keycode 61 = VoidSymbol
