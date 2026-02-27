@@ -113,5 +113,5 @@ runs:
       with:
         webhook: ${{ inputs.webhook_url }}
         webhook-type: incoming-webhook
-        payload: ${{ steps.prepare-payload.outputs.slack_payload }}
+        payload: ${{ steps.prepare-refs.outputs.slack_payload }}
       continue-on-error: false
