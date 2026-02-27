@@ -2,6 +2,8 @@
 Description=Opentrons update server
 Wants=nginx.service
 After=nginx.service
+Wants=opentrons-auth-server.service
+After=opentrons-auth-server.service
 
 [Service]
 Type=notify
