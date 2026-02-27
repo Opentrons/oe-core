@@ -1,9 +1,12 @@
 [Unit]
 Description=Opentrons Robot HTTP Server
-Wants=nginx.service opentrons-pyro-nameserver.service
-After=nginx.service opentrons-pyro-nameserver.service
-After=opentrons-ot3-canbus
+
+Wants=nginx.service
+After=nginx.service
 Wants=opentrons-ot3-canbus
+After=opentrons-ot3-canbus
+Wants=opentrons-pyro-nameserver.service
+After=opentrons-pyro-nameserver.service
 
 [Service]
 Type=notify
