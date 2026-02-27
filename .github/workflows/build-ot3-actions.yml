@@ -27,6 +27,18 @@ on:
           - "stage-prod"
           - "stage-dev"
         default: "stage-prod"
+      runner-request-max-attempts:
+        description: |
+          Maximum number of retries when requesting an ephemeral runner after 429 capacity responses.
+        required: false
+        default: 120
+        type: number
+      runner-request-retry-seconds:
+        description: |
+          Seconds to wait between ephemeral runner request retries on 429 capacity responses.
+        required: false
+        default: 60
+        type: number
 
 jobs:
   lint-bitbake:
@@ -112,21 +124,110 @@ jobs:
           echo "| **ot3-firmware** | ${{ steps.build-refs.outputs.ot3-firmware }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **variant** | ${{ steps.build-refs.outputs.variant }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **build type** | ${{ steps.build-refs.outputs.build-type }} |" >> $GITHUB_STEP_SUMMARY
-  run-build:
+  request-ephemeral-runner:
+    name: request ephemeral runner
     needs: [decide-refs, lint-bitbake]
+    runs-on: ubuntu-latest
+    outputs:
+      runner_label: ${{ steps.req.outputs.runner_label }}
+    steps:
+      - id: req
+        env:
+          # Set these repo secrets:
+          # - EPHEMERAL_RUNNER_API_URL_PROD
+          # - EPHEMERAL_RUNNER_API_URL_DEV
+          API_URL: ${{ inputs.infra-stage == 'stage-dev' && secrets.EPHEMERAL_RUNNER_API_URL_DEV || secrets.EPHEMERAL_RUNNER_API_URL_PROD }}
+          INFRA_STAGE: ${{ inputs.infra-stage }}
+          VARIANT: ${{ needs.decide-refs.outputs.variant }}
+          RUNNER_LABEL: ephemeral-${{ github.run_id }}-${{ github.run_attempt }}
+          MAX_ATTEMPTS: ${{ inputs.runner-request-max-attempts }}
+          RETRY_SECONDS: ${{ inputs.runner-request-retry-seconds }}
+        run: |
+          set -euo pipefail
+          request_start_epoch="$(date +%s)"
+          retries_on_429=0
+          final_attempt=0
+
+          if [[ -z "${API_URL:-}" ]]; then
+            echo "Missing EPHEMERAL_RUNNER_API_URL_* secret for infra-stage=${INFRA_STAGE}" >&2
+            exit 1
+          fi
+
+          echo "runner_label=${RUNNER_LABEL}" >> "$GITHUB_OUTPUT"
+
+          # Request an ephemeral runner that matches the existing build job labels
+          # plus a unique label so only THIS workflow run can claim it.
+          LABELS_JSON=$(python3 -c 'import json,os; print(json.dumps(["x64","linux-x64","sb-x64","oe-core", os.environ["INFRA_STAGE"], os.environ["VARIANT"], os.environ["RUNNER_LABEL"]]))')
+          emit_request_summary() {
+            local status="$1"
+            local now_epoch elapsed_seconds waited_seconds
+            now_epoch="$(date +%s)"
+            elapsed_seconds="$((now_epoch - request_start_epoch))"
+            waited_seconds="$((retries_on_429 * RETRY_SECONDS))"
+            {
+              echo "### Runner Request Metrics"
+              echo ""
+              echo "| Field | Value |"
+              echo "|---|---|"
+              echo "| Status | ${status} |"
+              echo "| Final HTTP status | ${http_code:-n/a} |"
+              echo "| Attempts used | ${final_attempt}/${MAX_ATTEMPTS} |"
+              echo "| 429 retries | ${retries_on_429} |"
+              echo "| Retry wait seconds | ${waited_seconds} |"
+              echo "| Total elapsed seconds | ${elapsed_seconds} |"
+              echo "| Runner label | ${RUNNER_LABEL} |"
+              echo "| Infra stage | ${INFRA_STAGE} |"
+              echo "| Variant | ${VARIANT} |"
+              echo ""
+            } >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          requested=false
+          for attempt in $(seq 1 "${MAX_ATTEMPTS}"); do
+            final_attempt="${attempt}"
+            http_code="$(
+              curl -sS -o /tmp/request-runner-response.json -w "%{http_code}" -X POST \
+                -H "Content-Type: application/json" \
+                -d "{\"labels\":${LABELS_JSON},\"workflow_run_id\":\"${GITHUB_RUN_ID}\",\"repository\":\"${GITHUB_REPOSITORY}\"}" \
+                "${API_URL%/}/request-runner"
+            )"
+            if [[ "${http_code}" == "200" ]]; then
+              requested=true
+              break
+            fi
+            if [[ "${http_code}" == "429" ]]; then
+              retries_on_429="$((retries_on_429 + 1))"
+              echo "Runner capacity full (429), waiting ${RETRY_SECONDS}s before retry (${attempt}/${MAX_ATTEMPTS})..."
+              sleep "${RETRY_SECONDS}"
+              continue
+            fi
+            emit_request_summary "failed"
+            echo "Runner request failed with HTTP ${http_code}" >&2
+            cat /tmp/request-runner-response.json >&2 || true
+            exit 1
+          done
+          if [[ "${requested}" != "true" ]]; then
+            emit_request_summary "timed_out"
+            echo "Timed out waiting for ephemeral runner capacity after ${MAX_ATTEMPTS} attempts." >&2
+            exit 1
+          fi
+          emit_request_summary "success"
+  run-build:
+    needs: [decide-refs, request-ephemeral-runner, lint-bitbake]
     strategy:
+      max-parallel: 4
       matrix:
         build_env: ["${{ inputs.infra-stage }}"]
     name: "Building ${{needs.decide-refs.outputs.variant}} images on ${{ matrix.build_env }}"
     timeout-minutes: 480
     runs-on:
       [
-        "self-hosted",
-        "${{matrix.build_env}}",
-        "${{needs.decide-refs.outputs.variant}}",
+        'self-hosted',
+        '${{ needs.request-ephemeral-runner.outputs.runner_label }}',
       ]
+    # Unique group per run so multiple workflow runs can execute in parallel (each gets its own ephemeral runner).
     concurrency:
-      group: ${{needs.decide-refs.outputs.monorepo}} ${{needs.decide-refs.outputs.oe-core}} ${{needs.decide-refs.outputs.ot3-firmware}} ${{needs.decide-refs.outputs.variant}} ${{needs.decide-refs.outputs.build-type}} ${{inputs.infra-stage}}
+      group: build-${{ github.run_id }}-${{ github.run_attempt }}
       cancel-in-progress: false
     outputs:
       system_url: ${{ steps.upload-results.outputs.system_url }}
@@ -243,15 +344,29 @@ jobs:
           else
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
+              s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
               for cachetype in downloads sstate git ; do
-                  localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+                  localzip="${cachedir}/../${cachetype}.zip"
                   thiscache=${cachedir}/${cachetype}
                   echo "Fetching cache for ${cachetype} to ${localzip}"
                   mkdir -p ${thiscache}
-                  TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
-                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
+                  max_attempts=3
+                  attempt=1
+                  while true; do
+                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.zip ${localzip} 2>elapsed; then
+                      break
+                    fi
+                    if [[ $attempt -ge $max_attempts ]]; then
+                      echo "S3 fetch for ${cachetype} failed after ${max_attempts} attempts, skipping cache for this type"
+                      continue 2
+                    fi
+                    echo "S3 fetch attempt ${attempt} failed, retrying in $((attempt * 15))s..."
+                    sleep $((attempt * 15))
+                    attempt=$((attempt + 1))
+                  done
+                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || true
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
-                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
+                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || true
                   # Remove zip file immediately after extraction to free up space
                   rm -f ${localzip}
                   echo "Removed ${localzip} to free up space"
@@ -312,7 +427,7 @@ jobs:
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
               df -h
-              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+              localzip="${cachedir}/../${cachetype}.zip"
               thiscache=${cachedir}/${cachetype}
               cd ${thiscache}
               echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
