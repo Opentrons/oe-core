@@ -281,11 +281,19 @@ jobs:
           stage: ${{ matrix.build_env }}
       - name: Apply CI runner customizations
         run: |
-          sudo sysctl -w fs.file-max=100000
-          sudo mount -o remount,exec /tmp
-          sudo mount | grep tmp
-          sudo sysctl fs.inotify.max_user_instances=256
-          sudo sysctl fs.inotify.max_user_watches=16384
+          # Ephemeral runners may not permit writing /etc/sysctl*; apply runtime settings only.
+          apply_sysctl() {
+            local key="$1"
+            local value="$2"
+            sudo sysctl -w "${key}=${value}" 2>/dev/null || sysctl -w "${key}=${value}" || true
+          }
+
+          apply_sysctl fs.inotify.max_user_watches 655360
+          apply_sysctl fs.inotify.max_user_instances 1280
+          apply_sysctl fs.file-max 100000
+
+          sudo mount -o remount,exec /tmp 2>/dev/null || true
+          sudo mount | grep tmp || true
       - name: Build container
         run: |
           cd oe-core
@@ -538,8 +546,10 @@ jobs:
           artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
+      # Ephemeral runners are destroyed after the job; cleanup is redundant but harmless.
       - name: Remove build data
         if: always()
+        continue-on-error: true
         run: |
           rm -rf ./*
       - name: Remove poisoned cache
