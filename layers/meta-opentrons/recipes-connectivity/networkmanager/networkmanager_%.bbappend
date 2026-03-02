@@ -1,6 +1,8 @@
 inherit systemd
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
+PACKAGECONFIG:append = " iwd "
+
 SRC_URI += "file://system-connections-location.conf \
             file://disable-uap0.conf \
             file://wired-linklocal.nmconnection \
