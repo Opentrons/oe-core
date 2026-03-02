@@ -1,6 +1,7 @@
 inherit systemd
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
+WIRELESS_DAEMON = "iwd"
 PACKAGECONFIG:append = " iwd "
 
 SRC_URI += "file://system-connections-location.conf \

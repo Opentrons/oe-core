@@ -5,8 +5,6 @@ LICENSE = "Apache-2"
 
 inherit core-image image_type_tezi
 
-WIRELESS_DAEMON = "iwd"
-
 DEPENDS += "rsync-native zip-native \
     opentrons-auth-server \
     opentrons-robot-server \
