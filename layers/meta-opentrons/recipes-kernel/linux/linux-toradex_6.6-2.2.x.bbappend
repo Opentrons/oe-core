@@ -7,4 +7,5 @@ SRC_URI += " \
         file://ftdi.cfg \
         file://usb.cfg \
         file://input.cfg \
+        file://crypto.cfg \
         "
