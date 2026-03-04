@@ -1,0 +1,41 @@
+From fcc92b84f3b2fc01a74f9b20a5298fd1b17ea481 Mon Sep 17 00:00:00 2001
+From: Erik Schumacher <erik.schumacher@iris-sensing.com>
+Date: Wed, 28 Jun 2023 12:54:17 +0200
+Subject: [PATCH] Makefile: Remove native optimization check
+
+Do not add -march=native to the OPTTEST and possibly to the CFLAGS as it
+might break cross-compile environments. Instead, use the march flags
+provided by the cross-compile setup via $(CC) to run the OPTTEST.
+
+Upstream-Status: Inappropriate [configuration]
+
+Signed-off-by: Erik Schumacher <erik.schumacher@iris-sensing.com>
+---
+ Makefile | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 837e7f7..a125906 100644
+--- a/Makefile
++++ b/Makefile
+@@ -48,16 +48,14 @@ endif
+ CI_CFLAGS := $(CFLAGS) -Werror=declaration-after-statement -D_FORTIFY_SOURCE=2 \
+                -Wextra -Wno-type-limits -Werror -coverage -DTEST_LARGE_RAM
+
+-OPTTARGET ?= native
+-OPTTEST := $(shell $(CC) -Iinclude -Isrc -march=$(OPTTARGET) src/opt.c -c \
++OPTTEST := $(shell $(CC) -Iinclude -Isrc src/opt.c -c \
+            -o /dev/null 2>/dev/null; echo $$?)
+ # Detect compatible platform
+ ifneq ($(OPTTEST), 0)
+ $(info Building without optimizations)
+    SRC += src/ref.c
+ else
+-$(info Building with optimizations for $(OPTTARGET))
+-   CFLAGS += -march=$(OPTTARGET)
++$(info Building with optimizations)
+    SRC += src/opt.c
+ endif
+
+--
+2.41.0
