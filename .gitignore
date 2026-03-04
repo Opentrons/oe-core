@@ -9,3 +9,6 @@ sstate-cache/
 
 # ignore linux swap files
 *.swp
+
+.lsp/
+.clj-kondo/
