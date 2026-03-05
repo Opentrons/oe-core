@@ -18,10 +18,10 @@ diff --git a/Makefile b/Makefile
 index 837e7f7..a125906 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -48,15 +48,13 @@ endif
+@@ -48,16 +48,14 @@ endif
  CI_CFLAGS := $(CFLAGS) -Werror=declaration-after-statement -D_FORTIFY_SOURCE=2 \
  				-Wextra -Wno-type-limits -Werror -coverage -DTEST_LARGE_RAM
-
+ 
 -OPTTARGET ?= native
 -OPTTEST := $(shell $(CC) -Iinclude -Isrc -march=$(OPTTARGET) src/opt.c -c \
 +OPTTEST := $(shell $(CC) -Iinclude -Isrc src/opt.c -c \
@@ -36,6 +36,6 @@ index 837e7f7..a125906 100644
 +$(info Building with optimizations)
  	SRC += src/opt.c
  endif
-
+ 
 --
 2.41.0
