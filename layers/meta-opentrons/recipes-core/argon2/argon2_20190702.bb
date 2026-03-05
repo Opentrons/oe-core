@@ -10,11 +10,11 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3f577d9446ded914cd9f8f0ae099a45a"
 
 SECTION = "libs cli"
 
-SRC_URI = "git://github.com/P-H-C/phc-winner-argon2.git;protocol=https;branch=master"
+SRC_URI = "git://github.com/P-H-C/phc-winner-argon2.git;protocol=https;branch=master;tag=${PV}"
 SRC_URI += "file://FindArgon2.cmake"
 SRC_URI += "file://0001-Makefile-Remove-native-optimization-check.patch"
 
-SRCREV = "62358ba2123abd17fccf2a108a301d4b52c01a7c"
+SRCREV = "${PV}"
 
 S = "${WORKDIR}/git"
 
