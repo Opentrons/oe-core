@@ -43,7 +43,7 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-auth-server.service.d 
                        ${systemd_system_unitdir}/opentrons-auth-server.service.d/auth-server-version.conf \
                        "
 
-RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd"
+RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 "
 
 DEPENDS += " cargo-native "
 
