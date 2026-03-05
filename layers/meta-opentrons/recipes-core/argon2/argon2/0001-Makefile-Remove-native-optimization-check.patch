@@ -18,23 +18,23 @@ diff --git a/Makefile b/Makefile
 index 837e7f7..a125906 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -48,16 +48,14 @@ endif
+@@ -48,15 +48,13 @@ endif
  CI_CFLAGS := $(CFLAGS) -Werror=declaration-after-statement -D_FORTIFY_SOURCE=2 \
-                -Wextra -Wno-type-limits -Werror -coverage -DTEST_LARGE_RAM
+ 				-Wextra -Wno-type-limits -Werror -coverage -DTEST_LARGE_RAM
 
 -OPTTARGET ?= native
 -OPTTEST := $(shell $(CC) -Iinclude -Isrc -march=$(OPTTARGET) src/opt.c -c \
 +OPTTEST := $(shell $(CC) -Iinclude -Isrc src/opt.c -c \
-            -o /dev/null 2>/dev/null; echo $$?)
+ 			-o /dev/null 2>/dev/null; echo $$?)
  # Detect compatible platform
  ifneq ($(OPTTEST), 0)
  $(info Building without optimizations)
-    SRC += src/ref.c
+ 	SRC += src/ref.c
  else
 -$(info Building with optimizations for $(OPTTARGET))
--   CFLAGS += -march=$(OPTTARGET)
+-	CFLAGS += -march=$(OPTTARGET)
 +$(info Building with optimizations)
-    SRC += src/opt.c
+ 	SRC += src/opt.c
  endif
 
 --
