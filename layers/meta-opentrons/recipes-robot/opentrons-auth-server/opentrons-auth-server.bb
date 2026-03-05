@@ -37,6 +37,9 @@ do_install:append () {
 
     install -d ${D}/${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-auth-server.service ${D}/${systemd_system_unitdir}/opentrons-auth-server.service
+
+    # remove pycaches
+    rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
 }
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-auth-server.service.d \
