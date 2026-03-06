@@ -21,7 +21,7 @@ SRC_URI:append = " file://opentrons-auth-server.service"
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/auth-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-auth-server"
-OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python "
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python argon2 argon2-cffi-bindings "
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 
