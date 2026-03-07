@@ -27,6 +27,18 @@ on:
           - "stage-prod"
           - "stage-dev"
         default: "stage-prod"
+      runner-request-max-attempts:
+        description: |
+          Maximum number of retries when requesting an ephemeral runner after 429 capacity responses.
+        required: false
+        default: 120
+        type: number
+      runner-request-retry-seconds:
+        description: |
+          Seconds to wait between ephemeral runner request retries on 429 capacity responses.
+        required: false
+        default: 60
+        type: number
 
 jobs:
   lint-bitbake:
@@ -112,21 +124,149 @@ jobs:
           echo "| **ot3-firmware** | ${{ steps.build-refs.outputs.ot3-firmware }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **variant** | ${{ steps.build-refs.outputs.variant }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **build type** | ${{ steps.build-refs.outputs.build-type }} |" >> $GITHUB_STEP_SUMMARY
-  run-build:
+  request-ephemeral-runner:
+    name: request ephemeral runner
     needs: [decide-refs, lint-bitbake]
+    runs-on: ubuntu-latest
+    outputs:
+      runner_label: ${{ steps.req.outputs.runner_label }}
+    steps:
+      - id: req
+        env:
+          # Set these repo secrets:
+          # - EPHEMERAL_RUNNER_API_URL_PROD
+          # - EPHEMERAL_RUNNER_API_URL_DEV
+          API_URL: ${{ inputs.infra-stage == 'stage-dev' && secrets.EPHEMERAL_RUNNER_API_URL_DEV || secrets.EPHEMERAL_RUNNER_API_URL_PROD }}
+          INFRA_STAGE: ${{ inputs.infra-stage }}
+          VARIANT: ${{ needs.decide-refs.outputs.variant }}
+          RUNNER_LABEL: ephemeral-${{ github.run_id }}-${{ github.run_attempt }}
+          MAX_ATTEMPTS: ${{ inputs.runner-request-max-attempts }}
+          RETRY_SECONDS: ${{ inputs.runner-request-retry-seconds }}
+          MISSING_SECRET_MESSAGE: Missing EPHEMERAL_RUNNER_API_URL_* secret for infra-stage=${{ inputs.infra-stage }}
+        shell: python
+        run: |
+          import json
+          import os
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          api_url = os.environ.get("API_URL", "").strip()
+          if not api_url:
+              print(os.environ.get("MISSING_SECRET_MESSAGE", "Missing runner API URL secret"), file=sys.stderr)
+              raise SystemExit(1)
+
+          infra_stage = os.environ["INFRA_STAGE"]
+          variant = os.environ["VARIANT"]
+          runner_label = os.environ["RUNNER_LABEL"]
+          max_attempts = int(os.environ.get("MAX_ATTEMPTS", "120"))
+          retry_seconds = int(os.environ.get("RETRY_SECONDS", "60"))
+
+          # Labels: platform, infra stage, variant, unique runner label, repo name (oe-core)
+          labels = ["x64", "linux-x64", "sb-x64", infra_stage, variant, runner_label, "oe-core"]
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"runner_label={runner_label}\n")
+
+          print(f"Requesting runner with unique label: [{runner_label}]")
+          print(f"Requested labels: {json.dumps(labels)}")
+
+          start_epoch = int(time.time())
+          retries_on_429 = 0
+          final_attempt = 0
+          http_code = "n/a"
+
+          payload = json.dumps(
+              {
+                  "labels": labels,
+                  "workflow_run_id": os.environ.get("GITHUB_RUN_ID", ""),
+                  "repository": os.environ.get("GITHUB_REPOSITORY", ""),
+              }
+          ).encode("utf-8")
+          request_url = f"{api_url.rstrip('/')}/request-runner"
+
+          def emit_request_summary(status: str) -> None:
+              now_epoch = int(time.time())
+              elapsed_seconds = now_epoch - start_epoch
+              waited_seconds = retries_on_429 * retry_seconds
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+                  fh.write("### Runner Request Metrics\n\n")
+                  fh.write("| Field | Value |\n")
+                  fh.write("|---|---|\n")
+                  fh.write(f"| Status | {status} |\n")
+                  fh.write(f"| Final HTTP status | {http_code} |\n")
+                  fh.write(f"| Attempts used | {final_attempt}/{max_attempts} |\n")
+                  fh.write(f"| 429 retries | {retries_on_429} |\n")
+                  fh.write(f"| Retry wait seconds | {waited_seconds} |\n")
+                  fh.write(f"| Total elapsed seconds | {elapsed_seconds} |\n")
+                  fh.write(f"| Runner label | {runner_label} |\n")
+                  fh.write(f"| Infra stage | {infra_stage} |\n")
+                  fh.write(f"| Variant | {variant} |\n\n")
+
+          requested = False
+          for attempt in range(1, max_attempts + 1):
+              final_attempt = attempt
+              response_body = ""
+              req = urllib.request.Request(
+                  request_url,
+                  data=payload,
+                  method="POST",
+                  headers={"Content-Type": "application/json"},
+              )
+              try:
+                  with urllib.request.urlopen(req) as resp:
+                      http_code = str(resp.getcode())
+                      response_body = resp.read().decode("utf-8", errors="replace")
+              except urllib.error.HTTPError as exc:
+                  http_code = str(exc.code)
+                  response_body = exc.read().decode("utf-8", errors="replace")
+              except Exception as exc:
+                  http_code = "request_error"
+                  response_body = str(exc)
+
+              if http_code == "200":
+                  requested = True
+                  break
+              if http_code == "429":
+                  retries_on_429 += 1
+                  print(
+                      f"Runner capacity full (429), waiting {retry_seconds}s before retry ({attempt}/{max_attempts})..."
+                  )
+                  time.sleep(retry_seconds)
+                  continue
+
+              emit_request_summary("failed")
+              print(f"Runner request failed with HTTP {http_code}", file=sys.stderr)
+              if response_body:
+                  print(response_body, file=sys.stderr)
+              raise SystemExit(1)
+
+          if not requested:
+              emit_request_summary("timed_out")
+              print(
+                  f"Timed out waiting for ephemeral runner capacity after {max_attempts} attempts.",
+                  file=sys.stderr,
+              )
+              raise SystemExit(1)
+
+          emit_request_summary("success")
+  run-build:
+    needs: [decide-refs, request-ephemeral-runner, lint-bitbake]
     strategy:
+      max-parallel: 4
       matrix:
         build_env: ["${{ inputs.infra-stage }}"]
     name: "Building ${{needs.decide-refs.outputs.variant}} images on ${{ matrix.build_env }}"
     timeout-minutes: 480
     runs-on:
       [
-        "self-hosted",
-        "${{matrix.build_env}}",
-        "${{needs.decide-refs.outputs.variant}}",
+        'self-hosted',
+        '${{ needs.request-ephemeral-runner.outputs.runner_label }}',
       ]
+    # Unique group per run so multiple workflow runs can execute in parallel (each gets its own ephemeral runner).
     concurrency:
-      group: ${{needs.decide-refs.outputs.monorepo}} ${{needs.decide-refs.outputs.oe-core}} ${{needs.decide-refs.outputs.ot3-firmware}} ${{needs.decide-refs.outputs.variant}} ${{needs.decide-refs.outputs.build-type}} ${{inputs.infra-stage}}
+      group: build-${{ github.run_id }}-${{ github.run_attempt }}
       cancel-in-progress: false
     outputs:
       system_url: ${{ steps.upload-results.outputs.system_url }}
@@ -180,11 +320,19 @@ jobs:
           stage: ${{ matrix.build_env }}
       - name: Apply CI runner customizations
         run: |
-          sudo sysctl -w fs.file-max=100000
-          sudo mount -o remount,exec /tmp
-          sudo mount | grep tmp
-          sudo sysctl fs.inotify.max_user_instances=256
-          sudo sysctl fs.inotify.max_user_watches=16384
+          # Ephemeral runners may not permit writing /etc/sysctl*; apply runtime settings only.
+          apply_sysctl() {
+            local key="$1"
+            local value="$2"
+            sudo sysctl -w "${key}=${value}" 2>/dev/null || sysctl -w "${key}=${value}" || true
+          }
+
+          apply_sysctl fs.inotify.max_user_watches 655360
+          apply_sysctl fs.inotify.max_user_instances 1280
+          apply_sysctl fs.file-max 100000
+
+          sudo mount -o remount,exec /tmp 2>/dev/null || true
+          sudo mount | grep tmp || true
       - name: Build container
         run: |
           cd oe-core
@@ -243,15 +391,29 @@ jobs:
           else
               aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
+              s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
               for cachetype in downloads sstate git ; do
-                  localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+                  localzip="${cachedir}/../${cachetype}.zip"
                   thiscache=${cachedir}/${cachetype}
                   echo "Fetching cache for ${cachetype} to ${localzip}"
                   mkdir -p ${thiscache}
-                  TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
-                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
+                  max_attempts=3
+                  attempt=1
+                  while true; do
+                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.zip ${localzip} 2>elapsed; then
+                      break
+                    fi
+                    if [[ $attempt -ge $max_attempts ]]; then
+                      echo "S3 fetch for ${cachetype} failed after ${max_attempts} attempts, skipping cache for this type"
+                      continue 2
+                    fi
+                    echo "S3 fetch attempt ${attempt} failed, retrying in $((attempt * 15))s..."
+                    sleep $((attempt * 15))
+                    attempt=$((attempt + 1))
+                  done
+                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || true
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
-                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
+                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || true
                   # Remove zip file immediately after extraction to free up space
                   rm -f ${localzip}
                   echo "Removed ${localzip} to free up space"
@@ -312,7 +474,7 @@ jobs:
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
               df -h
-              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+              localzip="${cachedir}/../${cachetype}.zip"
               thiscache=${cachedir}/${cachetype}
               cd ${thiscache}
               echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
@@ -423,8 +585,10 @@ jobs:
           artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
+      # Ephemeral runners are destroyed after the job; cleanup is redundant but harmless.
       - name: Remove build data
         if: always()
+        continue-on-error: true
         run: |
           rm -rf ./*
       - name: Remove poisoned cache
