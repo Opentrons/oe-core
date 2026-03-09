@@ -21,7 +21,7 @@ SRC_URI:append = " file://opentrons-auth-server.service"
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/auth-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-auth-server"
-OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python "
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python argon2 argon2-cffi-bindings "
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 
@@ -37,13 +37,16 @@ do_install:append () {
 
     install -d ${D}/${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-auth-server.service ${D}/${systemd_system_unitdir}/opentrons-auth-server.service
+
+    # remove pycaches
+    rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
 }
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-auth-server.service.d \
                        ${systemd_system_unitdir}/opentrons-auth-server.service.d/auth-server-version.conf \
                        "
 
-RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd"
+RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi "
 
 DEPENDS += " cargo-native "
 

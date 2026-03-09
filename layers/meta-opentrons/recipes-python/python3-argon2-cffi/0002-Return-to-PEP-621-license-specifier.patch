@@ -1,0 +1,35 @@
+From 04e1645fb2c9622dc4f98be605dcb85ca6866579 Mon Sep 17 00:00:00 2001
+From: Seth Foster <seth@opentrons.com>
+Date: Fri, 6 Mar 2026 15:21:44 -0500
+Subject: [PATCH 2/2] Return to PEP-621 license specifier
+
+---
+ pyproject.toml | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 4feb0e0..e920fa1 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -15,8 +15,6 @@ description = "Argon2 for Python"
+ authors = [{ name = "Hynek Schlawack", email = "hs@ox.cx" }]
+ dynamic = ["version", "readme"]
+ requires-python = ">=3.8"
+-license = "MIT"
+-license-files = ["LICENSE"]
+ keywords = ["password", "hash", "hashing", "security"]
+ classifiers = [
+     "Development Status :: 5 - Production/Stable",
+@@ -48,6 +46,9 @@ docs = [
+ ]
+ dev = [{ include-group = "tests" }, { include-group = "typing" }, "tox>4"]
+ 
++[project.license]
++file = "LICENSE"
++
+ [project.urls]
+ Documentation = "https://argon2-cffi.readthedocs.io/"
+ Changelog = "https://github.com/hynek/argon2-cffi/blob/main/CHANGELOG.md"
+-- 
+2.43.0
+
