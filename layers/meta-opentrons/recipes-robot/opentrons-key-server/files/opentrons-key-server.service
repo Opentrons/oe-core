@@ -1,0 +1,16 @@
+[Unit]
+Description=Opentrons Key Server
+Wants=nginx.service
+After=nginx.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+ExecStart=python3 -m key_server --uds /run/opentrons-key-server.sock
+StateDirectory=opentrons-key-server
+Environment=PYTHONPATH=/opt/opentrons-key-server
+Restart=on-failure
+TimeoutStartSec=3min
+
+[Install]
+WantedBy=multi-user.target

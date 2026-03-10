@@ -51,7 +51,7 @@ IMAGE_INSTALL:append = " \
     plymouth mosquitto hidapi \
     python3 python3-misc python3-modules python3-pip \
     robot-app-wayland-launch opentrons-robot-app \
-    opentrons-auth-server opentrons-robot-server opentrons-system-server opentrons-update-server \
+    opentrons-auth-server opentrons-robot-server opentrons-system-server opentrons-update-server opentrons-key-server \
     opentrons-usb-bridge opentrons-jupyter-notebook \
     opentrons-mcu-firmware opentrons-module-firmware \
     opentrons-user-environment \
