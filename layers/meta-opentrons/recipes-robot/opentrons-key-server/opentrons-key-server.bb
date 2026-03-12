@@ -38,12 +38,16 @@ do_install:append () {
     install -d ${D}/${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-key-server.service ${D}/${systemd_system_unitdir}/opentrons-key-server.service
 
+    install -d ${D}/${systemd_system_unitdir}/nginx.target.wants
+    ln -s ${systemd_system_unitdir}/opentrons-key-server.service ${D}/${systemd_system_unitdir}/nginx.target.wants/opentrons-key-server.service
+
     # remove pycaches
     rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
 }
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-key-server.service.d \
                        ${systemd_system_unitdir}/opentrons-key-server.service.d/key-server-version.conf \
+                       ${systemd_system_unitdir}/nginx.target.wants/opentrons-key-server.service
                        "
 
 RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi "

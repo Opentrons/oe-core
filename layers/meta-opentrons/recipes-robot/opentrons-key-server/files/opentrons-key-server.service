@@ -1,7 +1,11 @@
 [Unit]
 Description=Opentrons Key Server
-Wants=nginx.service
-After=nginx.service
+Wants=local-fs.target
+After=local-fs.target
+
+[Install]
+WantedBy=nginx.service
+Before=nginx.service
 
 [Service]
 Type=notify
