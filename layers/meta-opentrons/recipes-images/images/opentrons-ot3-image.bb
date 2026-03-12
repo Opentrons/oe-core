@@ -7,6 +7,7 @@ inherit core-image image_type_tezi
 
 DEPENDS += "rsync-native zip-native \
     opentrons-auth-server \
+    opentrons-key-server \
     opentrons-robot-server \
     opentrons-update-server \
     opentrons-usb-bridge \
