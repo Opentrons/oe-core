@@ -47,7 +47,7 @@ do_install:append () {
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-key-server.service.d \
                        ${systemd_system_unitdir}/opentrons-key-server.service.d/key-server-version.conf \
-                       ${systemd_system_unitdir}/nginx.target.wants/opentrons-key-server.service
+                       ${systemd_system_unitdir}/nginx.target.wants/opentrons-key-server.service \
                        "
 
 RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi "
