@@ -6,8 +6,8 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 # Modify these as desired
-DEST_SYSTEMD_DROPFILE ?= "${B}/auth-server-version.conf"
-OT_PACKAGE = "auth-server"
+DEST_SYSTEMD_DROPFILE ?= "${B}/key-server-version.conf"
+OT_PACKAGE = "key-server"
 
 # Rust python modules installed by pip get stripped outside OE infra
 INSANE_SKIP:${PN}:append = "already-stripped"
@@ -15,13 +15,13 @@ INSANE_SKIP:${PN}:append = "already-stripped"
 inherit systemd get_ot_package_version
 
 SYSTEMD_AUTO_ENABLE = "enable"
-SYSTEMD_SERVICE:${PN} = "opentrons-auth-server.service"
+SYSTEMD_SERVICE:${PN} = "opentrons-key-server.service"
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
-SRC_URI:append = " file://opentrons-auth-server.service"
+SRC_URI:append = " file://opentrons-key-server.service"
 
-OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/auth-server"
-OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-auth-server"
-OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python argon2 argon2-cffi-bindings "
+OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/key-server"
+OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-key-server"
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python "
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 
@@ -33,17 +33,17 @@ addtask do_write_systemd_dropfile after do_compile before do_install
 do_install:append () {
     # create json file to be used in VERSION.json
     install -d ${D}/opentrons_versions
-    python3 ${S}/scripts/python_build_utils.py auth-server ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-auth-server-version.json
+    python3 ${S}/scripts/python_build_utils.py key-server ${OPENTRONS_PROJECT} dump_br_version > ${D}/opentrons_versions/opentrons-key-server-version.json
 
     install -d ${D}/${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/opentrons-auth-server.service ${D}/${systemd_system_unitdir}/opentrons-auth-server.service
+    install -m 0644 ${WORKDIR}/opentrons-key-server.service ${D}/${systemd_system_unitdir}/opentrons-key-server.service
 
     # remove pycaches
     rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
 }
 
-FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-auth-server.service.d \
-                       ${systemd_system_unitdir}/opentrons-auth-server.service.d/auth-server-version.conf \
+FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-key-server.service.d \
+                       ${systemd_system_unitdir}/opentrons-key-server.service.d/key-server-version.conf \
                        "
 
 RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi "
