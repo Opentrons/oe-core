@@ -6,7 +6,7 @@ LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
 
-RDEPENDS:${PN} += " bmaptool libubootenv nginx python3-dbus python3-aiohttp python3-systemd"
+RDEPENDS:${PN} += " bmaptool libubootenv nginx python3-dbus python3-systemd"
 OT_PROJECT = 'update-server'
 
 # Rust python modules installed by pip get stripped outside OE infra
@@ -28,7 +28,7 @@ OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/update-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-update-server"
 OPENTRONS_APP_BUNDLE_STRIP_HASHES = "yes"
 OPENTRONS_APP_BUNDLE_EXTRAS = ""
-OPENTRONS_APP_BUNDLE_USE_GLOBAL = "python3-aiohttp systemd-python python3-async-timeout"
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python"
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 
