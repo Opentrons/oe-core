@@ -23,7 +23,8 @@
       "USE_NONFREE",
       "OT_PROJECT",
       "AUTHOR",
-      "SPDX_S"
+      "SPDX_S",
+      "PYPI_ARCHIVE_NAME"
     ]
   }
 }
