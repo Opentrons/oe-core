@@ -23,3 +23,6 @@ KERNEL=="video[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="9230", ATTRS{idVend
 
 # vacuum module
 KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ef40", ATTRS{idVendor}=="0483", SYMLINK+="ot_module_vacuummodule%n"
+
+# barcode scanner
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="1d06", ATTRS{idVendor}=="1eab", SYMLINK+="ot_module_barcodescanner%n"
