@@ -2,6 +2,8 @@
 Description=Opentrons System HTTP Server
 Wants=nginx.service
 After=nginx.service
+Wants=opentrons-auth-server.service
+After=opentrons-auth-server.service
 
 [Service]
 Type=notify
@@ -9,6 +11,7 @@ NotifyAccess=all
 ExecStart=python3 -m system_server
 StateDirectory=opentrons-system-server
 Environment=PYTHONPATH=/opt/opentrons-system-server:/usr/lib/python3.10/site-packages
+Environment=OT_SYSTEM_SERVER_auth_server_uds=/run/opentrons-auth-server.sock
 Environment=OT_SYSTEM_SERVER_persistence_directory=/var/lib/opentrons-system-server
 Restart=on-failure
 TimeoutStartSec=3min
