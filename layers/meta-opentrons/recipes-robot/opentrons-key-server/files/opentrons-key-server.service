@@ -1,7 +1,11 @@
 [Unit]
 Description=Opentrons Key Server
-Wants=nginx.service
-After=nginx.service
+Wants=local-fs.target
+After=local-fs.target
+
+[Install]
+WantedBy=nginx.service
+Before=nginx.service
 
 [Service]
 Type=notify
@@ -9,6 +13,10 @@ NotifyAccess=all
 ExecStart=python3 -m key_server --uds /run/opentrons-key-server.sock
 StateDirectory=opentrons-key-server
 Environment=PYTHONPATH=/opt/opentrons-key-server
+Environment=OT_KEY_SERVER_secure_storage_implementation=caam
+Environment=OT_KEY_SERVER_base_directory=%S/opentrons-key-server
+Environment=OT_KEY_SERVER_image_mount_point=%S/opentrons-key-server/ot-secure-volume
+Environment=OT_KEY_SERVER_secure_volume_size_mb=64
 Restart=on-failure
 TimeoutStartSec=3min
 
