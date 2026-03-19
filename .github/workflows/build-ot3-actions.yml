@@ -39,7 +39,7 @@ jobs:
           submodules: false
           fetch-depth: 1
       - name: Install oelint-adv
-        run: pip install oelint-adv
+        run: pip install oelint-adv==9.5.1
       - name: Run BitBake linting
         id: lint
         env:
