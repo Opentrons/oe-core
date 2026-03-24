@@ -21,7 +21,7 @@ SRC_URI:append = " file://opentrons-key-server.service"
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/key-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-key-server"
-OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python "
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python python3-cryptography python3-cffi "
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 
@@ -50,7 +50,7 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-key-server.service.d \
                        ${systemd_system_unitdir}/nginx.target.wants/opentrons-key-server.service \
                        "
 
-RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi "
+RDEPENDS:${PN} += " nginx python3-systemd python3-cryptography "
 
 DEPENDS += " cargo-native "
 
