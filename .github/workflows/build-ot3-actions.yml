@@ -200,7 +200,7 @@ jobs:
           echo 'GITDIR = "/volumes/cache/git"' >> ./conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./conf/local.conf
           echo 'OT_BUILD_TYPE = "${{needs.decide-refs.outputs.build-type}}"' >> ./conf/local.conf
-          echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./conf/local.conf
+          echo 'PNPM_CACHE_DIR = "/volumes/cache/pnpm"' >> ./conf/local.conf
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./conf/local.conf
           echo 'CONNECTIVITY_CHECK_URIS = "https://www.yoctoproject.org/connectivity.html"' >> ./conf/local.conf
           echo 'OT_BUILD_TARGET = "odd"' >> ./conf/local.conf
