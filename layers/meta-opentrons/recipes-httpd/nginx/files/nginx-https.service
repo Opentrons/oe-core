@@ -1,0 +1,15 @@
+[Unit]
+Description=TLS termination and reverse proxying for HTTPS login
+After=syslog.target network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+PIDFile=/run/nginx/nginx-https.pid
+ExecStartPre=/usr/sbin/nginx -t -c /etc/nginx/nginx-https.conf
+ExecStart=/usr/sbin/nginx -c /etc/nginx/nginx-https.conf
+ExecReload=/usr/sbin/nginx -s reload -c /etc/nginx/nginx-https.conf
+ExecStop=/bin/kill -s QUIT $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
