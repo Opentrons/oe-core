@@ -27,7 +27,7 @@
 	url = https://git.toradex.com/meta-toradex-nxp.git
 [submodule "layers/meta-yocto"]
 	path = layers/meta-yocto
-	url = https://git.yoctoproject.org/git/meta-yocto
+	url = https://git.yoctoproject.org/meta-yocto
 [submodule "layers/openembedded-core"]
 	path = layers/openembedded-core
 	url = https://github.com/openembedded/openembedded-core.git
