@@ -17,6 +17,8 @@ Environment=OT_KEY_SERVER_secure_storage_implementation=caam
 Environment=OT_KEY_SERVER_base_directory=%S/opentrons-key-server
 Environment=OT_KEY_SERVER_image_mount_point=%S/opentrons-key-server/ot-secure-volume
 Environment=OT_KEY_SERVER_secure_volume_size_mb=64
+Environment=OT_KEY_SERVER_tls_directory=%S/opentrons-key-server/tls
+Environment=OT_KEY_SERVER_tls_server_integration=systemd-nginx
 Restart=on-failure
 TimeoutStartSec=3min
 
