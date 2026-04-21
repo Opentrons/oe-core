@@ -9,7 +9,7 @@ NotifyAccess=all
 ExecStart=python3 -m auth_server --uds /run/opentrons-auth-server.sock
 StateDirectory=opentrons-auth-server
 Environment=PYTHONPATH=/opt/opentrons-auth-server
-Environment=OT_SYSTEM_SERVER_persistence_directory=/var/lib/opentrons-system-server
+Environment=OT_AUTH_SERVER_persistence_directory=/var/lib/opentrons-auth-server
 Restart=on-failure
 TimeoutStartSec=3min
 
