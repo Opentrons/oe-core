@@ -5,6 +5,8 @@ SRC_URI += "file://system-connections-location.conf \
             file://disable-uap0.conf \
             file://wired-linklocal.nmconnection \
             file://wired.nmconnection \
+            file://wired-end0-linklocal.nmconnection \
+            file://wired-end0.nmconnection \
             file://opentrons-init-systemconnections.service\
             file://dispatch-bounce-mlan0.sh \
 "
@@ -14,6 +16,8 @@ FILES:${PN} += "/etc/NetworkManager/conf.d/system-connections-location.conf \
                 ${systemd_system_unitdir}/opentrons-init-systemconnections.service \
                 /usr/share/default-connections/wired-linklocal.nmconnection \
                 /usr/share/default-connections/wired.nmconnection \
+                /usr/share/default-connections/wired-end0-linklocal.nmconnection \
+                /usr/share/default-connections/wired-end0.nmconnection \
                 /etc/NetworkManager/dispatcher.d/bounce-mlan0.sh \
 "
 
@@ -25,8 +29,12 @@ do_install:append() {
     install -d ${D}/usr/share/default-connections
     install -m 600 ${WORKDIR}/wired-linklocal.nmconnection ${D}/usr/share/default-connections/wired-linklocal.nmconnection
     install -m 600 ${WORKDIR}/wired.nmconnection ${D}/usr/share/default-connections/wired.nmconnection
+    install -m 600 ${WORKDIR}/wired-end0-linklocal.nmconnection ${D}/usr/share/default-connections/wired-end0-linklocal.nmconnection
+    install -m 600 ${WORKDIR}/wired-end0.nmconnection ${D}/usr/share/default-connections/wired-end0.nmconnection
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-init-systemconnections.service ${D}${systemd_system_unitdir}/opentrons-init-systemconnections.service
+    install -d ${D}${systemd_system_unitdir}/NetworkManager.service.wants
+    ln -s ../opentrons-init-systemconnections.service ${D}${systemd_system_unitdir}/NetworkManager.service.wants/opentrons-init-systemconnections.service
     install -d ${D}/etc/NetworkManager/dispatcher.d
     install -m 744 ${WORKDIR}/dispatch-bounce-mlan0.sh ${D}/etc/NetworkManager/dispatcher.d/bounce-mlan0.sh
 }

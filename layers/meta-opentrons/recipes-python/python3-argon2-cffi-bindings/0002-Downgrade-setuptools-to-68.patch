@@ -1,0 +1,24 @@
+From 9e1ddf77c372a2f6dc3ed61997a817ef8162a53b Mon Sep 17 00:00:00 2001
+From: Seth Foster <seth@opentrons.com>
+Date: Fri, 6 Mar 2026 15:47:31 -0500
+Subject: [PATCH 2/2] Downgrade setuptools to 68
+
+---
+ pyproject.toml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index e0f87e5..3119159 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,6 +1,6 @@
+ [build-system]
+ requires = [
+-    "setuptools>=77",
++    "setuptools>=68",
+     "setuptools_scm[toml]>=6.2",
+     "cffi>=1.0.1; python_version < '3.14'",
+     "cffi>=2.0.0b1; python_version >= '3.14'",
+-- 
+2.43.0
+

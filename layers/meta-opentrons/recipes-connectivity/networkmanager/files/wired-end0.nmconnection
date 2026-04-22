@@ -7,7 +7,7 @@
 # overwritten on boot.
 
 [connection]
-id=wired
+id=wired-end0
 type=ethernet
 autoconnect-priority=1
 autoconnect-retries=2

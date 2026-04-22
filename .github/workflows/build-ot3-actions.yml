@@ -51,7 +51,7 @@ jobs:
           submodules: false
           fetch-depth: 1
       - name: Install oelint-adv
-        run: pip install oelint-adv
+        run: pip install oelint-adv==9.5.1
       - name: Run BitBake linting
         id: lint
         env:
@@ -253,6 +253,9 @@ jobs:
           emit_request_summary("success")
   run-build:
     needs: [decide-refs, request-ephemeral-runner, lint-bitbake]
+    permissions:
+      contents: read
+      id-token: write
     strategy:
       max-parallel: 4
       matrix:
@@ -311,13 +314,11 @@ jobs:
           ./update.sh
           cd ..
       - name: Configure AWS Credentials
-        uses: ./oe-core-for-workflow/.github/actions/aws-credentials
-        id: aws
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          access_key_id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
-          secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
-          region: us-east-2
-          stage: ${{ matrix.build_env }}
+          role-to-assume: ${{ matrix.build_env == 'stage-dev' && vars.ROBOT_STACK_AWS_OIDC_ROLE_ARN_DEV || vars.ROBOT_STACK_AWS_OIDC_ROLE_ARN_PROD }}
+          aws-region: us-east-2
+          role-duration-seconds: 43200
       - name: Apply CI runner customizations
         run: |
           # Ephemeral runners may not permit writing /etc/sysctl*; apply runtime settings only.
@@ -384,12 +385,12 @@ jobs:
         shell: bash
         run: |
           # fetch cache if the size is less than 20GB, so we have enough space to build image.
-          sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
+          sizeInBytes=`aws s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
           if [[ $sizeInGigabytes -gt 50 ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
           else
-              aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
+              aws_cp="aws s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
               s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
               for cachetype in downloads sstate git ; do
@@ -470,7 +471,7 @@ jobs:
         shell: bash
         continue-on-error: true
         run: |
-          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
+          aws_cp="aws s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
           for cachetype in downloads sstate git ; do
               df -h
@@ -524,18 +525,18 @@ jobs:
         id: "handle-release"
         run: |
           pushd oe-core/scripts
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json releases.json
+          aws s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json releases.json
           base_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           version_file=${{ steps.artifacts.outputs.artifact_root }}/${{ steps.artifacts.outputs.artifact_unversioned_subdir }}/VERSION.json
           python3 update_releases_file.py --releases-file releases.json --version-file ${version_file} --base-url $base_url
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/
+          aws s3 cp --acl=public-read releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/
           popd
       - name: Upload results to S3
         shell: bash
         id: "upload-results"
         run: |
           pushd ${{ steps.artifacts.outputs.artifact_root }}
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive ${{ steps.artifacts.outputs.artifact_unversioned_subdir }} s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          aws s3 cp --acl=public-read --recursive ${{ steps.artifacts.outputs.artifact_unversioned_subdir }} s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "version_file_url=$root_url/VERSION.json" >> $GITHUB_OUTPUT
@@ -609,7 +610,7 @@ jobs:
         with:
           status: "success"
           workflow_name: "Build Flex image on github workflows"
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL_TAGGED }}
+          webhook_url: ${{ vars.SLACK_WEBHOOK_URL_TAGGED }}
           console_url: ${{ needs.run-build.outputs.console_url }}
           system_url: ${{ needs.run-build.outputs.system_url }}
           fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
@@ -632,7 +633,7 @@ jobs:
         with:
           status: "failure"
           workflow_name: "Build Flex image on github workflows"
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL_TAGGED }}
+          webhook_url: ${{ vars.SLACK_WEBHOOK_URL_TAGGED }}
           console_url: ${{ needs.run-build.outputs.console_url }}
           system_url: ${{ needs.run-build.outputs.system_url }}
           fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}

@@ -7,7 +7,7 @@
 # file will be overwritten on boot.
 
 [connection]
-id=wired-linklocal
+id=wired-end0-linklocal
 type=ethernet
 interface-name=end0
 permissions=

@@ -6,4 +6,7 @@ SRC_URI += " \
         file://0001-pmdomain-imx-scu-pd-clear-is_off.patch \
         file://devicemapper.cfg \
         file://disable-sysrq.cfg \
+        file://ftdi.cfg \
+        file://usb.cfg \
+        file://input.cfg \
         "
