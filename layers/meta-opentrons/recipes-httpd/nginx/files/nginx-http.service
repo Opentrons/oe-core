@@ -1,0 +1,16 @@
+[Unit]
+Description=HTTP and reverse proxy server for robot server
+After=syslog.target network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+PIDFile=/run/nginx/nginx-http.pid
+ExecStartPre=/bin/mkdir -p /var/www/localhost/html/stream
+ExecStartPre=/usr/sbin/nginx -t -c /etc/nginx/nginx-http.conf
+ExecStart=/usr/sbin/nginx -c /etc/nginx/nginx-http.conf
+ExecReload=/usr/sbin/nginx -s reload -c /etc/nginx/nginx-http.conf
+ExecStop=/bin/kill -s QUIT $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
