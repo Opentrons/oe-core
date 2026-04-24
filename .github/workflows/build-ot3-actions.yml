@@ -473,6 +473,10 @@ jobs:
         run: |
           aws_cp="aws s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
+          # Docker leaves root-owned files on bind-mounted cache; zip and rm need runner ownership.
+          if [ -d "$cachedir" ]; then
+            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
+          fi
           for cachetype in downloads sstate git ; do
               df -h
               localzip="${cachedir}/../${cachetype}.zip"
@@ -594,8 +598,14 @@ jobs:
           rm -rf ./*
       - name: Remove poisoned cache
         if: ${{ failure() }}
+        shell: bash
+        continue-on-error: true
         run: |
-          rm -rf ${LOCAL_CACHE:-./cache}/*
+          cachedir="${LOCAL_CACHE:-./cache}"
+          if [ -d "$cachedir" ]; then
+            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
+            rm -rf "${cachedir}/"*
+          fi
   notify-tagged-success:
     name: "Notify Tagged Build Success"
     runs-on: "ubuntu-latest"
