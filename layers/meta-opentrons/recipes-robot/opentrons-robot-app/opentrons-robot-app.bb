@@ -21,7 +21,8 @@ do_configure(){
     export CI=true
     pnpm install
     cd ${S}/app-shell-odd
-    pnpm exec electron-rebuild --arch=arm64
+    # `pnpm rebuild` does not support --arch; `--` forwards flags to electron-rebuild.
+    pnpm exec -- electron-rebuild --arch=arm64
     cd ${S}
     # we removed setup-js from shared-data recently so let's allow it to fail so we
     # can handle both the is-there and the is-not-there case
@@ -59,7 +60,7 @@ do_compile(){
     OPENTRONS_PROJECT="${OPENTRONS_PROJECT}" \
     NODE_ENV=production \
     NO_PYTHON=true \
-    pnpm exec electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
+    pnpm exec -- electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
 
 fakeroot do_install(){
