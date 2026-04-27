@@ -20,8 +20,10 @@ do_configure(){
 
     export CI=true
     pnpm install
+    cd ${S}/js-package-testing
+    pnpm install
     cd ${S}/app-shell-odd
-    pnpm exec -- electron-rebuild --arch=arm64
+    pnpm exec electron-rebuild --arch=arm64
     cd ${S}
     # we removed setup-js from shared-data recently so let's allow it to fail so we
     # can handle both the is-there and the is-not-there case
