@@ -11,6 +11,12 @@ do_configure(){
     npm install -g pnpm@10
     cd ${S}
 
+    # externalsrc reuses the host checkout; stale node_modules (absolute symlinks
+    # from another path) breaks electron-rebuild, e.g. js-package-testing/.../@opentrons/components.
+    rm -rf ${S}/node_modules
+    rm -rf ${S}/app-shell-odd/node_modules
+    rm -rf ${S}/js-package-testing/node_modules
+
     # Move the yarn package configs to a mapped location when running in container
     if [ ! -z "${PNPM_CACHE_DIR}" ]; then
         bbnote "Seting the yarn cache location to - ${PNPM_CACHE_DIR}"
