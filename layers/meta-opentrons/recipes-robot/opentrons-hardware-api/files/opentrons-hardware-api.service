@@ -1,0 +1,22 @@
+[Unit]
+Description=Opentrons Hardware API 
+
+Wants=nginx.service
+After=nginx.service
+Wants=opentrons-ot3-canbus
+After=opentrons-ot3-canbus
+Wants=opentrons-pyro-nameserver.service
+After=opentrons-pyro-nameserver.service
+Before=opentrons-robot-server.service
+
+[Service]
+# Ensure the subprocess is enabled to continue
+ExecCondition=/usr/bin/validate-feature-flags.sh
+
+# If ExecConditions were met proceed to start the Hardware API subprocess
+ExecStart=python3 -m opentrons.hardware_control.pyro_utils.pyro_process_entry
+Restart=on-failure
+TimeoutStartSec=10min
+
+[Install]
+WantedBy=multi-user.target
