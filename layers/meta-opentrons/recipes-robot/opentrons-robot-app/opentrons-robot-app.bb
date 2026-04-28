@@ -11,11 +11,9 @@ do_configure(){
     npm install -g pnpm@10
     cd ${S}
 
-    # externalsrc reuses the host checkout; stale node_modules (absolute symlinks
-    # from another path) breaks electron-rebuild, e.g. js-package-testing/.../@opentrons/components.
-    rm -rf ${S}/node_modules
-    rm -rf ${S}/app-shell-odd/node_modules
-    rm -rf ${S}/js-package-testing/node_modules
+    # externalsrc reuses the host checkout; remove all node_modules trees so pnpm
+    # does not keep stale symlinks. (Do not descend into .git.)
+    find "${S}" \( -name .git -type d -prune \) -o \( -name node_modules -type d -prune -print0 \) | xargs -0 rm -rf 2>/dev/null || true
 
     # Move the yarn package configs to a mapped location when running in container
     if [ ! -z "${PNPM_CACHE_DIR}" ]; then
@@ -28,7 +26,9 @@ do_configure(){
     pnpm install
     cd ${S}/app-shell-odd
     # `pnpm rebuild` does not support --arch; `--` forwards flags to electron-rebuild.
-    pnpm exec -- electron-rebuild --arch=arm64
+    # js-package-testing uses link:pack/* (see its Makefile); pack/ is not built here.
+    # Default rebuild walks the repo and can ENOENT on that tree; scope to ODD only.
+    pnpm exec -- electron-rebuild --arch=arm64 --module-dir ./node_modules
     cd ${S}
     # we removed setup-js from shared-data recently so let's allow it to fail so we
     # can handle both the is-there and the is-not-there case
