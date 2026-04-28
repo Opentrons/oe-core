@@ -339,7 +339,14 @@ jobs:
           cd oe-core
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
           cp start.sh $tmp_dir/
-          docker build -f ./Dockerfile --tag "ot3-image:latest" $tmp_dir
+          # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
+          # Defaults in Dockerfile are 1001:1001; ec2-user is often 1000 — without this, cleanup/gather hit Permission denied.
+          docker build -f ./Dockerfile \
+            --build-arg "username=$(whoami)" \
+            --build-arg "host_uid=$(id -u)" \
+            --build-arg "host_gid=$(id -g)" \
+            --tag "ot3-image:latest" \
+            $tmp_dir
           cd ..
       - name: Apply unconditional CI config overrides
         run: |
@@ -598,8 +605,10 @@ jobs:
       - name: Remove build data
         if: always()
         continue-on-error: true
+        shell: bash
         run: |
-          rm -rf ./*
+          # Docker/BitBake leaves root-owned files in checked-out trees; plain rm fails as the runner user.
+          sudo find . -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
       - name: Remove poisoned cache
         if: ${{ failure() }}
         shell: bash
