@@ -22,7 +22,7 @@ USERADD_PARAM:${PN} = "--system --home /run/ot-protocol \
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service"
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
-SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules"
+SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules file://opentrons-hardware-api.service file://validate-feature-flags.sh"
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
@@ -62,6 +62,10 @@ do_install:append () {
     install -d ${D}${sysconfdir}/udev/rules.d/
     install -m 0644 ${WORKDIR}/95-opentrons-udev.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-udev.rules
 
+    # install the hardware api service files
+    install -m 0644 ${WORKDIR}/opentrons-hardware-api.service ${D}${systemd_system_unitdir}
+    install -m 0755 ${WORKDIR}/validate-feature-flags.sh ${D}${bindir}
+
     # remove pycaches
     rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
 }
@@ -70,6 +74,8 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d
                        ${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf \
                        ${sysconfdir}/udev/rules.d/95-opentrons-udev.rules \
                        ${sysconfdir}/release-notes.md \
+                       ${systemd_system_unitdir}/opentrons-hardware-api.service \
+                       ${bindir}/validate-feature-flags.sh\
                        "
 
 RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy python3-pyusb "

@@ -121,7 +121,6 @@ python do_create_opentrons_manifest() {
         "opentrons-system-server-version.json",
         "opentrons-update-server-version.json",
         "opentrons-usb-bridge-version.json",
-        "opentrons-hardware-api-version.json"
     ]
 
     opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')
