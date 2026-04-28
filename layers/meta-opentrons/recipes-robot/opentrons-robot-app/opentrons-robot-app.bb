@@ -26,9 +26,9 @@ do_configure(){
     pnpm install
     cd ${S}/app-shell-odd
     # `pnpm rebuild` does not support --arch; `--` forwards flags to electron-rebuild.
-    # js-package-testing uses link:pack/* (see its Makefile); pack/ is not built here.
-    # Default rebuild walks the repo and can ENOENT on that tree; scope to ODD only.
-    pnpm exec -- electron-rebuild --arch=arm64 --module-dir ./node_modules
+    # @electron/rebuild --module-dir is the app root (has package.json), not node_modules.
+    # js-package-testing uses link:pack/* without pack/ in OE; cwd here scopes walking vs repo root.
+    pnpm exec -- electron-rebuild --arch=arm64 --module-dir .
     cd ${S}
     # we removed setup-js from shared-data recently so let's allow it to fail so we
     # can handle both the is-there and the is-not-there case
