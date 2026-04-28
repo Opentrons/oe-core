@@ -493,6 +493,10 @@ jobs:
         run: |
           _oe_build=$(pwd)/oe-core/build
           echo "found build dir at ${_oe_build}"
+          # Docker/BitBake may leave root-owned files in the bind-mounted build tree.
+          if [ -d "${_oe_build}" ]; then
+            sudo chown -R "$(id -u):$(id -g)" "${_oe_build}"
+          fi
           _artifact_root=${_oe_build}/deploy
           _artifact_unversioned_subdir=opentrons
           _artifact_s3=${_artifact_root}/${_artifact_unversioned_subdir}
@@ -604,7 +608,8 @@ jobs:
           cachedir="${LOCAL_CACHE:-./cache}"
           if [ -d "$cachedir" ]; then
             sudo chown -R "$(id -u):$(id -g)" "$cachedir"
-            rm -rf "${cachedir}/"*
+            # Some cache entries can remain undeletable by the runner user; remove as root.
+            sudo rm -rf "${cachedir}/"* "${cachedir}"/.[!.]* "${cachedir}"/..?* 2>/dev/null || true
           fi
   notify-tagged-success:
     name: "Notify Tagged Build Success"
