@@ -21,7 +21,7 @@ do_configure(){
     export CI=true
     pnpm install
     cd ${S}/js-package-testing
-    pnpm install
+    make setup
     cd ${S}/app-shell-odd
     pnpm exec electron-rebuild --arch=arm64
     cd ${S}
