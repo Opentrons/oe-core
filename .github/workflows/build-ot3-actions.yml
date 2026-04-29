@@ -450,23 +450,7 @@ jobs:
                   echo "Cleaned up old download files"
               fi
           fi
-      - name: Download sources
-        run: |
-          here=$(pwd)
-          oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
-          monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
-          ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
-          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          tmp_mount="/tmp:rw,exec"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch
-      - name: Reset opentrons-ot3-image workdir before full build
-        shell: bash
-        run: |
-          # Pseudo can abort on inode/path mismatch in this recipe's stale workdir.
-          # Reset only this recipe's tmp/work subtree between fetch and full build.
-          rm -rf oe-core/build/tmp/work/*/opentrons-ot3-image
-      - name: Build image
+      - name: Fetch sources and build image
         run: |
           here=$(pwd)
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
@@ -475,8 +459,10 @@ jobs:
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
           sudo mount -o remount,exec /tmp
           tmp_mount="/tmp:rw,exec"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
+          # One container: fetch then full build (start.sh). Avoids a second start.sh chown/tmp pass
+          # between separate docker runs, which triggers pseudo inode aborts on do_create_tezi_ot3.
+          echo "docker run --rm -e OE_CI_FETCH_THEN_BUILD=1 --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
+          docker run --rm -e OE_CI_FETCH_THEN_BUILD=1 --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af
