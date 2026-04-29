@@ -63,6 +63,7 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/95-opentrons-udev.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-udev.rules
 
     # install the hardware api service files
+    install -d ${D}${bindir}
     install -m 0644 ${WORKDIR}/opentrons-hardware-api.service ${D}${systemd_system_unitdir}
     install -m 0755 ${WORKDIR}/validate-feature-flags.sh ${D}${bindir}
 
@@ -75,7 +76,7 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d
                        ${sysconfdir}/udev/rules.d/95-opentrons-udev.rules \
                        ${sysconfdir}/release-notes.md \
                        ${systemd_system_unitdir}/opentrons-hardware-api.service \
-                       ${bindir}/validate-feature-flags.sh\
+                       ${bindir}/validate-feature-flags.sh \
                        "
 
 RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy python3-pyusb "
