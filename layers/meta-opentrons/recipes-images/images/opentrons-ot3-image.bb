@@ -14,7 +14,6 @@ DEPENDS += "rsync-native zip-native \
     opentrons-system-server \
     opentrons-mcu-firmware \
     opentrons-pyro-nameserver \
-    opentrons-hardware-api \
     opentrons-live-stream \
     ffmpeg \
     "
@@ -61,7 +60,6 @@ IMAGE_INSTALL:append = " \
     opentrons-ssh-keys \
     opentrons-live-stream \
     opentrons-pyro-nameserver \
-    opentrons-hardware-api \
     libjpeg-turbo avrdude ffmpeg rtl88x2bu zip \
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-imx gstreamer1.0 gstd openh264 \
     keyctl-caam keyutils lvm2 \
