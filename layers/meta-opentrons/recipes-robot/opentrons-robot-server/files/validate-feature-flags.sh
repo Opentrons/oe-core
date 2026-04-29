@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Flags to validate
 HARDWARE_SUBPROCESS=$(jq -r '.enableHardwareSubprocess' /data/feature_flags.json)
