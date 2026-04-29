@@ -599,8 +599,7 @@ jobs:
         continue-on-error: true
         shell: bash
         run: |
-          # Docker/BitBake leaves root-owned files in checked-out trees; plain rm fails as the runner user.
-          sudo find . -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+          find . -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
       - name: Remove poisoned cache
         if: ${{ failure() }}
         shell: bash
