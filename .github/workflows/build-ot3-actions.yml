@@ -339,7 +339,14 @@ jobs:
           cd oe-core
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
           cp start.sh $tmp_dir/
-          docker build -f ./Dockerfile --tag "ot3-image:latest" $tmp_dir
+          # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
+          # Defaults in Dockerfile are 1001:1001; ec2-user is often 1000 — without this, cleanup/gather hit Permission denied.
+          docker build -f ./Dockerfile \
+            --build-arg "username=$(whoami)" \
+            --build-arg "host_uid=$(id -u)" \
+            --build-arg "host_gid=$(id -g)" \
+            --tag "ot3-image:latest" \
+            $tmp_dir
           cd ..
       - name: Apply unconditional CI config overrides
         run: |
@@ -443,17 +450,7 @@ jobs:
                   echo "Cleaned up old download files"
               fi
           fi
-      - name: Download sources
-        run: |
-          here=$(pwd)
-          oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
-          monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
-          ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
-          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          tmp_mount="/tmp:rw,exec"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch
-      - name: Build image
+      - name: Fetch sources and build image
         run: |
           here=$(pwd)
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
@@ -462,8 +459,10 @@ jobs:
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
           sudo mount -o remount,exec /tmp
           tmp_mount="/tmp:rw,exec"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
+          # One container: fetch then full build (start.sh). Avoids a second start.sh chown/tmp pass
+          # between separate docker runs, which triggers pseudo inode aborts on do_create_tezi_ot3.
+          echo "docker run --rm -e OE_CI_FETCH_THEN_BUILD=1 --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
+          docker run --rm -e OE_CI_FETCH_THEN_BUILD=1 --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af
@@ -493,6 +492,10 @@ jobs:
         run: |
           _oe_build=$(pwd)/oe-core/build
           echo "found build dir at ${_oe_build}"
+          # Docker/BitBake may leave root-owned files in the bind-mounted build tree.
+          if [ -d "${_oe_build}" ]; then
+            chown -R "$(id -u):$(id -g)" "${_oe_build}"
+          fi
           _artifact_root=${_oe_build}/deploy
           _artifact_unversioned_subdir=opentrons
           _artifact_s3=${_artifact_root}/${_artifact_unversioned_subdir}
@@ -594,8 +597,9 @@ jobs:
       - name: Remove build data
         if: always()
         continue-on-error: true
+        shell: bash
         run: |
-          rm -rf ./*
+          sudo find . -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
       - name: Remove poisoned cache
         if: ${{ failure() }}
         shell: bash
@@ -604,7 +608,8 @@ jobs:
           cachedir="${LOCAL_CACHE:-./cache}"
           if [ -d "$cachedir" ]; then
             sudo chown -R "$(id -u):$(id -g)" "$cachedir"
-            rm -rf "${cachedir}/"*
+            # Some cache entries can remain undeletable by the runner user; remove as root.
+            sudo rm -rf "${cachedir}/"* "${cachedir}"/.[!.]* "${cachedir}"/..?* 2>/dev/null || true
           fi
   notify-tagged-success:
     name: "Notify Tagged Build Success"
