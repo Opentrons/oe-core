@@ -3,8 +3,7 @@ Description=Opentrons Hardware API
 
 Wants=nginx.service
 After=nginx.service
-Wants=opentrons-ot3-canbus
-After=opentrons-ot3-canbus
+After=opentrons-ot3-canbus.service
 Wants=opentrons-pyro-nameserver.service
 After=opentrons-pyro-nameserver.service
 Before=opentrons-robot-server.service
@@ -15,6 +14,8 @@ ExecCondition=/usr/bin/validate-feature-flags.sh
 
 # If ExecConditions were met proceed to start the Hardware API subprocess
 ExecStart=python3 -m opentrons.hardware_control.pyro_utils.pyro_process_entry
+Environment=OT_API_FF_enableOT3HardwareController=true
+Environment=RUNNING_ON_VERDIN=true
 Environment=PYTHONPATH=/opt/opentrons-robot-server:/usr/lib/python3.10/site-packages
 Restart=on-failure
 TimeoutStartSec=10min
