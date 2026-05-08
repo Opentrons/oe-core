@@ -20,7 +20,7 @@ USERADD_PARAM:${PN} = "--system --home /run/ot-protocol \
                        --user-group ot-protocol"
 
 SYSTEMD_AUTO_ENABLE = "enable"
-SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service"
+SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service opentrons-hardware-api.service"
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
 SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules file://opentrons-hardware-api.service file://validate-feature-flags.sh"
 
