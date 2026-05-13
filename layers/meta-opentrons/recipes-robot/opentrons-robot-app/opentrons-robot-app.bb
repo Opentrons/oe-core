@@ -9,21 +9,35 @@ inherit features_check
 
 do_configure(){
     npm install -g pnpm@10
-    cd ${S}
 
-    # Move the yarn package configs to a mapped location when running in container
+    # Monorepo chore_release-pd-8.10.2 declares packageManager=yarn; pnpm refuses any
+    # command under ${S} (including pnpm config set). Set cache globally first, then strip
+    # packageManager so pnpm install/exec match edge-style OE builds.
     if [ ! -z "${PNPM_CACHE_DIR}" ]; then
-        bbnote "Seting the yarn cache location to - ${PNPM_CACHE_DIR}"
-        pnpm config set cache-folder "${PNPM_CACHE_DIR}"
+        bbnote "Setting global pnpm cache-folder to ${PNPM_CACHE_DIR}"
+        ( cd / && pnpm config set cache-folder "${PNPM_CACHE_DIR}" --global )
         export electron_config_cache="${ELECTRON_CACHE_DIR}"
     fi
 
+    cd ${S}
+    python3 <<'PY'
+import json
+from pathlib import Path
+p = Path("package.json")
+if not p.is_file():
+    raise SystemExit("package.json missing in monorepo root (externalsrc)")
+data = json.loads(p.read_text(encoding="utf-8"))
+if data.pop("packageManager", None) is not None:
+    p.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+PY
+
+    export npm_config_package_manager_strict=false
     export CI=true
-    pnpm install
+    pnpm install --config.package-manager-strict=false
     cd ${S}/js-package-testing
     make setup
     cd ${S}/app-shell-odd
-    pnpm exec electron-rebuild --arch=arm64
+    pnpm --config.package-manager-strict=false exec electron-rebuild --arch=arm64
     cd ${S}
     # we removed setup-js from shared-data recently so let's allow it to fail so we
     # can handle both the is-there and the is-not-there case
@@ -32,6 +46,7 @@ do_configure(){
 
 do_compile(){
     cd ${S}
+    export npm_config_package_manager_strict=false
     export BUILD_ID=${CODEBUILD_BUILD_NUMBER:-dev}
     export NODE_OPTIONS=--openssl-legacy-provider
     export OPENSSL_MODULES=${STAGING_LIBDIR_NATIVE}/ossl-modules
@@ -61,7 +76,7 @@ do_compile(){
     OPENTRONS_PROJECT="${OPENTRONS_PROJECT}" \
     NODE_ENV=production \
     NO_PYTHON=true \
-    pnpm exec electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
+    pnpm --config.package-manager-strict=false exec electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
 
 fakeroot do_install(){
