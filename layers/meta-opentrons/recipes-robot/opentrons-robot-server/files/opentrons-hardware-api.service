@@ -11,6 +11,8 @@ Before=opentrons-robot-server.service
 ExecCondition=/usr/bin/jq -r -e '.enableHardwareSubprocess?' /data/feature_flags.json
 
 # If ExecConditions were met proceed to start the Hardware API subprocess
+Type=notify
+NotifyAccess=all
 ExecStart=python3 -m opentrons.hardware_control.pyro_utils.pyro_process_entry
 Environment=OT_API_FF_enableOT3HardwareController=true
 Environment=RUNNING_ON_VERDIN=true

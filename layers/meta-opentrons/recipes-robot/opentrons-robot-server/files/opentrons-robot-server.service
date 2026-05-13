@@ -10,7 +10,6 @@ After=opentrons-ot3-canbus
 Wants=opentrons-pyro-nameserver.service
 After=opentrons-pyro-nameserver.service
 Wants=opentrons-hardware-api.service
-After=opentrons-hardware-api.service
 
 [Service]
 Type=notify
