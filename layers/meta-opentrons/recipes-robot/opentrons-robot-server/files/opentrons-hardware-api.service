@@ -1,0 +1,24 @@
+[Unit]
+Description=Opentrons Hardware API 
+
+After=opentrons-ot3-canbus.service
+Wants=opentrons-pyro-nameserver.service
+After=opentrons-pyro-nameserver.service
+Before=opentrons-robot-server.service
+
+[Service]
+# Ensure the subprocess is enabled to continue
+ExecCondition=/usr/bin/jq -r -e '.enableHardwareSubprocess?' /data/feature_flags.json
+
+# If ExecConditions were met proceed to start the Hardware API subprocess
+Type=notify
+NotifyAccess=all
+ExecStart=python3 -m opentrons.hardware_control.pyro_utils.pyro_process_entry
+Environment=OT_API_FF_enableOT3HardwareController=true
+Environment=RUNNING_ON_VERDIN=true
+Environment=PYTHONPATH=/opt/opentrons-robot-server:/usr/lib/python3.10/site-packages
+Restart=on-failure
+TimeoutStartSec=10min
+
+[Install]
+WantedBy=opentrons-robot-server.service

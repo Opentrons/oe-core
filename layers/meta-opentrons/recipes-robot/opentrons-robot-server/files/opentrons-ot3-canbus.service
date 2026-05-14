@@ -39,3 +39,4 @@ RestartSec=1s
 
 [Install]
 WantedBy=opentrons-robot-server.service
+WantedBy=opentrons-hardware-api.service
