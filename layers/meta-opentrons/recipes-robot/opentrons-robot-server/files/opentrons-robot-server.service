@@ -26,6 +26,8 @@ Environment=OT_ROBOT_SERVER_maximum_unused_protocols=20
 Environment=OT_ROBOT_SERVER_maximum_quick_transfer_protocols=20
 Restart=on-failure
 TimeoutStartSec=10min
+# We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
+PrivateTmp=yes
 
 [Install]
 WantedBy=multi-user.target
