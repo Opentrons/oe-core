@@ -12,6 +12,8 @@ ExecStart=python3 -m otupdate.openembedded -p 34000
 Environment=PYTHONPATH=/opt/opentrons-update-server:/usr/lib/python3.10/site-packages
 Restart=on-failure
 TimeoutStartSec=3min
+# We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
+PrivateTmp=yes
 
 [Install]
 WantedBy=multi-user.target
