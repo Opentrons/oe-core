@@ -19,6 +19,8 @@ Environment=JUPYTER_CONFIG_DIR=%S/jupyter/config
 Environment=JUPYTER_DATA_DIR=%S/jupyter/data
 Environment=JUPYTER_NOTEBOOK_DIR=%S/jupyter/notebooks
 Environment=IPYTHONDIR=%S/ipython
+# We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
+PrivateTmp=yes
 
 [Install]
 WantedBy=multi-user.target
