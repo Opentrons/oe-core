@@ -1,5 +1,5 @@
-name: 'Build Flex image on github workflows'
-run-name: 'image: mono ${{ inputs.monorepo-ref }}, core ${{ inputs.oe-core-ref }}, fw ${{ inputs.ot3-firmware-ref }}'
+name: "Build Flex image on github workflows"
+run-name: "image: mono ${{ inputs.monorepo-ref }}, core ${{ inputs.oe-core-ref }}, fw ${{ inputs.ot3-firmware-ref }}"
 on:
   workflow_dispatch:
     inputs:
@@ -7,46 +7,58 @@ on:
         description: |
           Ref of https://github.com/opentrons/opentrons to build. ONLY use a tag ref if you are trying to actually release!!! This MUST be a full ref, e.g. refs/heads/edge or refs/tags/v7.5.0-alpha.1 or '-' to indicate not-specified. If not specified, will be determined from the oe-core ref if specified, and then default to edge.
         required: true
-        default: '-'
+        default: "-"
       oe-core-ref:
         description: |
           Ref of https://github.com/opentrons/oe-core to build. This is different from the ref specified in the github api/webUI when starting this workflow - that ref is what contains this workflow, this ref specifies what gets built. ONLY use a tag ref if you are trying to actually release!!! It MUST be a full ref, e.g. refs/heads/main or refs/tags/v0.6.4 or '-' to indicate not-specified. If not specified, will be decided based on the monorepo ref; if that isn't specified, will be main.
         required: true
-        default: '-'
+        default: "-"
       ot3-firmware-ref:
         description: |
           Ref of https://github.com/opentrons/ot3-firmware to build. ONLY use a tag ref if you are trying to actually release!!! It MUST be a full ref, e.g. refs/heads/main or refs/tags/v52 or '-' to indicate not-specified. If not specified, will be decided based on the monorepo ref; if that isn't specified, will be main.
         required: false
-        default: '-'
+        default: "-"
       infra-stage:
         description: |
           What infra stage to run on. This should almost always be prod; dev is useful when you explicitly want to test or prod is busy.
         required: true
         type: choice
         options:
-          - 'stage-prod'
-          - 'stage-dev'
-        default: 'stage-prod'
+          - "stage-prod"
+          - "stage-dev"
+        default: "stage-prod"
+      runner-request-max-attempts:
+        description: |
+          Maximum number of retries when requesting an ephemeral runner after 429 capacity responses.
+        required: false
+        default: 120
+        type: number
+      runner-request-retry-seconds:
+        description: |
+          Seconds to wait between ephemeral runner request retries on 429 capacity responses.
+        required: false
+        default: 60
+        type: number
 
 jobs:
   decide-refs:
-    runs-on: ubuntu-latest
+    runs-on: "ubuntu-latest"
     outputs:
       oe-core: ${{ steps.build-refs.outputs.oe-core }}
       monorepo: ${{ steps.build-refs.outputs.monorepo }}
       ot3-firmware: ${{ steps.build-refs.outputs.ot3-firmware }}
       variant: ${{ steps.build-refs.outputs.variant }}
       build-type: ${{ steps.build-refs.outputs.build-type }}
-    name: 'deciding refs to build'
+    name: "deciding refs to build"
     steps:
       - name: Fetch initial sources for action
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           submodules: false
           path: ./oe-core-for-workflow
       - name: Decide refs to build
         id: build-refs
-        uses: './oe-core-for-workflow/.github/actions/build-refs'
+        uses: ./oe-core-for-workflow/.github/actions/build-refs
         with:
           token: ${{ github.token }}
           monorepo: ${{ inputs.monorepo-ref }}
@@ -63,43 +75,182 @@ jobs:
           echo "| **ot3-firmware** | ${{ steps.build-refs.outputs.ot3-firmware }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **variant** | ${{ steps.build-refs.outputs.variant }} |" >> $GITHUB_STEP_SUMMARY
           echo "| **build type** | ${{ steps.build-refs.outputs.build-type }} |" >> $GITHUB_STEP_SUMMARY
+  request-ephemeral-runner:
+    name: request ephemeral runner
+    needs: [decide-refs]
+    runs-on: ubuntu-latest
+    outputs:
+      runner_label: ${{ steps.req.outputs.runner_label }}
+    steps:
+      - id: req
+        env:
+          # Set these repo secrets:
+          # - EPHEMERAL_RUNNER_API_URL_PROD
+          # - EPHEMERAL_RUNNER_API_URL_DEV
+          API_URL: ${{ inputs.infra-stage == 'stage-dev' && secrets.EPHEMERAL_RUNNER_API_URL_DEV || secrets.EPHEMERAL_RUNNER_API_URL_PROD }}
+          INFRA_STAGE: ${{ inputs.infra-stage }}
+          VARIANT: ${{ needs.decide-refs.outputs.variant }}
+          RUNNER_LABEL: ephemeral-${{ github.run_id }}-${{ github.run_attempt }}
+          MAX_ATTEMPTS: ${{ inputs.runner-request-max-attempts }}
+          RETRY_SECONDS: ${{ inputs.runner-request-retry-seconds }}
+          MISSING_SECRET_MESSAGE: Missing EPHEMERAL_RUNNER_API_URL_* secret for infra-stage=${{ inputs.infra-stage }}
+        shell: python
+        run: |
+          import json
+          import os
+          import sys
+          import time
+          import urllib.error
+          import urllib.request
+
+          api_url = os.environ.get("API_URL", "").strip()
+          if not api_url:
+              print(os.environ.get("MISSING_SECRET_MESSAGE", "Missing runner API URL secret"), file=sys.stderr)
+              raise SystemExit(1)
+
+          infra_stage = os.environ["INFRA_STAGE"]
+          variant = os.environ["VARIANT"]
+          runner_label = os.environ["RUNNER_LABEL"]
+          max_attempts = int(os.environ.get("MAX_ATTEMPTS", "120"))
+          retry_seconds = int(os.environ.get("RETRY_SECONDS", "60"))
+
+          # Labels: platform, infra stage, variant, unique runner label, repo name (oe-core)
+          labels = ["x64", "linux-x64", "sb-x64", infra_stage, variant, runner_label, "oe-core"]
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"runner_label={runner_label}\n")
+
+          print(f"Requesting runner with unique label: [{runner_label}]")
+          print(f"Requested labels: {json.dumps(labels)}")
+
+          start_epoch = int(time.time())
+          retries_on_429 = 0
+          final_attempt = 0
+          http_code = "n/a"
+
+          payload = json.dumps(
+              {
+                  "labels": labels,
+                  "workflow_run_id": os.environ.get("GITHUB_RUN_ID", ""),
+                  "repository": os.environ.get("GITHUB_REPOSITORY", ""),
+              }
+          ).encode("utf-8")
+          request_url = f"{api_url.rstrip('/')}/request-runner"
+
+          def emit_request_summary(status: str) -> None:
+              now_epoch = int(time.time())
+              elapsed_seconds = now_epoch - start_epoch
+              waited_seconds = retries_on_429 * retry_seconds
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+                  fh.write("### Runner Request Metrics\n\n")
+                  fh.write("| Field | Value |\n")
+                  fh.write("|---|---|\n")
+                  fh.write(f"| Status | {status} |\n")
+                  fh.write(f"| Final HTTP status | {http_code} |\n")
+                  fh.write(f"| Attempts used | {final_attempt}/{max_attempts} |\n")
+                  fh.write(f"| 429 retries | {retries_on_429} |\n")
+                  fh.write(f"| Retry wait seconds | {waited_seconds} |\n")
+                  fh.write(f"| Total elapsed seconds | {elapsed_seconds} |\n")
+                  fh.write(f"| Runner label | {runner_label} |\n")
+                  fh.write(f"| Infra stage | {infra_stage} |\n")
+                  fh.write(f"| Variant | {variant} |\n\n")
+
+          requested = False
+          for attempt in range(1, max_attempts + 1):
+              final_attempt = attempt
+              response_body = ""
+              req = urllib.request.Request(
+                  request_url,
+                  data=payload,
+                  method="POST",
+                  headers={"Content-Type": "application/json"},
+              )
+              try:
+                  with urllib.request.urlopen(req) as resp:
+                      http_code = str(resp.getcode())
+                      response_body = resp.read().decode("utf-8", errors="replace")
+              except urllib.error.HTTPError as exc:
+                  http_code = str(exc.code)
+                  response_body = exc.read().decode("utf-8", errors="replace")
+              except Exception as exc:
+                  http_code = "request_error"
+                  response_body = str(exc)
+
+              if http_code == "200":
+                  requested = True
+                  break
+              if http_code == "429":
+                  retries_on_429 += 1
+                  print(
+                      f"Runner capacity full (429), waiting {retry_seconds}s before retry ({attempt}/{max_attempts})..."
+                  )
+                  time.sleep(retry_seconds)
+                  continue
+
+              emit_request_summary("failed")
+              print(f"Runner request failed with HTTP {http_code}", file=sys.stderr)
+              if response_body:
+                  print(response_body, file=sys.stderr)
+              raise SystemExit(1)
+
+          if not requested:
+              emit_request_summary("timed_out")
+              print(
+                  f"Timed out waiting for ephemeral runner capacity after {max_attempts} attempts.",
+                  file=sys.stderr,
+              )
+              raise SystemExit(1)
+
+          emit_request_summary("success")
   run-build:
-    needs: decide-refs
+    needs: [decide-refs, request-ephemeral-runner]
+    permissions:
+      contents: read
+      id-token: write
     strategy:
+      max-parallel: 4
       matrix:
-        build_env: [ '${{ inputs.infra-stage }}' ]
-    name: 'Building ${{needs.decide-refs.outputs.variant}} images on ${{ matrix.build_env }}'
+        build_env: ["${{ inputs.infra-stage }}"]
+    name: "Building ${{needs.decide-refs.outputs.variant}} images on ${{ matrix.build_env }}"
     timeout-minutes: 480
-    runs-on: ['self-hosted', '${{matrix.build_env}}', '${{needs.decide-refs.outputs.variant}}']
+    runs-on:
+      [
+        'self-hosted',
+        '${{ needs.request-ephemeral-runner.outputs.runner_label }}',
+      ]
+    # Unique group per run so multiple workflow runs can execute in parallel (each gets its own ephemeral runner).
     concurrency:
-      group: ${{needs.decide-refs.outputs.monorepo}} ${{needs.decide-refs.outputs.oe-core}} ${{needs.decide-refs.outputs.ot3-firmware}} ${{needs.decide-refs.outputs.variant}} ${{needs.decide-refs.outputs.build-type}} ${{inputs.infra-stage}}
+      group: build-${{ github.run_id }}-${{ github.run_attempt }}
       cancel-in-progress: false
     outputs:
       system_url: ${{ steps.upload-results.outputs.system_url }}
-      fullimage_url: ${{ steps.upload-results.output.fullimage_url }}
+      fullimage_url: ${{ steps.upload-results.outputs.fullimage_url }}
+      console_url: ${{ steps.upload-results.outputs.console_url }}
+      version_file_url: ${{ steps.upload-results.outputs.version_file_url }}
+      release_notes_file_url: ${{ steps.upload-results.outputs.release_notes_file_url }}
     steps:
       - name: Fetch initial sources for action
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           submodules: false
           fetch-depth: 0
           path: ./oe-core-for-workflow
       - name: Fetch oe-core source
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           submodules: false
           fetch-depth: 0
           ref: ${{needs.decide-refs.outputs.oe-core}}
           path: ./oe-core
       - name: Fetch monorepo source
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: ${{ needs.decide-refs.outputs.monorepo }}
           repository: Opentrons/opentrons
           path: ./opentrons
       - name: Fetch ot3-firmware source
-        uses: 'actions/checkout@v3'
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
@@ -114,19 +265,39 @@ jobs:
           ./update.sh
           cd ..
       - name: Configure AWS Credentials
-        uses: './oe-core-for-workflow/.github/actions/aws-credentials'
-        id: aws
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          access_key_id: ${{ secrets.ROBOT_STACK_AWS_ACCESS_KEY_ID }}
-          secret_access_key: ${{ secrets.ROBOT_STACK_AWS_SECRET_ACCESS_KEY }}
-          region: us-east-2
-          stage: ${{ matrix.build_env }}
+          role-to-assume: ${{ matrix.build_env == 'stage-dev' && vars.ROBOT_STACK_AWS_OIDC_ROLE_ARN_DEV || vars.ROBOT_STACK_AWS_OIDC_ROLE_ARN_PROD }}
+          aws-region: us-east-2
+          role-duration-seconds: 43200
+      - name: Apply CI runner customizations
+        run: |
+          # Ephemeral runners may not permit writing /etc/sysctl*; apply runtime settings only.
+          apply_sysctl() {
+            local key="$1"
+            local value="$2"
+            sudo sysctl -w "${key}=${value}" 2>/dev/null || sysctl -w "${key}=${value}" || true
+          }
+
+          apply_sysctl fs.inotify.max_user_watches 655360
+          apply_sysctl fs.inotify.max_user_instances 1280
+          apply_sysctl fs.file-max 100000
+
+          sudo mount -o remount,exec /tmp 2>/dev/null || true
+          sudo mount | grep tmp || true
       - name: Build container
         run: |
           cd oe-core
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
           cp start.sh $tmp_dir/
-          docker build -f ./Dockerfile --tag "ot3-image:latest" $tmp_dir
+          # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
+          # Defaults in Dockerfile are 1001:1001; ec2-user is often 1000 — without this, cleanup/gather hit Permission denied.
+          docker build -f ./Dockerfile \
+            --build-arg "username=$(whoami)" \
+            --build-arg "host_uid=$(id -u)" \
+            --build-arg "host_gid=$(id -g)" \
+            --tag "ot3-image:latest" \
+            $tmp_dir
           cd ..
       - name: Apply unconditional CI config overrides
         run: |
@@ -136,7 +307,7 @@ jobs:
           echo 'GITDIR = "/volumes/cache/git"' >> ./build/conf/local.conf
           echo 'SSTATE_DIR = "/volumes/cache/sstate"' >> ./build/conf/local.conf
           echo 'OT_BUILD_TYPE = "${{needs.decide-refs.outputs.build-type}}"' >> ./build/conf/local.conf
-          echo 'YARN_CACHE_DIR = "/volumes/cache/yarn"' >> ./build/conf/local.conf
+          echo 'PNPM_CACHE_DIR = "/volumes/cache/pnpm"' >> ./build/conf/local.conf
           echo 'ELECTRON_CACHE_DIR = "/volumes/cache/electron"' >> ./build/conf/local.conf
           echo 'CONNECTIVITY_CHECK_URIS = "https://www.yoctoproject.org/connectivity.html"' >> ./build/conf/local.conf
           echo 'OT_BUILD_TARGET = "odd"' >> ./build/conf/local.conf
@@ -162,6 +333,7 @@ jobs:
           echo 'MIXPANEL_ID = "${{ secrets.MIXPANEL_ID }}"' >> ./build/conf/local.conf
           # setup signing key
           echo 'SIGNING_KEY = "${TOPDIR}/.signing-key"' >> ./build/conf/local.conf
+          mkdir -p ./build
           cat <<EOF >./build/.signing-key
           ${{secrets.ROBOT_SIGNING_KEY}}
           EOF
@@ -171,44 +343,77 @@ jobs:
         shell: bash
         run: |
           # fetch cache if the size is less than 20GB, so we have enough space to build image.
-          sizeInBytes=`aws --profile=${{ steps.aws.outputs.profile_name }} s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
+          sizeInBytes=`aws s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
           sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
-          if [[ sizeInGigabytes -gt 50 ]]; then
+          if [[ $sizeInGigabytes -gt 50 ]]; then
               echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
           else
-              aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
+              aws_cp="aws s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
+              s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
               for cachetype in downloads sstate git ; do
-                  localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+                  localzip="${cachedir}/../${cachetype}.zip"
                   thiscache=${cachedir}/${cachetype}
                   echo "Fetching cache for ${cachetype} to ${localzip}"
                   mkdir -p ${thiscache}
-                  TIME="%E" time $aws_cp s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip ${localzip} 2>elapsed || continue
-                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || 0
+                  max_attempts=3
+                  attempt=1
+                  while true; do
+                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.zip ${localzip} 2>elapsed; then
+                      break
+                    fi
+                    if [[ $attempt -ge $max_attempts ]]; then
+                      echo "S3 fetch for ${cachetype} failed after ${max_attempts} attempts, skipping cache for this type"
+                      continue 2
+                    fi
+                    echo "S3 fetch attempt ${attempt} failed, retrying in $((attempt * 15))s..."
+                    sleep $((attempt * 15))
+                    attempt=$((attempt + 1))
+                  done
+                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || true
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
-                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || 0
+                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || true
+                  # Remove zip file immediately after extraction to free up space
+                  rm -f ${localzip}
+                  echo "Removed ${localzip} to free up space"
               done
           fi
-      - name: Download sources
+      - name: Cleanup before build
+        run: |
+          cachedir=${LOCAL_CACHE:-./cache}
+          echo "Checking disk space before build..."
+          df -h ${cachedir} || df -h .
+          # Clean up pip cache if it exists and is large
+          if [ -d "${cachedir}/pip" ]; then
+              pip_size=$(du -sm ${cachedir}/pip 2>/dev/null | cut -f1 || echo "0")
+              if [ "$pip_size" -gt 5000 ]; then
+                  echo "Pip cache is ${pip_size}MB, cleaning up..."
+                  find ${cachedir}/pip -type f -mtime +7 -delete 2>/dev/null || true
+                  echo "Cleaned up old pip cache files"
+              fi
+          fi
+          # Clean up old downloads if space is low
+          if [ -d "${cachedir}/downloads" ]; then
+              available=$(df -m ${cachedir} | tail -1 | awk '{print $4}')
+              if [ "$available" -lt 5000 ]; then
+                  echo "Low disk space (${available}MB available), cleaning old downloads..."
+                  find ${cachedir}/downloads -type f -mtime +30 -delete 2>/dev/null || true
+                  echo "Cleaned up old download files"
+              fi
+          fi
+      - name: Fetch sources and build image
         run: |
           here=$(pwd)
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
           monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
           ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
           cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          tmp_mount="type=tmpfs,dst=/tmp"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image --runall=fetch
-      - name: Build image
-        run: |
-          here=$(pwd)
-          oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
-          monorepo_mount="type=bind,src=$here/opentrons,dst=/volumes/opentrons,consistency=delegated"
-          ot3_firmware_mount="type=bind,src=$here/ot3-firmware,dst=/volumes/ot3-firmware,consistency=delegated"
-          cache_mount="type=bind,src=${LOCAL_CACHE:-./cache},dst=/volumes/cache,consistency=delegated"
-          tmp_mount="type=tmpfs,dst=/tmp"
-          echo "docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image"
-          docker run --rm --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --mount $tmp_mount ot3-image:latest opentrons-ot3-image
+          sudo mount -o remount,exec /tmp
+          tmp_mount="/tmp:rw,exec"
+          # One container: fetch then full build (start.sh). Avoids a second start.sh chown/tmp pass
+          # between separate docker runs, which triggers pseudo inode aborts on do_create_tezi_ot3.
+          echo "docker run --rm -e OE_CI_FETCH_THEN_BUILD=1 --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
+          docker run --rm -e OE_CI_FETCH_THEN_BUILD=1 --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
       - name: Prune images
         if: always()
         run: docker image prune -af
@@ -216,11 +421,15 @@ jobs:
         shell: bash
         continue-on-error: true
         run: |
-          aws_cp="aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --no-progress"
+          aws_cp="aws s3 cp --no-progress"
           cachedir=${LOCAL_CACHE:-./cache}
+          # Docker leaves root-owned files on bind-mounted cache; zip and rm need runner ownership.
+          if [ -d "$cachedir" ]; then
+            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
+          fi
           for cachetype in downloads sstate git ; do
               df -h
-              localzip=$(realpath ${cachedir}/../${cachetype}.zip)
+              localzip="${cachedir}/../${cachetype}.zip"
               thiscache=${cachedir}/${cachetype}
               cd ${thiscache}
               echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
@@ -234,6 +443,10 @@ jobs:
         run: |
           _oe_build=$(pwd)/oe-core/build
           echo "found build dir at ${_oe_build}"
+          # Docker/BitBake may leave root-owned files in the bind-mounted build tree.
+          if [ -d "${_oe_build}" ]; then
+            chown -R "$(id -u):$(id -g)" "${_oe_build}"
+          fi
           _artifact_root=${_oe_build}/deploy
           _artifact_unversioned_subdir=opentrons
           _artifact_s3=${_artifact_root}/${_artifact_unversioned_subdir}
@@ -267,21 +480,21 @@ jobs:
       - name: Handle Release
         if: ${{ needs.decide-refs.outputs.build-type == 'release' }}
         shell: bash
-        id: 'handle-release'
+        id: "handle-release"
         run: |
           pushd oe-core/scripts
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json releases.json
+          aws s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json releases.json
           base_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           version_file=${{ steps.artifacts.outputs.artifact_root }}/${{ steps.artifacts.outputs.artifact_unversioned_subdir }}/VERSION.json
           python3 update_releases_file.py --releases-file releases.json --version-file ${version_file} --base-url $base_url
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/
+          aws s3 cp --acl=public-read releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/
           popd
       - name: Upload results to S3
         shell: bash
-        id: 'upload-results'
+        id: "upload-results"
         run: |
           pushd ${{ steps.artifacts.outputs.artifact_root }}
-          aws --profile=${{ steps.aws.outputs.profile_name }} s3 cp --acl=public-read --recursive ${{ steps.artifacts.outputs.artifact_unversioned_subdir }} s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
+          aws s3 cp --acl=public-read --recursive ${{ steps.artifacts.outputs.artifact_unversioned_subdir }} s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
           echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT
           echo "version_file_url=$root_url/VERSION.json" >> $GITHUB_OUTPUT
@@ -291,7 +504,7 @@ jobs:
           popd
       - name: Upload system zip to monorepo release
         if: needs.decide-refs.outputs.build-type == 'release'
-        uses: 'ncipollo/release-action@v1.12.0'
+        uses: ncipollo/release-action@v1.12.0
         with:
           allowUpdates: true
           omitBody: true
@@ -305,7 +518,7 @@ jobs:
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       - name: Upload fullimage tar to monorepo release
         if: needs.decide-refs.outputs.build-type == 'release'
-        uses: 'ncipollo/release-action@v1.12.0'
+        uses: ncipollo/release-action@v1.12.0
         with:
           allowUpdates: true
           omitBody: true
@@ -319,7 +532,7 @@ jobs:
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       - name: Upload version json to monorepo release
         if: needs.decide-refs.outputs.build-type == 'release'
-        uses: 'ncipollo/release-action@v1.12.0'
+        uses: ncipollo/release-action@v1.12.0
         with:
           allowUpdates: true
           omitBody: true
@@ -331,26 +544,113 @@ jobs:
           artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
-      - name: Post results as internal-release
-        if: ${{ matrix.build_env == 'stage-prod' && needs.decide-refs.outputs.variant=='internal-release' }}
-        uses: slackapi/slack-github-action@v1.14.0
-        with:
-          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ needs.decide-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ needs.decide-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ needs.decide-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Post results as release
-        if: ${{ matrix.build_env == 'stage-prod' && needs.decide-refs.outputs.variant== 'release' }}
-        uses: slackapi/slack-github-action@v1.14.0
-        with:
-          payload: "{\"s3-url\":\"${{ steps.upload-results.outputs.console_url }}/\",\"type\":\"branch\", \"reflike\":\"${{ needs.decide-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ needs.decide-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ needs.decide-refs.outputs.ot3-firmware }}\",\"full-image\":\"${{ steps.upload-results.outputs.fullimage_url }}\", \"system-update\":\"${{ steps.upload-results.outputs.system_url }}\", \"version-file\":\"${{ steps.upload-results.outputs.version_file_url }}\", \"release-notes\":\"${{ steps.upload-results.outputs.release_notes_file_url }}\"}"
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_RELEASE }}
+      # Ephemeral runners are destroyed after the job; cleanup is redundant but harmless.
       - name: Remove build data
         if: always()
+        continue-on-error: true
+        shell: bash
         run: |
-          rm -rf ./*
+          sudo find . -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
       - name: Remove poisoned cache
         if: ${{ failure() }}
+        shell: bash
+        continue-on-error: true
         run: |
-          rm -rf ${LOCAL_CACHE:-./cache}/*
+          cachedir="${LOCAL_CACHE:-./cache}"
+          if [ -d "$cachedir" ]; then
+            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
+            # Some cache entries can remain undeletable by the runner user; remove as root.
+            sudo rm -rf "${cachedir}/"* "${cachedir}"/.[!.]* "${cachedir}"/..?* 2>/dev/null || true
+          fi
+  notify-tagged-success:
+    name: "Notify Tagged Build Success"
+    runs-on: "ubuntu-latest"
+    needs: [decide-refs, run-build]
+    if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success' && needs.decide-refs.outputs.variant != ''
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: "Send success alert"
+        uses: ./.github/actions/simple-build-alert
+        continue-on-error: true
+        with:
+          status: "success"
+          workflow_name: "Build Flex image on github workflows"
+          webhook_url: ${{ vars.SLACK_WEBHOOK_URL_TAGGED }}
+          console_url: ${{ needs.run-build.outputs.console_url }}
+          system_url: ${{ needs.run-build.outputs.system_url }}
+          fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
+          version_file_url: ${{ needs.run-build.outputs.version_file_url }}
+          release_notes_file_url: ${{ needs.run-build.outputs.release_notes_file_url }}
+          oe-core_ref: ${{ needs.decide-refs.outputs.oe-core }}
+          monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
+          firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
+  notify-tagged-failure:
+    name: "Notify Tagged Build Failure"
+    runs-on: "ubuntu-latest"
+    needs: [decide-refs, run-build]
+    if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: "Send failure alert"
+        uses: ./.github/actions/simple-build-alert
+        continue-on-error: true
+        with:
+          status: "failure"
+          workflow_name: "Build Flex image on github workflows"
+          webhook_url: ${{ vars.SLACK_WEBHOOK_URL_TAGGED }}
+          console_url: ${{ needs.run-build.outputs.console_url }}
+          system_url: ${{ needs.run-build.outputs.system_url }}
+          fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
+          version_file_url: ${{ needs.run-build.outputs.version_file_url }}
+          release_notes_file_url: ${{ needs.run-build.outputs.release_notes_file_url }}
+          oe-core_ref: ${{ needs.decide-refs.outputs.oe-core }}
+          monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
+          firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
+  notify-untagged-success:
+    name: "Notify Untagged Build Success"
+    runs-on: "ubuntu-latest"
+    needs: [decide-refs, run-build]
+    if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: "Send success alert"
+        uses: ./.github/actions/simple-build-alert
+        continue-on-error: true
+        with:
+          status: "success"
+          workflow_name: "Build Flex image on github workflows"
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          console_url: ${{ needs.run-build.outputs.console_url }}
+          system_url: ${{ needs.run-build.outputs.system_url }}
+          fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
+          version_file_url: ${{ needs.run-build.outputs.version_file_url }}
+          release_notes_file_url: ${{ needs.run-build.outputs.release_notes_file_url }}
+          oe-core_ref: ${{ needs.decide-refs.outputs.oe-core }}
+          monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
+          firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
+  notify-untagged-failure:
+    name: "Notify Untagged Build Failure"
+    runs-on: "ubuntu-latest"
+    needs: [decide-refs, run-build]
+    if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: "Send failure alert"
+        uses: ./.github/actions/simple-build-alert
+        continue-on-error: true
+        with:
+          status: "failure"
+          workflow_name: "Build Flex image on github workflows"
+          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          console_url: ${{ needs.run-build.outputs.console_url }}
+          system_url: ${{ needs.run-build.outputs.system_url }}
+          fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
+          version_file_url: ${{ needs.run-build.outputs.version_file_url }}
+          release_notes_file_url: ${{ needs.run-build.outputs.release_notes_file_url }}
+          oe-core_ref: ${{ needs.decide-refs.outputs.oe-core }}
+          monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
+          firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
