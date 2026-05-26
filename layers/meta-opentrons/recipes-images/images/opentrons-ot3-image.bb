@@ -281,7 +281,10 @@ python do_create_tezi_manifest(){
 }
 
 # create the tezi ot3 image
-fakeroot do_create_tezi_ot3() {
+# Not fakeroot: this task only runs tar on DEPLOY_DIR_IMAGE. Marking it fakeroot makes
+# BitBake run pre-task cleanup (e.g. rm -rf .../image-json from image_type_tezi) under
+# pseudo, which can SIGABRT with inode/path mismatch on bind-mounted CI workspaces.
+do_create_tezi_ot3() {
     tar --xattrs --xattrs-include=* --numeric-owner --transform \
     's,^,${TEZI_IMAGE_NAME}-Tezi_${TEZI_VERSION}/,' -chf  \
     ${DEPLOY_DIR_IMAGE}/${TEZI_IMAGE_NAME}-Tezi_${TEZI_VERSION}.tar -C \
@@ -313,7 +316,6 @@ do_create_opentrons_ot3() {
 do_create_filesystem[depends] += "virtual/fakeroot-native:do_populate_sysroot"
 do_create_tezi_manifest[prefuncs] += "do_image_teziimg"
 
-do_create_tezi_ot3[depends] += "virtual/fakeroot-native:do_populate_sysroot"
 do_create_tezi_ot3[prefuncs] += "do_image_teziimg do_create_filesystem"
 
 addtask do_create_filesystem after do_image_complete before do_populate_lic_deploy
