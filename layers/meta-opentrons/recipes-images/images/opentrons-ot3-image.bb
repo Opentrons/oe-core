@@ -6,6 +6,7 @@ LICENSE = "Apache-2"
 inherit core-image image_type_tezi
 
 DEPENDS += "rsync-native zip-native \
+    opentrons-audit-server \
     opentrons-auth-server \
     opentrons-key-server \
     opentrons-robot-server \
@@ -52,7 +53,7 @@ IMAGE_INSTALL:append = " \
     plymouth mosquitto hidapi \
     python3 python3-misc python3-modules python3-pip \
     robot-app-wayland-launch opentrons-robot-app \
-    opentrons-auth-server opentrons-robot-server opentrons-system-server opentrons-update-server opentrons-key-server \
+    opentrons-auth-server opentrons-robot-server opentrons-system-server opentrons-update-server opentrons-key-server opentrons-audit-server \
     opentrons-usb-bridge opentrons-jupyter-notebook \
     opentrons-mcu-firmware opentrons-module-firmware \
     opentrons-user-environment \
@@ -119,6 +120,7 @@ python do_create_opentrons_manifest() {
         "opentrons-system-server-version.json",
         "opentrons-update-server-version.json",
         "opentrons-usb-bridge-version.json",
+        "opentrons-audit-server-version.json",
     ]
 
     opentrons_versions_dir = "%s/opentrons_versions" % d.getVar('STAGING_DIR_HOST')

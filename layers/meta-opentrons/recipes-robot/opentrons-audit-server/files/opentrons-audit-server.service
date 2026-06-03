@@ -1,0 +1,22 @@
+[Unit]
+Description=Opentrons Audit Server
+Wants=local-fs.target
+After=local-fs.target
+
+[Install]
+WantedBy=nginx.service
+Before=nginx.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+ExecStart=python3 -m audit_server --uds /run/opentrons-audit-server.sock
+StateDirectory=opentrons-audit-server
+Environment=PYTHONPATH=/opt/opentrons-audit-server
+Restart=on-failure
+TimeoutStartSec=3min
+# We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
