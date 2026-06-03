@@ -6,6 +6,7 @@ LICENSE = "Apache-2"
 inherit core-image image_type_tezi
 
 DEPENDS += "rsync-native zip-native \
+    opentrons-audit-server \
     opentrons-auth-server \
     opentrons-key-server \
     opentrons-robot-server \
