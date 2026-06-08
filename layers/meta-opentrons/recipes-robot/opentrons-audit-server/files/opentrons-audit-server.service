@@ -13,6 +13,7 @@ NotifyAccess=all
 ExecStart=python3 -m audit_server --uds /run/opentrons-audit-server.sock
 StateDirectory=opentrons-audit-server
 Environment=PYTHONPATH=/opt/opentrons-audit-server
+Environment=OT_AUDIT_SERVER_persistence_directory=/var/lib/opentrons-audit-server
 Restart=on-failure
 TimeoutStartSec=3min
 # We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
