@@ -133,16 +133,16 @@ jobs:
     steps:
       - id: req
         env:
-          # Set these repo secrets:
-          # - EPHEMERAL_RUNNER_API_URL_PROD
-          # - EPHEMERAL_RUNNER_API_URL_DEV
-          API_URL: ${{ inputs.infra-stage == 'stage-dev' && secrets.EPHEMERAL_RUNNER_API_URL_DEV || secrets.EPHEMERAL_RUNNER_API_URL_PROD }}
+          # Set these repo variables (Settings → Actions → Variables):
+          # - RUNNER_API_URL_PROD
+          # - RUNNER_API_URL_DEV
+          API_URL: ${{ inputs.infra-stage == 'stage-dev' && vars.RUNNER_API_URL_DEV || vars.RUNNER_API_URL_PROD }}
           INFRA_STAGE: ${{ inputs.infra-stage }}
           VARIANT: ${{ needs.decide-refs.outputs.variant }}
           RUNNER_LABEL: ephemeral-${{ github.run_id }}-${{ github.run_attempt }}
           MAX_ATTEMPTS: ${{ inputs.runner-request-max-attempts }}
           RETRY_SECONDS: ${{ inputs.runner-request-retry-seconds }}
-          MISSING_SECRET_MESSAGE: Missing EPHEMERAL_RUNNER_API_URL_* secret for infra-stage=${{ inputs.infra-stage }}
+          MISSING_VAR_MESSAGE: Missing RUNNER_API_URL_* variable for infra-stage=${{ inputs.infra-stage }}
         shell: python
         run: |
           import json
@@ -154,7 +154,7 @@ jobs:
 
           api_url = os.environ.get("API_URL", "").strip()
           if not api_url:
-              print(os.environ.get("MISSING_SECRET_MESSAGE", "Missing runner API URL secret"), file=sys.stderr)
+              print(os.environ.get("MISSING_VAR_MESSAGE", "Missing runner API URL (set vars RUNNER_API_URL_DEV and RUNNER_API_URL_PROD)"), file=sys.stderr)
               raise SystemExit(1)
 
           infra_stage = os.environ["INFRA_STAGE"]
