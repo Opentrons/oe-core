@@ -293,8 +293,10 @@ LATEST_TAG_TEST_SPECS.forEach(
 const COORDINATED_RELEASE_TAG_SPECS: Array<[string, Ref, boolean]> = [
   ['ot3 internal alpha', 'refs/tags/ot3@8.5.0-alpha.0', true],
   ['ot3 internal beta', 'refs/tags/ot3@8.5.0-beta.1', true],
+  ['ot3 internal stable', 'refs/tags/ot3@8.5.0', true],
   ['external beta', 'refs/tags/v10.0.0-beta.1', true],
   ['external alpha', 'refs/tags/v10.0.0-alpha.0', true],
+  ['external stable', 'refs/tags/v10.0.0', true],
   ['edge branch', 'refs/heads/edge', false],
   ['legacy internal@ tag alone', 'refs/tags/internal@8.5.0', false],
 ]
