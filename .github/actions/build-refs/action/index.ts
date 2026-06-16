@@ -20,14 +20,13 @@ export type Ref = Branch | Tag
 
 export type InputRefs = Map<Repo, Ref | null>
 
-export type AttemptableTag = Tag | ':latest:'
-export type AttemptableRef = AttemptableTag | Branch
+export type AttemptableRef = Tag | Branch
 
 export type AttemptableRefs = Map<Repo, AttemptableRef[]>
 
 export type OutputRefs = Map<Repo, Ref>
 
-function mainRefFor(input: Repo): Branch {
+function defaultBranchRefFor(input: Repo): Branch {
   return {
     monorepo: 'refs/heads/edge',
     'oe-core': 'refs/heads/main',
@@ -58,19 +57,6 @@ export function resolveBuildVariant(ref: Ref): Variant {
     }
   }
   return 'internal-release'
-}
-
-function latestTagPrefixFor(repo: Repo, variant: Variant): string[] {
-  if (variant === 'release') {
-    return ['refs/tags/v']
-  }
-  if (variant === 'internal-release') {
-    if (repo === 'monorepo') return ['refs/tags/internal@', 'refs/tags/ot3@v']
-    if (repo === 'oe-core') return ['refs/tags/internal@']
-    if (repo === 'ot3-firmware') return ['refs/tags/internal@']
-    throw new Error(`Unknown repo ${repo}`)
-  }
-  throw new Error(`Unknown variant ${variant}`)
 }
 
 export function latestTag(tagRefs: GitHubApiTag[]): Tag | null {
@@ -153,8 +139,8 @@ function restDetailsFor(input: Repo): { owner: string; repo: string } {
   }[input]
 }
 
-function refIsMain(input: Ref, repo: Repo): boolean {
-  return mainRefFor(repo) === input
+function refIsDefaultBranch(input: Ref, repo: Repo): boolean {
+  return defaultBranchRefFor(repo) === input
 }
 
 export function authoritativeRef(inputs: InputRefs): [Ref, boolean] {
@@ -163,7 +149,7 @@ export function authoritativeRef(inputs: InputRefs): [Ref, boolean] {
       .map((repoName): [Ref, boolean] | null => {
         const inputRefForRepo = inputs.get(repoName)
         return inputRefForRepo
-          ? [inputRefForRepo, refIsMain(inputRefForRepo, repoName)]
+          ? [inputRefForRepo, refIsDefaultBranch(inputRefForRepo, repoName)]
           : null
       })
       .find(el => el !== null) ?? ['refs/heads/edge', true]
@@ -191,74 +177,55 @@ function visitRefsByType<T>(
 
 function branchesToAttempt(
   requesterBranch: Branch,
-  requesterIsMain: boolean,
-  requestedMain: Branch
+  requesterIsDefaultBranch: boolean,
+  requestedDefaultBranch: Branch
 ): Ref[] {
-  // if this is a main-branch build, use our main branch
-  if (requesterIsMain) {
-    return [requestedMain]
+  // if this is a default-branch build, use our default branch
+  if (requesterIsDefaultBranch) {
+    return [requestedDefaultBranch]
   }
-  // otherwise, use a matching branchname and then our main branch
-  return [requesterBranch, requestedMain]
+  // otherwise, use a matching branchname and then our default branch
+  return [requesterBranch, requestedDefaultBranch]
 }
 
-function tagsToAttempt(
-  requesterTag: Tag,
-  requestedMain: Branch
-): AttemptableTag[] {
-  return [requesterTag, ':latest:', requestedMain]
+/** Return whether a ref is a coordinated Flex release tag (ot3@* or v*). */
+export function isCoordinatedReleaseTag(ref: Ref): boolean {
+  if (!ref.startsWith('refs/tags/')) {
+    return false
+  }
+  const tagName = ref.slice('refs/tags/'.length)
+  return tagName.startsWith('ot3@') || tagName.startsWith('v')
+}
+
+function tagsToAttempt(requesterTag: Tag): Ref[] {
+  // Tag builds require the same tag on every repo; no default-branch fallback.
+  return [requesterTag]
 }
 
 export function refsToAttempt(
   requesterRef: Ref,
-  requesterIsMain: boolean,
-  requestedMain: Branch
+  requesterIsDefaultBranch: boolean,
+  requestedDefaultBranch: Branch
 ): Ref[] {
   ///Based on the refs from whatever was specified, return an ordered list of refs to
   // try.
   return visitRefsByType(
     requesterRef,
     requesterBranch =>
-      branchesToAttempt(requesterBranch, requesterIsMain, requestedMain),
-    requesterTag => tagsToAttempt(requesterTag, requestedMain)
+      branchesToAttempt(
+        requesterBranch,
+        requesterIsDefaultBranch,
+        requestedDefaultBranch
+      ),
+    requesterTag => tagsToAttempt(requesterTag)
   )
 }
 
-async function resolveRefs(
-  toAttempt: AttemptableRefs,
-  variant: Variant
-): Promise<OutputRefs> {
+async function resolveRefs(toAttempt: AttemptableRefs): Promise<OutputRefs> {
   const token = core.getInput('token')
   let resolved = new Map()
   for (const [repo, refList] of toAttempt) {
     const octokit = getOctokit(token)
-
-    const fetchTags = async (repoName: Repo): Promise<Ref | null> => {
-      core.info(`finding latest tag for ${repoName}`)
-      return Promise.all(
-        latestTagPrefixFor(repoName, variant).map(prefix =>
-          octokit.rest.git
-            .listMatchingRefs({
-              ...restDetailsFor(repoName),
-              ref: restAPICompliantRef(prefix),
-            })
-            .then((response: any) => {
-              if (response.status != 200) {
-                throw new Error(
-                  `Bad response from github api for ${repoName} get tags: ${response.status}`
-                )
-              }
-              const latest = latestTag(response.data)
-              core.debug(
-                `latest tag for ${repoName} variant ${variant} is ${latest}`
-              )
-              return latest
-            })
-        )
-      ).then(results =>
-        results.reduce((prev: any, current: any) => prev ?? current, null)
-      )
-    }
 
     // this is a big function to be inline and untestable, but tookit doesn't export
     // the type for the octokit object above so what are you gonna do
@@ -267,16 +234,11 @@ async function resolveRefs(
       ref: AttemptableRef
     ): Promise<Ref | null> => {
       core.info(`looking for ${ref} on ${repoName}`)
-      const correctRef = ref === ':latest:' ? await fetchTags(repoName) : ref
-      if (correctRef === null) {
-        core.info(`couldn't find ref ${correctRef} for ${ref} on ${repoName}`)
-        return null
-      }
 
       return octokit.rest.git
         .listMatchingRefs({
           ...restDetailsFor(repoName),
-          ref: restAPICompliantRef(correctRef),
+          ref: restAPICompliantRef(ref),
         })
         .then((value: any) => {
           if (value.status != 200 || !value.data) {
@@ -286,7 +248,7 @@ async function resolveRefs(
           }
           const availableRefs = value.data.map((refObj: any) => refObj.ref)
           core.info(`refs on ${repoName} matching ${ref}: ${availableRefs}`)
-          return availableRefs.includes(correctRef) ? correctRef : null
+          return availableRefs.includes(ref) ? ref : null
         })
     }
 
@@ -320,8 +282,10 @@ async function run() {
   inputs.forEach((ref, repo) => {
     core.debug(`found input for ${repo}: ${ref}`)
   })
-  const [authoritative, isMain] = authoritativeRef(inputs)
-  core.debug(`authoritative ref is ${authoritative} (main: ${isMain})`)
+  const [authoritative, isDefaultBranch] = authoritativeRef(inputs)
+  core.debug(
+    `authoritative ref is ${authoritative} (default branch: ${isDefaultBranch})`
+  )
   const buildType = resolveBuildType(authoritative)
   const buildVariant = resolveBuildVariant(authoritative)
   core.info(`Resolved build type to ${buildType}`)
@@ -333,7 +297,11 @@ async function run() {
         repoName,
         inputRef
           ? [inputRef]
-          : refsToAttempt(authoritative, isMain, mainRefFor(repoName))
+          : refsToAttempt(
+              authoritative,
+              isDefaultBranch,
+              defaultBranchRefFor(repoName)
+            )
       )
     },
     new Map()
@@ -344,11 +312,16 @@ async function run() {
   setOutput('build-type', buildType)
   setOutput('variant', buildVariant)
 
-  const resolved = await resolveRefs(attemptable, buildVariant)
+  const resolved = await resolveRefs(attemptable)
   resolved.forEach((ref, repo) => {
     if (!ref) {
+      const inputRef = inputs.get(repo)
+      const tagHint =
+        authoritative.startsWith('refs/tags/') && inputRef === null
+          ? ` Tag builds require the same tag (${authoritative}) on all repos.`
+          : ''
       throw new Error(
-        `Could not resolve ${repo} input reference ${inputs.get(repo)}`
+        `Could not resolve ${repo} input reference ${inputRef}.${tagHint}`
       )
     }
     core.info(`Resolved ${repo} to ${ref}`)

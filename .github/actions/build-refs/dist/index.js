@@ -34569,6 +34569,7 @@ var __webpack_exports__ = {};
 __nccwpck_require__.r(__webpack_exports__);
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   authoritativeRef: () => (/* binding */ authoritativeRef),
+/* harmony export */   isCoordinatedReleaseTag: () => (/* binding */ isCoordinatedReleaseTag),
 /* harmony export */   latestTag: () => (/* binding */ latestTag),
 /* harmony export */   refsToAttempt: () => (/* binding */ refsToAttempt),
 /* harmony export */   resolveBuildType: () => (/* binding */ resolveBuildType),
@@ -34597,7 +34598,7 @@ var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _argume
 
 
 const orderedRepos = ['monorepo', 'oe-core', 'ot3-firmware'];
-function mainRefFor(input) {
+function defaultBranchRefFor(input) {
     return {
         monorepo: 'refs/heads/edge',
         'oe-core': 'refs/heads/main',
@@ -34625,21 +34626,6 @@ function resolveBuildVariant(ref) {
         }
     }
     return 'internal-release';
-}
-function latestTagPrefixFor(repo, variant) {
-    if (variant === 'release') {
-        return ['refs/tags/v'];
-    }
-    if (variant === 'internal-release') {
-        if (repo === 'monorepo')
-            return ['refs/tags/internal@', 'refs/tags/ot3@v'];
-        if (repo === 'oe-core')
-            return ['refs/tags/internal@'];
-        if (repo === 'ot3-firmware')
-            return ['refs/tags/internal@'];
-        throw new Error(`Unknown repo ${repo}`);
-    }
-    throw new Error(`Unknown variant ${variant}`);
 }
 function latestTag(tagRefs) {
     if (tagRefs.length === 0)
@@ -34716,8 +34702,8 @@ function restDetailsFor(input) {
         'ot3-firmware': { owner: 'Opentrons', repo: 'ot3-firmware' },
     }[input];
 }
-function refIsMain(input, repo) {
-    return mainRefFor(repo) === input;
+function refIsDefaultBranch(input, repo) {
+    return defaultBranchRefFor(repo) === input;
 }
 function authoritativeRef(inputs) {
     var _a;
@@ -34725,7 +34711,7 @@ function authoritativeRef(inputs) {
         .map((repoName) => {
         const inputRefForRepo = inputs.get(repoName);
         return inputRefForRepo
-            ? [inputRefForRepo, refIsMain(inputRefForRepo, repoName)]
+            ? [inputRefForRepo, refIsDefaultBranch(inputRefForRepo, repoName)]
             : null;
     })
         .find(el => el !== null)) !== null && _a !== void 0 ? _a : ['refs/heads/edge', true]);
@@ -34743,59 +34729,50 @@ function visitRefsByType(ref, ifBranch, ifTag) {
         return ifTag(ref);
     throw new Error(`Ref ${ref} can't be matched to branch or tag, is it a shortref?`);
 }
-function branchesToAttempt(requesterBranch, requesterIsMain, requestedMain) {
-    // if this is a main-branch build, use our main branch
-    if (requesterIsMain) {
-        return [requestedMain];
+function branchesToAttempt(requesterBranch, requesterIsDefaultBranch, requestedDefaultBranch) {
+    // if this is a default-branch build, use our default branch
+    if (requesterIsDefaultBranch) {
+        return [requestedDefaultBranch];
     }
-    // otherwise, use a matching branchname and then our main branch
-    return [requesterBranch, requestedMain];
+    // otherwise, use a matching branchname and then our default branch
+    return [requesterBranch, requestedDefaultBranch];
 }
-function tagsToAttempt(requesterTag, requestedMain) {
-    return [requesterTag, ':latest:', requestedMain];
+/** Return whether a ref is a coordinated Flex release tag (ot3@* or v*). */
+function isCoordinatedReleaseTag(ref) {
+    if (!ref.startsWith('refs/tags/')) {
+        return false;
+    }
+    const tagName = ref.slice('refs/tags/'.length);
+    return tagName.startsWith('ot3@') || tagName.startsWith('v');
 }
-function refsToAttempt(requesterRef, requesterIsMain, requestedMain) {
+function tagsToAttempt(requesterTag) {
+    // Tag builds require the same tag on every repo; no default-branch fallback.
+    return [requesterTag];
+}
+function refsToAttempt(requesterRef, requesterIsDefaultBranch, requestedDefaultBranch) {
     ///Based on the refs from whatever was specified, return an ordered list of refs to
     // try.
-    return visitRefsByType(requesterRef, requesterBranch => branchesToAttempt(requesterBranch, requesterIsMain, requestedMain), requesterTag => tagsToAttempt(requesterTag, requestedMain));
+    return visitRefsByType(requesterRef, requesterBranch => branchesToAttempt(requesterBranch, requesterIsDefaultBranch, requestedDefaultBranch), requesterTag => tagsToAttempt(requesterTag));
 }
-function resolveRefs(toAttempt, variant) {
+function resolveRefs(toAttempt) {
     return __awaiter(this, void 0, void 0, function* () {
         const token = _actions_core__WEBPACK_IMPORTED_MODULE_1__.getInput('token');
         let resolved = new Map();
         for (const [repo, refList] of toAttempt) {
             const octokit = (0,_actions_github__WEBPACK_IMPORTED_MODULE_0__.getOctokit)(token);
-            const fetchTags = (repoName) => __awaiter(this, void 0, void 0, function* () {
-                _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`finding latest tag for ${repoName}`);
-                return Promise.all(latestTagPrefixFor(repoName, variant).map(prefix => octokit.rest.git
-                    .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: restAPICompliantRef(prefix) }))
-                    .then((response) => {
-                    if (response.status != 200) {
-                        throw new Error(`Bad response from github api for ${repoName} get tags: ${response.status}`);
-                    }
-                    const latest = latestTag(response.data);
-                    _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`latest tag for ${repoName} variant ${variant} is ${latest}`);
-                    return latest;
-                }))).then(results => results.reduce((prev, current) => prev !== null && prev !== void 0 ? prev : current, null));
-            });
             // this is a big function to be inline and untestable, but tookit doesn't export
             // the type for the octokit object above so what are you gonna do
             const refResolves = (repoName, ref) => __awaiter(this, void 0, void 0, function* () {
                 _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`looking for ${ref} on ${repoName}`);
-                const correctRef = ref === ':latest:' ? yield fetchTags(repoName) : ref;
-                if (correctRef === null) {
-                    _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`couldn't find ref ${correctRef} for ${ref} on ${repoName}`);
-                    return null;
-                }
                 return octokit.rest.git
-                    .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: restAPICompliantRef(correctRef) }))
+                    .listMatchingRefs(Object.assign(Object.assign({}, restDetailsFor(repoName)), { ref: restAPICompliantRef(ref) }))
                     .then((value) => {
                     if (value.status != 200 || !value.data) {
                         throw new Error(`Bad response from github api for ${repoName} get matching refs: ${value.status}`);
                     }
                     const availableRefs = value.data.map((refObj) => refObj.ref);
                     _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`refs on ${repoName} matching ${ref}: ${availableRefs}`);
-                    return availableRefs.includes(correctRef) ? correctRef : null;
+                    return availableRefs.includes(ref) ? ref : null;
                 });
             });
             resolved.set(repo, yield Promise.all(refList.map(ref => refResolves(repo, ref))).then(presentRefs => presentRefs.find(maybeRef => maybeRef !== null) || null));
@@ -34821,8 +34798,8 @@ function run() {
         inputs.forEach((ref, repo) => {
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found input for ${repo}: ${ref}`);
         });
-        const [authoritative, isMain] = authoritativeRef(inputs);
-        _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`authoritative ref is ${authoritative} (main: ${isMain})`);
+        const [authoritative, isDefaultBranch] = authoritativeRef(inputs);
+        _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`authoritative ref is ${authoritative} (default branch: ${isDefaultBranch})`);
         const buildType = resolveBuildType(authoritative);
         const buildVariant = resolveBuildVariant(authoritative);
         _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved build type to ${buildType}`);
@@ -34830,17 +34807,21 @@ function run() {
         const attemptable = Array.from(inputs.entries()).reduce((prev, [repoName, inputRef]) => {
             return prev.set(repoName, inputRef
                 ? [inputRef]
-                : refsToAttempt(authoritative, isMain, mainRefFor(repoName)));
+                : refsToAttempt(authoritative, isDefaultBranch, defaultBranchRefFor(repoName)));
         }, new Map());
         attemptable.forEach((refs, repo) => {
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.debug(`found attemptable refs for ${repo}: ${refs.join(', ')}`);
         });
         setOutput('build-type', buildType);
         setOutput('variant', buildVariant);
-        const resolved = yield resolveRefs(attemptable, buildVariant);
+        const resolved = yield resolveRefs(attemptable);
         resolved.forEach((ref, repo) => {
             if (!ref) {
-                throw new Error(`Could not resolve ${repo} input reference ${inputs.get(repo)}`);
+                const inputRef = inputs.get(repo);
+                const tagHint = authoritative.startsWith('refs/tags/') && inputRef === null
+                    ? ` Tag builds require the same tag (${authoritative}) on all repos.`
+                    : '';
+                throw new Error(`Could not resolve ${repo} input reference ${inputRef}.${tagHint}`);
             }
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved ${repo} to ${ref}`);
             setOutput(repo, ref);

@@ -29,7 +29,7 @@ const AUTHORITATIVE_REF_TEST_SPECS: Array<
     ['refs/heads/edge', true],
   ],
   [
-    'identifies if monorepo preferred but on non-main branch',
+    'identifies if monorepo preferred but on non-default branch',
     new Map([
       ['oe-core', 'refs/heads/main'],
       ['monorepo', 'refs/heads/some-test-branch'],
@@ -37,7 +37,7 @@ const AUTHORITATIVE_REF_TEST_SPECS: Array<
     ['refs/heads/some-test-branch', false],
   ],
   [
-    'identifies if oe-core preferred but on non-main branch',
+    'identifies if oe-core preferred but on non-default branch',
     new Map([
       ['oe-core', 'refs/heads/some-test-branch'],
       ['monorepo', null],
@@ -45,7 +45,7 @@ const AUTHORITATIVE_REF_TEST_SPECS: Array<
     ['refs/heads/some-test-branch', false],
   ],
   [
-    'falls back to main branches if nothing is specified',
+    'falls back to default branches if nothing is specified',
     new Map([
       ['oe-core', null],
       ['monorepo', null],
@@ -66,34 +66,48 @@ const REFS_TO_ATTEMPT_TEST_SPECS: Array<
   [string, [Ref, boolean, Branch], Ref[]]
 > = [
   [
-    'with non-main branches should prioritize the request and then use main',
-    ['refs/heads/someBranch', false, 'refs/heads/someMain'],
-    ['refs/heads/someBranch', 'refs/heads/someMain'],
+    'with non-default branches should prioritize the request and then use default branch',
+    ['refs/heads/someBranch', false, 'refs/heads/someDefaultBranch'],
+    ['refs/heads/someBranch', 'refs/heads/someDefaultBranch'],
   ],
   [
-    'with main branches should just use main',
-    ['refs/heads/someOtherMain', true, 'refs/heads/someMain'],
-    ['refs/heads/someMain'],
+    'with default branches should just use default branch',
+    ['refs/heads/someOtherDefaultBranch', true, 'refs/heads/someDefaultBranch'],
+    ['refs/heads/someDefaultBranch'],
   ],
   [
-    'with tags should prioritize match tag, then latest',
-    ['refs/tags/someTag', false, 'refs/heads/someMain'],
-    ['refs/tags/someTag', ':latest:', 'refs/heads/someMain'],
+    'with tags should require the matching tag only',
+    ['refs/tags/someTag', false, 'refs/heads/someDefaultBranch'],
+    ['refs/tags/someTag'],
+  ],
+  [
+    'with coordinated ot3 tags should require the matching tag only',
+    ['refs/tags/ot3@8.5.0-alpha.0', false, 'refs/heads/someDefaultBranch'],
+    ['refs/tags/ot3@8.5.0-alpha.0'],
+  ],
+  [
+    'with external firmware tags should require the matching tag only',
+    ['refs/tags/v10.0.0-beta.1', false, 'refs/heads/someDefaultBranch'],
+    ['refs/tags/v10.0.0-beta.1'],
   ],
 ]
 
 REFS_TO_ATTEMPT_TEST_SPECS.forEach(
   ([
     testNameFragment,
-    [testRequesterRef, testRequesterIsMain, testRequestedMain],
+    [
+      testRequesterRef,
+      testRequesterIsDefaultBranch,
+      testRequestedDefaultBranch,
+    ],
     testResults,
   ]) => {
     test(`refsToAttempt ${testNameFragment}`, () => {
       expect(
         action.refsToAttempt(
           testRequesterRef,
-          testRequesterIsMain,
-          testRequestedMain
+          testRequesterIsDefaultBranch,
+          testRequestedDefaultBranch
         )
       ).toStrictEqual(testResults)
     })
@@ -105,21 +119,25 @@ const REFS_TO_ATTEMPT_FAILURE_TEST_SPECS: Array<
 > = [
   [
     'when called with a short refname throws',
-    ['shortBranchName', true, 'refs/heads/someMain'],
+    ['shortBranchName', true, 'refs/heads/someDefaultBranch'],
   ],
 ]
 
 REFS_TO_ATTEMPT_FAILURE_TEST_SPECS.forEach(
   ([
     testNameFragment,
-    [testRequesterRef, testRequesterIsMain, testRequestedMain],
+    [
+      testRequesterRef,
+      testRequesterIsDefaultBranch,
+      testRequestedDefaultBranch,
+    ],
   ]) => {
     test(`refsToAttempt ${testNameFragment}`, () => {
       expect(() => {
         action.refsToAttempt(
           testRequesterRef,
-          testRequesterIsMain,
-          testRequestedMain
+          testRequesterIsDefaultBranch,
+          testRequestedDefaultBranch
         )
       }).toThrow()
     })
@@ -268,6 +286,23 @@ LATEST_TAG_TEST_SPECS.forEach(
   ([testNameFragment, testTagRefs, testExpectedResult]) => {
     test(`latestTag ${testNameFragment}`, () => {
       expect(action.latestTag(testTagRefs)).toStrictEqual(testExpectedResult)
+    })
+  }
+)
+
+const COORDINATED_RELEASE_TAG_SPECS: Array<[string, Ref, boolean]> = [
+  ['ot3 internal alpha', 'refs/tags/ot3@8.5.0-alpha.0', true],
+  ['ot3 internal beta', 'refs/tags/ot3@8.5.0-beta.1', true],
+  ['external beta', 'refs/tags/v10.0.0-beta.1', true],
+  ['external alpha', 'refs/tags/v10.0.0-alpha.0', true],
+  ['edge branch', 'refs/heads/edge', false],
+  ['legacy internal@ tag alone', 'refs/tags/internal@8.5.0', false],
+]
+
+COORDINATED_RELEASE_TAG_SPECS.forEach(
+  ([testNameFragment, testRef, expected]) => {
+    test(`isCoordinatedReleaseTag ${testNameFragment}`, () => {
+      expect(action.isCoordinatedReleaseTag(testRef)).toStrictEqual(expected)
     })
   }
 )
