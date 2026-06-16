@@ -5,14 +5,13 @@ This github action is used to determine which git references of the repos that g
 - When a build is started, identify the "authoritative ref", which shall be the first of the following repos in order that is in `S: opentrons, oe-core`. The authoritative ref is `A`.
   - For each repo in `S`, use the specified source revision
   - For each repo `Fi` in `F`
-    - if `A` is the main branch of its repo (i.e. `edge` for monorepo, `main` for oe-core), use the main branch of `Fi`
-    - if `A` is a branch that is not the main branch of its repo
+    - if `A` is the default branch of its repo (i.e. `edge` for monorepo, `main` for oe-core), use the default branch of `Fi`
+    - if `A` is a branch that is not the default branch of its repo
       - and a branch of the same name exists in `Fi`, use that matching branch
-      - and a branch of the same name does not exist in `Fi`, use the main branch of `Fi`
+      - and a branch of the same name does not exist in `Fi`, use the default branch of `Fi`
     - if `A` is a tag
-      - and a tag of the same name exists in `Fi`, use that tag
-      - and a tag of the same name does not exist in `Fi`, but other tags exist in `Fi`, use the latest tag in `Fi`
-      - and a tag of the same name does not exist in `Fi` and there are no tags in `Fi`, use `Fi`'s main branch
+      - for each repo `Fi` whose ref is not specified, use that tag on `Fi`
+      - fail the build if that tag does not exist on `Fi`
 
 ## Developing
 
