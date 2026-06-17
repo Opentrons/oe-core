@@ -63,7 +63,7 @@ AUTHORITATIVE_REF_TEST_SPECS.forEach(
 )
 
 const REFS_TO_ATTEMPT_TEST_SPECS: Array<
-  [string, [Ref, boolean, Branch], Ref[]]
+  [string, [Ref, boolean, Branch], Ref[], action.Repo?]
 > = [
   [
     'with non-default branches should prioritize the request and then use default branch',
@@ -90,6 +90,18 @@ const REFS_TO_ATTEMPT_TEST_SPECS: Array<
     ['refs/tags/v10.0.0-beta.1', false, 'refs/heads/someDefaultBranch'],
     ['refs/tags/v10.0.0-beta.1'],
   ],
+  [
+    'with external firmware tags on ot3-firmware maps to ex tag',
+    ['refs/tags/v10.0.0-beta.1', false, 'refs/heads/someDefaultBranch'],
+    ['refs/tags/ex10.0.0-beta.1'],
+    'ot3-firmware',
+  ],
+  [
+    'with internal ot3 tags on ot3-firmware uses same tag',
+    ['refs/tags/ot3@8.5.0-alpha.0', false, 'refs/heads/someDefaultBranch'],
+    ['refs/tags/ot3@8.5.0-alpha.0'],
+    'ot3-firmware',
+  ],
 ]
 
 REFS_TO_ATTEMPT_TEST_SPECS.forEach(
@@ -101,13 +113,15 @@ REFS_TO_ATTEMPT_TEST_SPECS.forEach(
       testRequestedDefaultBranch,
     ],
     testResults,
+    repo,
   ]) => {
     test(`refsToAttempt ${testNameFragment}`, () => {
       expect(
         action.refsToAttempt(
           testRequesterRef,
           testRequesterIsDefaultBranch,
-          testRequestedDefaultBranch
+          testRequestedDefaultBranch,
+          repo
         )
       ).toStrictEqual(testResults)
     })
@@ -223,73 +237,6 @@ VARIANT_TEST_SPECS.forEach(
   }
 )
 
-const LATEST_TAG_TEST_SPECS: Array<
-  [string, action.GitHubApiTag[], string | null]
-> = [
-  [
-    'handles internal@v* numeric tags correctly',
-    [
-      { ref: 'refs/tags/internal@v23' },
-      { ref: 'refs/tags/internal@v22' },
-      { ref: 'refs/tags/internal@v21' },
-    ],
-    'refs/tags/internal@v23',
-  ],
-  [
-    'handles internal@* semantic version tags correctly',
-    [
-      { ref: 'refs/tags/internal@1.2.0-alpha.0' },
-      { ref: 'refs/tags/internal@1.1.0-alpha.0' },
-      { ref: 'refs/tags/internal@1.0.0-alpha.0' },
-    ],
-    'refs/tags/internal@1.2.0-alpha.0',
-  ],
-  [
-    'handles mixed internal@* tag formats and picks the latest',
-    [
-      { ref: 'refs/tags/internal@v23' },
-      { ref: 'refs/tags/internal@1.2.0-alpha.0' },
-      { ref: 'refs/tags/internal@v22' },
-    ],
-    'refs/tags/internal@1.2.0-alpha.0', // semantic versions are considered newer
-  ],
-  [
-    'handles v* tags correctly',
-    [
-      { ref: 'refs/tags/v1.19.4' },
-      { ref: 'refs/tags/v1.19.3' },
-      { ref: 'refs/tags/v66' },
-    ],
-    'refs/tags/v1.19.4',
-  ],
-  [
-    'handles ot3@* tags correctly',
-    [
-      { ref: 'refs/tags/ot3@2.8.0-alpha.0' },
-      { ref: 'refs/tags/ot3@2.7.0-alpha.0' },
-    ],
-    'refs/tags/ot3@2.8.0-alpha.0',
-  ],
-  ['returns null for empty tag list', [], null],
-  [
-    'filters out invalid tags and returns the latest valid one',
-    [
-      { ref: 'refs/tags/invalid-tag' },
-      { ref: 'refs/tags/internal@v23' },
-      { ref: 'refs/tags/another-invalid' },
-    ],
-    'refs/tags/internal@v23',
-  ],
-]
-
-LATEST_TAG_TEST_SPECS.forEach(
-  ([testNameFragment, testTagRefs, testExpectedResult]) => {
-    test(`latestTag ${testNameFragment}`, () => {
-      expect(action.latestTag(testTagRefs)).toStrictEqual(testExpectedResult)
-    })
-  }
-)
-
 const COORDINATED_RELEASE_TAG_SPECS: Array<[string, Ref, boolean]> = [
   ['ot3 internal alpha', 'refs/tags/ot3@8.5.0-alpha.0', true],
   ['ot3 internal beta', 'refs/tags/ot3@8.5.0-beta.1', true],
@@ -305,6 +252,116 @@ COORDINATED_RELEASE_TAG_SPECS.forEach(
   ([testNameFragment, testRef, expected]) => {
     test(`isCoordinatedReleaseTag ${testNameFragment}`, () => {
       expect(action.isCoordinatedReleaseTag(testRef)).toStrictEqual(expected)
+    })
+  }
+)
+
+const FIRMWARE_EX_TAG_MAPPING_SPECS: Array<[string, Ref, Ref | null]> = [
+  [
+    'external semver alpha',
+    'refs/tags/v9.1.0-alpha.7',
+    'refs/tags/ex9.1.0-alpha.7',
+  ],
+  ['external semver stable', 'refs/tags/v9.1.0', 'refs/tags/ex9.1.0'],
+  ['internal ot3 alpha', 'refs/tags/ot3@8.5.0-alpha.1', null],
+  ['internal ot3 stable', 'refs/tags/ot3@8.5.0', null],
+  ['internal semver on oe-core', 'refs/tags/internal@8.5.0-alpha.1', null],
+  ['integer firmware version v70', 'refs/tags/v70', null],
+  ['existing ex tag', 'refs/tags/ex9.1.0-alpha.7', null],
+  ['branch ref', 'refs/heads/main', null],
+]
+
+FIRMWARE_EX_TAG_MAPPING_SPECS.forEach(
+  ([testNameFragment, stackTag, expected]) => {
+    test(`stackCoordinatedTagToFirmwareTag ${testNameFragment}`, () => {
+      expect(action.stackCoordinatedTagToFirmwareTag(stackTag)).toStrictEqual(
+        expected
+      )
+    })
+  }
+)
+
+const FIRMWARE_REF_FOR_STACK_SPECS: Array<[string, Ref, Ref]> = [
+  [
+    'external semver alpha',
+    'refs/tags/v9.1.0-alpha.7',
+    'refs/tags/ex9.1.0-alpha.7',
+  ],
+  ['external semver stable', 'refs/tags/v9.1.0', 'refs/tags/ex9.1.0'],
+  [
+    'internal ot3 alpha',
+    'refs/tags/ot3@8.5.0-alpha.1',
+    'refs/tags/ot3@8.5.0-alpha.1',
+  ],
+  ['integer vN tag', 'refs/tags/v70', 'refs/tags/v70'],
+  ['branch ref', 'refs/heads/main', 'refs/heads/main'],
+]
+
+FIRMWARE_REF_FOR_STACK_SPECS.forEach(
+  ([testNameFragment, stackRef, expected]) => {
+    test(`firmwareRefForStackRef ${testNameFragment}`, () => {
+      expect(action.firmwareRefForStackRef(stackRef)).toStrictEqual(expected)
+    })
+  }
+)
+
+const FIRMWARE_VERSION_TAG_SPECS: Array<[string, Ref, boolean]> = [
+  ['integer v70', 'refs/tags/v70', true],
+  ['integer v9', 'refs/tags/v9', true],
+  ['semver coordination', 'refs/tags/v9.1.0-alpha.7', false],
+  ['ex coordination tag', 'refs/tags/ex9.1.0-alpha.7', false],
+  ['branch', 'refs/heads/main', false],
+]
+
+FIRMWARE_VERSION_TAG_SPECS.forEach(([testNameFragment, testRef, expected]) => {
+  test(`isFirmwareVersionTagRef ${testNameFragment}`, () => {
+    expect(action.isFirmwareVersionTagRef(testRef)).toStrictEqual(expected)
+  })
+})
+
+const SUMMARY_NOTE_SPECS: Array<
+  [string, action.Repo, Ref, Ref, Ref | null, string]
+> = [
+  [
+    'external tag maps firmware from authoritative',
+    'ot3-firmware',
+    'refs/tags/v9.1.0-alpha.7',
+    'refs/tags/ex9.1.0-alpha.7',
+    null,
+    'Mapped stack tag v9.1.0-alpha.7 → ex9.1.0-alpha.7',
+  ],
+  [
+    'external tag leaves monorepo note unchanged',
+    'monorepo',
+    'refs/tags/v9.1.0-alpha.7',
+    'refs/tags/v9.1.0-alpha.7',
+    null,
+    'Stack coordination tag',
+  ],
+  [
+    'internal tag uses same firmware tag',
+    'ot3-firmware',
+    'refs/tags/ot3@8.5.0-alpha.1',
+    'refs/tags/ot3@8.5.0-alpha.1',
+    null,
+    'Coordination tag on firmware (internal ot3@*, or ex* specified explicitly)',
+  ],
+  [
+    'branch build on firmware',
+    'ot3-firmware',
+    'refs/heads/chore_release-9.1.0',
+    'refs/heads/chore_release-9.1.0',
+    null,
+    'Branch build; matching branch or default (no ex* tag mapping)',
+  ],
+]
+
+SUMMARY_NOTE_SPECS.forEach(
+  ([testNameFragment, repo, authoritative, resolved, inputRef, expected]) => {
+    test(`summaryNoteForRepo ${testNameFragment}`, () => {
+      expect(
+        action.summaryNoteForRepo(repo, authoritative, resolved, inputRef)
+      ).toStrictEqual(expected)
     })
   }
 )
