@@ -75,6 +75,8 @@ git push origin ot3@8.5.0-alpha.1
 
 build-refs resolves monorepo and oe-core to the stack coordination tag. ot3-firmware uses `ex*` for external releases and `ot3@*` for internal releases.
 
+When the action runs in a workflow job, it writes a **Build refs** table to the GitHub Actions step summary. The table lists each repo's input, resolved ref, and notes (including `v*` → `ex*` firmware mapping on external tag builds). Branch builds note that no tag mapping applies.
+
 ## Developing
 
 This github action is written in typescript. Github Actions doesn't support typescript, it supports javascript. So the action is transpiled, which means there's a whole huge project setup to handle it.

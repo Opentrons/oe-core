@@ -31882,6 +31882,7 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony export */   resolveBuildVariant: () => (/* binding */ resolveBuildVariant),
 /* harmony export */   restAPICompliantRef: () => (/* binding */ restAPICompliantRef),
 /* harmony export */   stackCoordinatedTagToFirmwareTag: () => (/* binding */ stackCoordinatedTagToFirmwareTag),
+/* harmony export */   summaryNoteForRepo: () => (/* binding */ summaryNoteForRepo),
 /* harmony export */   tagNameFromRef: () => (/* binding */ tagNameFromRef)
 /* harmony export */ });
 /* harmony import */ var _actions_github__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(3228);
@@ -31957,6 +31958,69 @@ function expectedFirmwareTagForAuthoritative(authoritative) {
         return authoritative;
     }
     return (_a = stackCoordinatedTagToFirmwareTag(authoritative)) !== null && _a !== void 0 ? _a : authoritative;
+}
+/** Human-readable note for one repo row in the workflow step summary. */
+function summaryNoteForRepo(repo, authoritative, resolved, inputRef) {
+    if (authoritative.startsWith('refs/heads/')) {
+        return repo === FIRMWARE_REPO
+            ? 'Branch build; matching branch or default (no ex* tag mapping)'
+            : 'Branch build; matching branch or default';
+    }
+    if (repo === FIRMWARE_REPO) {
+        const mappedFromAuthoritative = stackCoordinatedTagToFirmwareTag(authoritative);
+        if (mappedFromAuthoritative && mappedFromAuthoritative === resolved) {
+            return `Mapped stack tag ${tagNameFromRef(authoritative)} → ${tagNameFromRef(resolved)}`;
+        }
+        if ((inputRef === null || inputRef === void 0 ? void 0 : inputRef.startsWith('refs/tags/')) &&
+            normalizeFirmwareInputRef(inputRef) === resolved &&
+            normalizeFirmwareInputRef(inputRef) !== inputRef) {
+            return `Mapped explicit input ${tagNameFromRef(inputRef)} → ${tagNameFromRef(resolved)}`;
+        }
+        return 'Coordination tag on firmware (internal ot3@*, or ex* specified explicitly)';
+    }
+    return 'Stack coordination tag';
+}
+function writeBuildRefsSummary(authoritative, isDefaultBranch, inputs, resolved, buildType, buildVariant) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const authKind = authoritative.startsWith('refs/tags/')
+            ? 'tag build'
+            : `branch build${isDefaultBranch ? ' (default branch)' : ''}`;
+        const rows = [
+            [
+                { data: 'Repo', header: true },
+                { data: 'Input', header: true },
+                { data: 'Resolved ref', header: true },
+                { data: 'Notes', header: true },
+            ],
+        ];
+        for (const repo of orderedRepos) {
+            const input = inputs.get(repo);
+            rows.push([
+                { data: repo },
+                { data: input !== null && input !== void 0 ? input : '(from authoritative ref)' },
+                { data: resolved.get(repo) },
+                {
+                    data: summaryNoteForRepo(repo, authoritative, resolved.get(repo), input !== null && input !== void 0 ? input : null),
+                },
+            ]);
+        }
+        const summary = _actions_core__WEBPACK_IMPORTED_MODULE_1__.summary
+            .addHeading('Build refs', 3)
+            .addRaw(`**Authoritative ref:** \`${authoritative}\` (${authKind})`, true)
+            .addEOL()
+            .addRaw(`**Build type:** \`${buildType}\` · **Variant:** \`${buildVariant}\``, true)
+            .addEOL()
+            .addTable(rows)
+            .addEOL();
+        if (authoritative.startsWith('refs/tags/v') &&
+            !isFirmwareVersionTagRef(authoritative)) {
+            summary.addRaw('> **External tag mapping:** stack semver tags (`vX.Y.Z*`) on opentrons and oe-core map to `exX.Y.Z*` on ot3-firmware only. That keeps stack semver off ot3-firmware.', true);
+        }
+        else if (authoritative.startsWith('refs/tags/ot3@')) {
+            summary.addRaw('> **Internal tag build:** the same `ot3@*` coordination tag is used on all three repos. ot3-firmware still needs an integer `vN` tag on that commit for cmake.', true);
+        }
+        yield summary.write();
+    });
 }
 function resolveBuildVariant(ref) {
     if (ref.startsWith('refs/heads')) {
@@ -32111,6 +32175,7 @@ function run() {
         });
         setOutput('build-type', buildType);
         setOutput('variant', buildVariant);
+        setOutput('authoritative-ref', authoritative);
         const resolved = yield resolveRefs(attemptable);
         for (const [repo, ref] of resolved.entries()) {
             if (!ref) {
@@ -32127,6 +32192,7 @@ function run() {
             _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved ${repo} to ${ref}`);
             setOutput(repo, ref);
         });
+        yield writeBuildRefsSummary(authoritative, isDefaultBranch, inputs, resolved, buildType, buildVariant);
     });
 }
 function _run() {

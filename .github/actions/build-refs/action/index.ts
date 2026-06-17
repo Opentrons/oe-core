@@ -84,6 +84,107 @@ export function expectedFirmwareTagForAuthoritative(authoritative: Ref): Ref {
   return stackCoordinatedTagToFirmwareTag(authoritative as Tag) ?? authoritative
 }
 
+/** Human-readable note for one repo row in the workflow step summary. */
+export function summaryNoteForRepo(
+  repo: Repo,
+  authoritative: Ref,
+  resolved: Ref,
+  inputRef: Ref | null
+): string {
+  if (authoritative.startsWith('refs/heads/')) {
+    return repo === FIRMWARE_REPO
+      ? 'Branch build; matching branch or default (no ex* tag mapping)'
+      : 'Branch build; matching branch or default'
+  }
+
+  if (repo === FIRMWARE_REPO) {
+    const mappedFromAuthoritative = stackCoordinatedTagToFirmwareTag(
+      authoritative as Tag
+    )
+    if (mappedFromAuthoritative && mappedFromAuthoritative === resolved) {
+      return `Mapped stack tag ${tagNameFromRef(authoritative as Tag)} → ${tagNameFromRef(resolved as Tag)}`
+    }
+    if (
+      inputRef?.startsWith('refs/tags/') &&
+      normalizeFirmwareInputRef(inputRef) === resolved &&
+      normalizeFirmwareInputRef(inputRef) !== inputRef
+    ) {
+      return `Mapped explicit input ${tagNameFromRef(inputRef as Tag)} → ${tagNameFromRef(resolved as Tag)}`
+    }
+    return 'Coordination tag on firmware (internal ot3@*, or ex* specified explicitly)'
+  }
+
+  return 'Stack coordination tag'
+}
+
+async function writeBuildRefsSummary(
+  authoritative: Ref,
+  isDefaultBranch: boolean,
+  inputs: InputRefs,
+  resolved: OutputRefs,
+  buildType: BuildType,
+  buildVariant: Variant
+): Promise<void> {
+  const authKind = authoritative.startsWith('refs/tags/')
+    ? 'tag build'
+    : `branch build${isDefaultBranch ? ' (default branch)' : ''}`
+
+  const rows: Array<Array<{ data: string; header?: boolean }>> = [
+    [
+      { data: 'Repo', header: true },
+      { data: 'Input', header: true },
+      { data: 'Resolved ref', header: true },
+      { data: 'Notes', header: true },
+    ],
+  ]
+
+  for (const repo of orderedRepos) {
+    const input = inputs.get(repo)
+    rows.push([
+      { data: repo },
+      { data: input ?? '(from authoritative ref)' },
+      { data: resolved.get(repo)! },
+      {
+        data: summaryNoteForRepo(
+          repo,
+          authoritative,
+          resolved.get(repo)!,
+          input ?? null
+        ),
+      },
+    ])
+  }
+
+  const summary = core.summary
+    .addHeading('Build refs', 3)
+    .addRaw(`**Authoritative ref:** \`${authoritative}\` (${authKind})`, true)
+    .addEOL()
+    .addRaw(
+      `**Build type:** \`${buildType}\` · **Variant:** \`${buildVariant}\``,
+      true
+    )
+    .addEOL()
+    .addTable(rows)
+    .addEOL()
+
+  if (
+    authoritative.startsWith('refs/tags/v') &&
+    !isFirmwareVersionTagRef(authoritative)
+  ) {
+    summary.addRaw(
+      '> **External tag mapping:** stack semver tags (`vX.Y.Z*`) on opentrons and oe-core map to `exX.Y.Z*` on ot3-firmware only. That keeps stack semver off ot3-firmware.',
+      true
+    )
+  } else if (authoritative.startsWith('refs/tags/ot3@')) {
+    summary.addRaw(
+      '> **Internal tag build:** the same `ot3@*` coordination tag is used on all three repos. ot3-firmware still needs an integer `vN` tag on that commit for cmake.',
+      true
+    )
+  }
+
+  await summary.write()
+}
+
 export function resolveBuildVariant(ref: Ref): Variant {
   if (ref.startsWith('refs/heads')) {
     if (ref.includes('internal-release')) {
@@ -301,6 +402,7 @@ async function run() {
   })
   setOutput('build-type', buildType)
   setOutput('variant', buildVariant)
+  setOutput('authoritative-ref', authoritative)
 
   const resolved = await resolveRefs(attemptable)
   for (const [repo, ref] of resolved.entries()) {
@@ -322,6 +424,15 @@ async function run() {
     core.info(`Resolved ${repo} to ${ref}`)
     setOutput(repo, ref!)
   })
+
+  await writeBuildRefsSummary(
+    authoritative,
+    isDefaultBranch,
+    inputs,
+    resolved,
+    buildType,
+    buildVariant
+  )
 }
 
 async function _run() {

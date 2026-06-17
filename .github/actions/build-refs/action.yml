@@ -27,6 +27,8 @@ outputs:
     description: "the type of build oe-core will create (develop, release)"
   variant:
     description: "internal-release or release"
+  authoritative-ref:
+    description: "the ref used to decide unspecified repo refs (first specified of monorepo, oe-core)"
 runs:
   using: 'node20'
   main: 'dist/index.js'

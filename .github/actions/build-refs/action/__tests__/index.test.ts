@@ -330,3 +330,50 @@ FIRMWARE_VERSION_TAG_SPECS.forEach(([testNameFragment, testRef, expected]) => {
     expect(action.isFirmwareVersionTagRef(testRef)).toStrictEqual(expected)
   })
 })
+
+const SUMMARY_NOTE_SPECS: Array<
+  [string, action.Repo, Ref, Ref, Ref | null, string]
+> = [
+  [
+    'external tag maps firmware from authoritative',
+    'ot3-firmware',
+    'refs/tags/v9.1.0-alpha.7',
+    'refs/tags/ex9.1.0-alpha.7',
+    null,
+    'Mapped stack tag v9.1.0-alpha.7 → ex9.1.0-alpha.7',
+  ],
+  [
+    'external tag leaves monorepo note unchanged',
+    'monorepo',
+    'refs/tags/v9.1.0-alpha.7',
+    'refs/tags/v9.1.0-alpha.7',
+    null,
+    'Stack coordination tag',
+  ],
+  [
+    'internal tag uses same firmware tag',
+    'ot3-firmware',
+    'refs/tags/ot3@8.5.0-alpha.1',
+    'refs/tags/ot3@8.5.0-alpha.1',
+    null,
+    'Coordination tag on firmware (internal ot3@*, or ex* specified explicitly)',
+  ],
+  [
+    'branch build on firmware',
+    'ot3-firmware',
+    'refs/heads/chore_release-9.1.0',
+    'refs/heads/chore_release-9.1.0',
+    null,
+    'Branch build; matching branch or default (no ex* tag mapping)',
+  ],
+]
+
+SUMMARY_NOTE_SPECS.forEach(
+  ([testNameFragment, repo, authoritative, resolved, inputRef, expected]) => {
+    test(`summaryNoteForRepo ${testNameFragment}`, () => {
+      expect(
+        action.summaryNoteForRepo(repo, authoritative, resolved, inputRef)
+      ).toStrictEqual(expected)
+    })
+  }
+)
