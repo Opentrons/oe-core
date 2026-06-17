@@ -13,19 +13,36 @@ This github action is used to determine which git references of the repos that g
       - for each repo `Fi` whose ref is not specified, use that tag on `Fi`
       - fail the build if that tag does not exist on `Fi`
     - if `A` is a coordinated release tag and `Fi` is `ot3-firmware`
-      - external builds: map `v9.1.0-alpha.7` to `ex9.1.0-alpha.7` on ot3-firmware
+      - external builds: map stack semver `v9.1.0-alpha.7` to firmware coordination tag `ex9.1.0-alpha.7`
       - internal builds: use the same `ot3@8.5.0-alpha.1` tag on ot3-firmware
-      - checkout the coordination tag so cmake sees the paired `vN` version tag on the same commit
-      - do not place semver `v*` coordination tags on ot3-firmware (they collide with `git describe --match=v*`)
+      - checkout the firmware coordination tag so cmake sees the integer version tag on that commit
+      - do not place stack-style semver `v*` tags on ot3-firmware (they collide with `git describe --match=v*`)
 
 ### ot3-firmware dual tagging at release
 
-Stack repos use coordinated release tags (`v*` external, `ot3@*` internal). ot3-firmware also carries an integer **`vN` version tag** on the same commit. CI checks out the coordination tag; firmware version comes from the co-located `vN` tag via cmake.
+Use three different tag shapes. Do not conflate them:
 
-**External** (stack tag `v9.1.0-alpha.7`, firmware checkout `ex9.1.0-alpha.7`):
+| Tag shape | Example | Repo | Role |
+|---|---|---|---|
+| Stack external semver | `v9.1.0-alpha.7` | opentrons, oe-core | Coordinated release marker |
+| Firmware coordination | `ex9.1.0-alpha.7` or `ot3@8.5.0-alpha.1` | ot3-firmware | Which commit CI checks out |
+| Firmware integer version | `v70` | ot3-firmware | Firmware version integer for cmake (`v` + digits only, no dots) |
+
+The integer version tag is **`vN`** (for example `v70`, not `v9.1.0`). That is unrelated to stack semver tags that happen to start with `v`.
+
+**Integer `vN` rules on ot3-firmware:**
+
+- Every commit that carries a firmware coordination tag (`ex*` or `ot3@*`) must also have **exactly one** integer version tag (`vN`) pointing at the **same commit**.
+- **You do not need a new `vN` for every stack release.** Bump the integer only when the firmware version actually increases (for example `v70` to `v71`).
+- If a coordination release reuses the same firmware commit, **reuse the existing `vN` already on that commit**. Add the new `ex*` or `ot3@*` tag only; do not mint another integer tag.
+- Example: `ex9.1.0-alpha.7` and `ex9.1.0-alpha.8` on the same commit both use the same co-located `v70`.
+
+CI checks out the coordination tag. cmake reads the integer `vN` on that commit via `git describe --match=v*`.
+
+**External** (stack tag `v9.1.0-alpha.7`, firmware checkout `ex9.1.0-alpha.7`, new firmware version):
 
 ```bash
-# ot3-firmware only:
+# ot3-firmware only (first time this commit is released as v70):
 git tag -a v70 -m "Flex firmware v70"
 git tag -a ex9.1.0-alpha.7 -m "Coordinated release marker"
 git push origin v70 ex9.1.0-alpha.7
@@ -35,10 +52,18 @@ git tag -a v9.1.0-alpha.7 -m "Coordinated release marker"
 git push origin v9.1.0-alpha.7
 ```
 
-**Internal** (stack tag `ot3@8.5.0-alpha.1`, same tag on firmware):
+**External, same firmware commit, new stack alpha** (reuse `v70`, add coordination tag only):
 
 ```bash
-# ot3-firmware:
+# ot3-firmware: v70 already points at this commit
+git tag -a ex9.1.0-alpha.8 -m "Coordinated release marker"
+git push origin ex9.1.0-alpha.8
+```
+
+**Internal** (stack tag `ot3@8.5.0-alpha.1`, same coordination tag on firmware):
+
+```bash
+# ot3-firmware (first time this commit is released as v70):
 git tag -a v70 -m "Flex firmware v70"
 git tag -a ot3@8.5.0-alpha.1 -m "Coordinated release marker"
 git push origin v70 ot3@8.5.0-alpha.1

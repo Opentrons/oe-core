@@ -31917,7 +31917,7 @@ function restAPICompliantRef(input) {
 function tagNameFromRef(ref) {
     return ref.slice('refs/tags/'.length);
 }
-/** Integer-only firmware version tags such as v70 (not semver coordination tags). */
+/** Integer-only firmware version tags such as v70 (not stack semver v9.1.0). */
 function isFirmwareVersionTagRef(ref) {
     if (!ref.startsWith('refs/tags/v')) {
         return false;
@@ -31925,9 +31925,10 @@ function isFirmwareVersionTagRef(ref) {
     return /^v\d+$/.test(tagNameFromRef(ref));
 }
 /**
- * Map an external stack coordination tag to the ot3-firmware coordination tag (ex* prefix).
- * External v9.1.0-alpha.7 becomes ex9.1.0-alpha.7. Internal ot3@* uses the same tag on firmware.
- * Integer vN version tags are not mapped (null means use the stack tag as-is).
+ * Map a stack coordinated release tag to the ot3-firmware coordination tag (ex* prefix).
+ * External stack semver v9.1.0-alpha.7 becomes ex9.1.0-alpha.7. Internal ot3@* is unchanged.
+ * Integer firmware version tags (v70) are not mapped here; release process places exactly
+ * one vN on the coordination commit (reused across releases when firmware does not bump).
  */
 function stackCoordinatedTagToFirmwareTag(stackTagRef) {
     if (!stackTagRef.startsWith('refs/tags/')) {
