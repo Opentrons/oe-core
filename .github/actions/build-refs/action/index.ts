@@ -279,9 +279,7 @@ async function run() {
         inputRef &&
         normalizedInput !== inputRef
       ) {
-        core.info(
-          `Mapped ot3-firmware input ${inputRef} to ${normalizedInput}`
-        )
+        core.info(`Mapped ot3-firmware input ${inputRef} to ${normalizedInput}`)
       }
       return prev.set(
         repoName,

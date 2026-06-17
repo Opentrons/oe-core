@@ -63,7 +63,7 @@ AUTHORITATIVE_REF_TEST_SPECS.forEach(
 )
 
 const REFS_TO_ATTEMPT_TEST_SPECS: Array<
-  [string, [Ref, boolean, Branch], Ref[], string?]
+  [string, [Ref, boolean, Branch], Ref[], action.Repo?]
 > = [
   [
     'with non-default branches should prioritize the request and then use default branch',
@@ -121,7 +121,7 @@ REFS_TO_ATTEMPT_TEST_SPECS.forEach(
           testRequesterRef,
           testRequesterIsDefaultBranch,
           testRequestedDefaultBranch,
-          repo as action.Repo | undefined
+          repo
         )
       ).toStrictEqual(testResults)
     })
