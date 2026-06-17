@@ -1,13 +1,12 @@
 import { getOctokit } from '@actions/github'
 import * as core from '@actions/core'
-import * as semver from 'semver'
 import * as fs from 'fs'
-import * as path from 'path'
 
 export type Repo = 'oe-core' | 'monorepo' | 'ot3-firmware'
 export type BuildType = 'develop' | 'release'
 export type Variant = 'internal-release' | 'release'
 const orderedRepos: Repo[] = ['monorepo', 'oe-core', 'ot3-firmware']
+const FIRMWARE_REPO: Repo = 'ot3-firmware'
 
 export interface BuildDetails {
   buildType: BuildType
@@ -38,8 +37,50 @@ export function restAPICompliantRef(input: Ref): string {
   return input.replace('refs/', '')
 }
 
-export interface GitHubApiTag {
-  ref: Tag
+export function tagNameFromRef(ref: Tag): string {
+  return ref.slice('refs/tags/'.length)
+}
+
+/** Integer-only firmware version tags such as v70 (not semver coordination tags). */
+export function isFirmwareVersionTagRef(ref: Ref): boolean {
+  if (!ref.startsWith('refs/tags/v')) {
+    return false
+  }
+  return /^v\d+$/.test(tagNameFromRef(ref as Tag))
+}
+
+/**
+ * Map an external stack coordination tag to the ot3-firmware coordination tag (ex* prefix).
+ * External v9.1.0-alpha.7 becomes ex9.1.0-alpha.7. Internal ot3@* uses the same tag on firmware.
+ * Integer vN version tags are not mapped (null means use the stack tag as-is).
+ */
+export function stackCoordinatedTagToFirmwareTag(stackTagRef: Tag): Tag | null {
+  if (!stackTagRef.startsWith('refs/tags/')) {
+    return null
+  }
+  const name = tagNameFromRef(stackTagRef)
+  if (name.startsWith('ex')) {
+    return null
+  }
+  if (name.startsWith('v') && !/^v\d+$/.test(name)) {
+    return `refs/tags/ex${name.slice(1)}` as Tag
+  }
+  return null
+}
+
+/** Normalize an ot3-firmware input ref (map external stack v* tags to ex* on firmware). */
+export function normalizeFirmwareInputRef(ref: Ref): Ref {
+  if (!ref.startsWith('refs/tags/')) {
+    return ref
+  }
+  return stackCoordinatedTagToFirmwareTag(ref as Tag) ?? ref
+}
+
+export function expectedFirmwareTagForAuthoritative(authoritative: Ref): Ref {
+  if (!authoritative.startsWith('refs/tags/')) {
+    return authoritative
+  }
+  return stackCoordinatedTagToFirmwareTag(authoritative as Tag) ?? authoritative
 }
 
 export function resolveBuildVariant(ref: Ref): Variant {
@@ -57,78 +98,6 @@ export function resolveBuildVariant(ref: Ref): Variant {
     }
   }
   return 'internal-release'
-}
-
-export function latestTag(tagRefs: GitHubApiTag[]): Tag | null {
-  if (tagRefs.length === 0) return null
-
-  // Extract and parse version numbers from tag refs
-  const tagVersions = tagRefs
-    .map(tag => {
-      const tagName = tag.ref.replace('refs/tags/', '')
-
-      // Handle v* tags (e.g., "v1.19.4" or "v66")
-      if (tagName.startsWith('v')) {
-        const version = tagName.substring(1)
-        // Accept both semantic versions and simple numeric versions like "v66"
-        const isValidSemver = semver.valid(version)
-        const isValidNumeric = /^\d+$/.test(version)
-        return {
-          tag: tag.ref,
-          version,
-          isValid: isValidSemver || isValidNumeric,
-        }
-      }
-
-      // Handle internal@* tags (e.g., "internal@1.2.0-alpha.0" or "internal@v23")
-      if (tagName.startsWith('internal@')) {
-        let version = tagName.substring(9) // Remove "internal@"
-        // Handle internal@v* format by removing the 'v' prefix
-        if (version.startsWith('v')) {
-          version = version.substring(1)
-        }
-        // Accept both semantic versions and simple numeric versions
-        const isValidSemver = semver.valid(version)
-        const isValidNumeric = /^\d+$/.test(version)
-        return {
-          tag: tag.ref,
-          version,
-          isValid: isValidSemver || isValidNumeric,
-        }
-      }
-
-      // Handle ot3@* tags (e.g., "ot3@1.2.0-alpha.0")
-      if (tagName.startsWith('ot3@')) {
-        const version = tagName.substring(4) // Remove "ot3@"
-        return { tag: tag.ref, version, isValid: semver.valid(version) }
-      }
-
-      // Unknown tag format
-      return { tag: tag.ref, version: null, isValid: false }
-    })
-    .filter(tv => tv.isValid) // Only keep valid versions (semantic or numeric)
-
-  if (tagVersions.length === 0) return null
-
-  // Sort by version and return the latest
-  tagVersions.sort((a, b) => {
-    const aIsSemver = semver.valid(a.version!)
-    const bIsSemver = semver.valid(b.version!)
-
-    if (aIsSemver && bIsSemver) {
-      return semver.compare(a.version!, b.version!)
-    } else if (aIsSemver && !bIsSemver) {
-      // Semantic versions are considered newer than numeric versions
-      return 1
-    } else if (!aIsSemver && bIsSemver) {
-      // Numeric versions are considered older than semantic versions
-      return -1
-    } else {
-      // Both are numeric versions, compare numerically
-      return parseInt(a.version!) - parseInt(b.version!)
-    }
-  })
-  return tagVersions[tagVersions.length - 1].tag
 }
 
 function restDetailsFor(input: Repo): { owner: string; repo: string } {
@@ -197,15 +166,22 @@ export function isCoordinatedReleaseTag(ref: Ref): boolean {
   return tagName.startsWith('ot3@') || tagName.startsWith('v')
 }
 
-function tagsToAttempt(requesterTag: Tag): Ref[] {
-  // Tag builds require the same tag on every repo; no default-branch fallback.
+function tagsToAttempt(requesterTag: Tag, repo?: Repo): Ref[] {
+  if (repo === FIRMWARE_REPO) {
+    const firmwareTag = stackCoordinatedTagToFirmwareTag(requesterTag)
+    if (firmwareTag) {
+      return [firmwareTag]
+    }
+  }
+  // Tag builds require the matching tag on every repo; no default-branch fallback.
   return [requesterTag]
 }
 
 export function refsToAttempt(
   requesterRef: Ref,
   requesterIsDefaultBranch: boolean,
-  requestedDefaultBranch: Branch
+  requestedDefaultBranch: Branch,
+  repo?: Repo
 ): Ref[] {
   ///Based on the refs from whatever was specified, return an ordered list of refs to
   // try.
@@ -217,7 +193,7 @@ export function refsToAttempt(
         requesterIsDefaultBranch,
         requestedDefaultBranch
       ),
-    requesterTag => tagsToAttempt(requesterTag)
+    requesterTag => tagsToAttempt(requesterTag, repo)
   )
 }
 
@@ -278,6 +254,7 @@ function setOutput(name: string, value: string): void {
 }
 
 async function run() {
+  const token = core.getInput('token')
   const inputs = getInputs()
   inputs.forEach((ref, repo) => {
     core.debug(`found input for ${repo}: ${ref}`)
@@ -293,14 +270,28 @@ async function run() {
 
   const attemptable = Array.from(inputs.entries()).reduce(
     (prev: AttemptableRefs, [repoName, inputRef]): AttemptableRefs => {
+      const normalizedInput =
+        repoName === FIRMWARE_REPO && inputRef
+          ? normalizeFirmwareInputRef(inputRef)
+          : inputRef
+      if (
+        repoName === FIRMWARE_REPO &&
+        inputRef &&
+        normalizedInput !== inputRef
+      ) {
+        core.info(
+          `Mapped ot3-firmware input ${inputRef} to ${normalizedInput}`
+        )
+      }
       return prev.set(
         repoName,
-        inputRef
-          ? [inputRef]
+        normalizedInput
+          ? [normalizedInput]
           : refsToAttempt(
               authoritative,
               isDefaultBranch,
-              defaultBranchRefFor(repoName)
+              defaultBranchRefFor(repoName),
+              repoName
             )
       )
     },
@@ -313,19 +304,24 @@ async function run() {
   setOutput('variant', buildVariant)
 
   const resolved = await resolveRefs(attemptable)
-  resolved.forEach((ref, repo) => {
+  for (const [repo, ref] of resolved.entries()) {
     if (!ref) {
       const inputRef = inputs.get(repo)
       const tagHint =
         authoritative.startsWith('refs/tags/') && inputRef === null
-          ? ` Tag builds require the same tag (${authoritative}) on all repos.`
+          ? repo === FIRMWARE_REPO
+            ? ` Tag builds require ${expectedFirmwareTagForAuthoritative(authoritative)} on ot3-firmware.`
+            : ` Tag builds require the same tag (${authoritative}) on all repos.`
           : ''
       throw new Error(
         `Could not resolve ${repo} input reference ${inputRef}.${tagHint}`
       )
     }
+  }
+
+  resolved.forEach((ref, repo) => {
     core.info(`Resolved ${repo} to ${ref}`)
-    setOutput(repo, ref)
+    setOutput(repo, ref!)
   })
 }
 
