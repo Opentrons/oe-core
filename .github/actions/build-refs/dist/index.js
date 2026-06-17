@@ -31919,7 +31919,7 @@ function tagNameFromRef(ref) {
 }
 /** Integer-only firmware version tags such as v70 (not stack semver v9.1.0). */
 function isFirmwareVersionTagRef(ref) {
-    if (!ref.startsWith('refs/tags/v')) {
+    if (!ref.startsWith('refs/tags/')) {
         return false;
     }
     return /^v\d+$/.test(tagNameFromRef(ref));

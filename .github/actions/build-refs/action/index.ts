@@ -43,7 +43,7 @@ export function tagNameFromRef(ref: Tag): string {
 
 /** Integer-only firmware version tags such as v70 (not stack semver v9.1.0). */
 export function isFirmwareVersionTagRef(ref: Ref): boolean {
-  if (!ref.startsWith('refs/tags/v')) {
+  if (!ref.startsWith('refs/tags/')) {
     return false
   }
   return /^v\d+$/.test(tagNameFromRef(ref as Tag))
