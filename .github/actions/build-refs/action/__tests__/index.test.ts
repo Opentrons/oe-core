@@ -281,41 +281,29 @@ FIRMWARE_EX_TAG_MAPPING_SPECS.forEach(
   }
 )
 
-test('normalizeFirmwareInputRef maps external stack v tags to ex tags', () => {
-  expect(
-    action.normalizeFirmwareInputRef('refs/tags/v9.1.0-alpha.7')
-  ).toStrictEqual('refs/tags/ex9.1.0-alpha.7')
-})
+const FIRMWARE_REF_FOR_STACK_SPECS: Array<[string, Ref, Ref]> = [
+  [
+    'external semver alpha',
+    'refs/tags/v9.1.0-alpha.7',
+    'refs/tags/ex9.1.0-alpha.7',
+  ],
+  ['external semver stable', 'refs/tags/v9.1.0', 'refs/tags/ex9.1.0'],
+  [
+    'internal ot3 alpha',
+    'refs/tags/ot3@8.5.0-alpha.1',
+    'refs/tags/ot3@8.5.0-alpha.1',
+  ],
+  ['integer vN tag', 'refs/tags/v70', 'refs/tags/v70'],
+  ['branch ref', 'refs/heads/main', 'refs/heads/main'],
+]
 
-test('normalizeFirmwareInputRef leaves internal ot3 tags unchanged', () => {
-  expect(
-    action.normalizeFirmwareInputRef('refs/tags/ot3@8.5.0-alpha.1')
-  ).toStrictEqual('refs/tags/ot3@8.5.0-alpha.1')
-})
-
-test('normalizeFirmwareInputRef leaves integer vN tags unchanged', () => {
-  expect(action.normalizeFirmwareInputRef('refs/tags/v70')).toStrictEqual(
-    'refs/tags/v70'
-  )
-})
-
-test('normalizeFirmwareInputRef leaves branch refs unchanged', () => {
-  expect(action.normalizeFirmwareInputRef('refs/heads/main')).toStrictEqual(
-    'refs/heads/main'
-  )
-})
-
-test('expectedFirmwareTagForAuthoritative maps external semver', () => {
-  expect(
-    action.expectedFirmwareTagForAuthoritative('refs/tags/v9.1.0-alpha.7')
-  ).toStrictEqual('refs/tags/ex9.1.0-alpha.7')
-})
-
-test('expectedFirmwareTagForAuthoritative keeps internal ot3 tag', () => {
-  expect(
-    action.expectedFirmwareTagForAuthoritative('refs/tags/ot3@8.5.0-alpha.1')
-  ).toStrictEqual('refs/tags/ot3@8.5.0-alpha.1')
-})
+FIRMWARE_REF_FOR_STACK_SPECS.forEach(
+  ([testNameFragment, stackRef, expected]) => {
+    test(`firmwareRefForStackRef ${testNameFragment}`, () => {
+      expect(action.firmwareRefForStackRef(stackRef)).toStrictEqual(expected)
+    })
+  }
+)
 
 const FIRMWARE_VERSION_TAG_SPECS: Array<[string, Ref, boolean]> = [
   ['integer v70', 'refs/tags/v70', true],

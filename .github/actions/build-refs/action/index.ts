@@ -69,19 +69,15 @@ export function stackCoordinatedTagToFirmwareTag(stackTagRef: Tag): Tag | null {
   return null
 }
 
-/** Normalize an ot3-firmware input ref (map external stack v* tags to ex* on firmware). */
-export function normalizeFirmwareInputRef(ref: Ref): Ref {
+/**
+ * Resolve the ot3-firmware ref for a stack tag or branch.
+ * External stack semver v* maps to ex*; branches, ot3@*, ex*, and integer vN pass through.
+ */
+export function firmwareRefForStackRef(ref: Ref): Ref {
   if (!ref.startsWith('refs/tags/')) {
     return ref
   }
   return stackCoordinatedTagToFirmwareTag(ref as Tag) ?? ref
-}
-
-export function expectedFirmwareTagForAuthoritative(authoritative: Ref): Ref {
-  if (!authoritative.startsWith('refs/tags/')) {
-    return authoritative
-  }
-  return stackCoordinatedTagToFirmwareTag(authoritative as Tag) ?? authoritative
 }
 
 /** Human-readable note for one repo row in the workflow step summary. */
@@ -98,18 +94,18 @@ export function summaryNoteForRepo(
   }
 
   if (repo === FIRMWARE_REPO) {
-    const mappedFromAuthoritative = stackCoordinatedTagToFirmwareTag(
-      authoritative as Tag
-    )
-    if (mappedFromAuthoritative && mappedFromAuthoritative === resolved) {
+    const mappedFromAuthoritative = firmwareRefForStackRef(authoritative)
+    if (
+      mappedFromAuthoritative !== authoritative &&
+      mappedFromAuthoritative === resolved
+    ) {
       return `Mapped stack tag ${tagNameFromRef(authoritative as Tag)} → ${tagNameFromRef(resolved as Tag)}`
     }
-    if (
-      inputRef?.startsWith('refs/tags/') &&
-      normalizeFirmwareInputRef(inputRef) === resolved &&
-      normalizeFirmwareInputRef(inputRef) !== inputRef
-    ) {
-      return `Mapped explicit input ${tagNameFromRef(inputRef as Tag)} → ${tagNameFromRef(resolved as Tag)}`
+    if (inputRef != null) {
+      const mappedInput = firmwareRefForStackRef(inputRef)
+      if (mappedInput !== inputRef && mappedInput === resolved) {
+        return `Mapped explicit input ${tagNameFromRef(inputRef as Tag)} → ${tagNameFromRef(resolved as Tag)}`
+      }
     }
     return 'Coordination tag on firmware (internal ot3@*, or ex* specified explicitly)'
   }
@@ -269,14 +265,12 @@ export function isCoordinatedReleaseTag(ref: Ref): boolean {
 }
 
 function tagsToAttempt(requesterTag: Tag, repo?: Repo): Ref[] {
-  if (repo === FIRMWARE_REPO) {
-    const firmwareTag = stackCoordinatedTagToFirmwareTag(requesterTag)
-    if (firmwareTag) {
-      return [firmwareTag]
-    }
-  }
   // Tag builds require the matching tag on every repo; no default-branch fallback.
-  return [requesterTag]
+  return [
+    repo === FIRMWARE_REPO
+      ? firmwareRefForStackRef(requesterTag)
+      : requesterTag,
+  ]
 }
 
 export function refsToAttempt(
@@ -373,12 +367,12 @@ async function run() {
   const attemptable = Array.from(inputs.entries()).reduce(
     (prev: AttemptableRefs, [repoName, inputRef]): AttemptableRefs => {
       const normalizedInput =
-        repoName === FIRMWARE_REPO && inputRef
-          ? normalizeFirmwareInputRef(inputRef)
+        repoName === FIRMWARE_REPO && inputRef != null
+          ? firmwareRefForStackRef(inputRef)
           : inputRef
       if (
         repoName === FIRMWARE_REPO &&
-        inputRef &&
+        inputRef != null &&
         normalizedInput !== inputRef
       ) {
         core.info(`Mapped ot3-firmware input ${inputRef} to ${normalizedInput}`)
@@ -411,7 +405,7 @@ async function run() {
       const tagHint =
         authoritative.startsWith('refs/tags/') && inputRef === null
           ? repo === FIRMWARE_REPO
-            ? ` Tag builds require ${expectedFirmwareTagForAuthoritative(authoritative)} on ot3-firmware.`
+            ? ` Tag builds require ${firmwareRefForStackRef(authoritative)} on ot3-firmware.`
             : ` Tag builds require the same tag (${authoritative}) on all repos.`
           : ''
       throw new Error(

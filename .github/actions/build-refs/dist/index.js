@@ -31873,10 +31873,9 @@ var __webpack_exports__ = {};
 __nccwpck_require__.r(__webpack_exports__);
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   authoritativeRef: () => (/* binding */ authoritativeRef),
-/* harmony export */   expectedFirmwareTagForAuthoritative: () => (/* binding */ expectedFirmwareTagForAuthoritative),
+/* harmony export */   firmwareRefForStackRef: () => (/* binding */ firmwareRefForStackRef),
 /* harmony export */   isCoordinatedReleaseTag: () => (/* binding */ isCoordinatedReleaseTag),
 /* harmony export */   isFirmwareVersionTagRef: () => (/* binding */ isFirmwareVersionTagRef),
-/* harmony export */   normalizeFirmwareInputRef: () => (/* binding */ normalizeFirmwareInputRef),
 /* harmony export */   refsToAttempt: () => (/* binding */ refsToAttempt),
 /* harmony export */   resolveBuildType: () => (/* binding */ resolveBuildType),
 /* harmony export */   resolveBuildVariant: () => (/* binding */ resolveBuildVariant),
@@ -31944,20 +31943,16 @@ function stackCoordinatedTagToFirmwareTag(stackTagRef) {
     }
     return null;
 }
-/** Normalize an ot3-firmware input ref (map external stack v* tags to ex* on firmware). */
-function normalizeFirmwareInputRef(ref) {
+/**
+ * Resolve the ot3-firmware ref for a stack tag or branch.
+ * External stack semver v* maps to ex*; branches, ot3@*, ex*, and integer vN pass through.
+ */
+function firmwareRefForStackRef(ref) {
     var _a;
     if (!ref.startsWith('refs/tags/')) {
         return ref;
     }
     return (_a = stackCoordinatedTagToFirmwareTag(ref)) !== null && _a !== void 0 ? _a : ref;
-}
-function expectedFirmwareTagForAuthoritative(authoritative) {
-    var _a;
-    if (!authoritative.startsWith('refs/tags/')) {
-        return authoritative;
-    }
-    return (_a = stackCoordinatedTagToFirmwareTag(authoritative)) !== null && _a !== void 0 ? _a : authoritative;
 }
 /** Human-readable note for one repo row in the workflow step summary. */
 function summaryNoteForRepo(repo, authoritative, resolved, inputRef) {
@@ -31967,14 +31962,16 @@ function summaryNoteForRepo(repo, authoritative, resolved, inputRef) {
             : 'Branch build; matching branch or default';
     }
     if (repo === FIRMWARE_REPO) {
-        const mappedFromAuthoritative = stackCoordinatedTagToFirmwareTag(authoritative);
-        if (mappedFromAuthoritative && mappedFromAuthoritative === resolved) {
+        const mappedFromAuthoritative = firmwareRefForStackRef(authoritative);
+        if (mappedFromAuthoritative !== authoritative &&
+            mappedFromAuthoritative === resolved) {
             return `Mapped stack tag ${tagNameFromRef(authoritative)} → ${tagNameFromRef(resolved)}`;
         }
-        if ((inputRef === null || inputRef === void 0 ? void 0 : inputRef.startsWith('refs/tags/')) &&
-            normalizeFirmwareInputRef(inputRef) === resolved &&
-            normalizeFirmwareInputRef(inputRef) !== inputRef) {
-            return `Mapped explicit input ${tagNameFromRef(inputRef)} → ${tagNameFromRef(resolved)}`;
+        if (inputRef != null) {
+            const mappedInput = firmwareRefForStackRef(inputRef);
+            if (mappedInput !== inputRef && mappedInput === resolved) {
+                return `Mapped explicit input ${tagNameFromRef(inputRef)} → ${tagNameFromRef(resolved)}`;
+            }
         }
         return 'Coordination tag on firmware (internal ot3@*, or ex* specified explicitly)';
     }
@@ -32092,14 +32089,12 @@ function isCoordinatedReleaseTag(ref) {
     return tagName.startsWith('ot3@') || tagName.startsWith('v');
 }
 function tagsToAttempt(requesterTag, repo) {
-    if (repo === FIRMWARE_REPO) {
-        const firmwareTag = stackCoordinatedTagToFirmwareTag(requesterTag);
-        if (firmwareTag) {
-            return [firmwareTag];
-        }
-    }
     // Tag builds require the matching tag on every repo; no default-branch fallback.
-    return [requesterTag];
+    return [
+        repo === FIRMWARE_REPO
+            ? firmwareRefForStackRef(requesterTag)
+            : requesterTag,
+    ];
 }
 function refsToAttempt(requesterRef, requesterIsDefaultBranch, requestedDefaultBranch, repo) {
     ///Based on the refs from whatever was specified, return an ordered list of refs to
@@ -32158,11 +32153,11 @@ function run() {
         _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved build type to ${buildType}`);
         _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Resolved build variant to ${buildVariant}`);
         const attemptable = Array.from(inputs.entries()).reduce((prev, [repoName, inputRef]) => {
-            const normalizedInput = repoName === FIRMWARE_REPO && inputRef
-                ? normalizeFirmwareInputRef(inputRef)
+            const normalizedInput = repoName === FIRMWARE_REPO && inputRef != null
+                ? firmwareRefForStackRef(inputRef)
                 : inputRef;
             if (repoName === FIRMWARE_REPO &&
-                inputRef &&
+                inputRef != null &&
                 normalizedInput !== inputRef) {
                 _actions_core__WEBPACK_IMPORTED_MODULE_1__.info(`Mapped ot3-firmware input ${inputRef} to ${normalizedInput}`);
             }
@@ -32182,7 +32177,7 @@ function run() {
                 const inputRef = inputs.get(repo);
                 const tagHint = authoritative.startsWith('refs/tags/') && inputRef === null
                     ? repo === FIRMWARE_REPO
-                        ? ` Tag builds require ${expectedFirmwareTagForAuthoritative(authoritative)} on ot3-firmware.`
+                        ? ` Tag builds require ${firmwareRefForStackRef(authoritative)} on ot3-firmware.`
                         : ` Tag builds require the same tag (${authoritative}) on all repos.`
                     : '';
                 throw new Error(`Could not resolve ${repo} input reference ${inputRef}.${tagHint}`);
