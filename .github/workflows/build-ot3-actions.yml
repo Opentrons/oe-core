@@ -465,6 +465,7 @@ jobs:
               fi
           fi
       - name: Fetch sources and build image
+        id: build-image
         run: |
           here=$(pwd)
           oe_mount="type=bind,src=$here/oe-core,dst=/volumes/oe-core,consistency=delegated"
@@ -480,27 +481,6 @@ jobs:
       - name: Prune images
         if: always()
         run: docker image prune -af
-      - name: Push S3 cache
-        shell: bash
-        continue-on-error: true
-        run: |
-          aws_cp="aws s3 cp --no-progress"
-          cachedir=${LOCAL_CACHE:-./cache}
-          # Docker leaves root-owned files on bind-mounted cache; zip and rm need runner ownership.
-          if [ -d "$cachedir" ]; then
-            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
-          fi
-          for cachetype in downloads sstate git ; do
-              df -h
-              localzip="${cachedir}/../${cachetype}.zip"
-              thiscache=${cachedir}/${cachetype}
-              cd ${thiscache}
-              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
-              TIME="%E" time zip -q -r --filesync --symlinks  ${localzip} ./* 2>elapsed
-              echo "Refreshed cache in $(cat elapsed)" || 0
-              TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
-              echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
-          done
       - name: Gather results
         id: artifacts
         run: |
@@ -614,6 +594,61 @@ jobs:
         shell: bash
         run: |
           sudo find . -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+      # Push cache after release artifacts so zip/upload does not block releases.json, S3, or monorepo uploads.
+      - name: Push S3 cache
+        if: always() && steps.build-image.outcome == 'success'
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+
+          aws_cp="aws s3 cp --no-progress"
+          cachedir=${LOCAL_CACHE:-./cache}
+          s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
+
+          # Docker leaves root-owned files on bind-mounted cache; zip and rm need runner ownership.
+          if [ -d "$cachedir" ]; then
+            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
+          fi
+
+          push_cache_type() {
+            local cachetype="$1"
+            local thiscache="${cachedir}/${cachetype}"
+            local localzip="${cachedir}/../${cachetype}.zip"
+            local elapsed_zip="${cachedir}/../${cachetype}-zip.elapsed"
+            local elapsed_upload="${cachedir}/../${cachetype}-upload.elapsed"
+
+            if [ ! -d "${thiscache}" ]; then
+              echo "Cache dir ${thiscache} does not exist; skipping upload"
+              return 0
+            fi
+
+            echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
+            rm -f "${localzip}"
+            pushd "${thiscache}" >/dev/null
+            TIME="%E" time zip -q -r --filesync --symlinks "${localzip}" ./* 2>"${elapsed_zip}"
+            popd >/dev/null
+            echo "Refreshed ${cachetype} cache in $(cat "${elapsed_zip}")"
+
+            TIME="%E" time ${aws_cp} "${localzip}" "${s3_prefix}/${cachetype}.zip" 2>"${elapsed_upload}"
+            echo "Uploaded ${cachetype} $(du -h "${localzip}" | cut -f 1) in $(cat "${elapsed_upload}")"
+            rm -f "${localzip}"
+          }
+
+          df -h || true
+
+          failures=0
+          for cachetype in downloads sstate git; do
+            push_cache_type "${cachetype}" &
+          done
+          for job in $(jobs -p); do
+            wait "${job}" || failures=$((failures + 1))
+          done
+
+          if [ "${failures}" -gt 0 ]; then
+            echo "Cache push completed with ${failures} failure(s)" >&2
+            exit 1
+          fi
       - name: Remove poisoned cache
         if: ${{ failure() }}
         shell: bash
