@@ -3,7 +3,7 @@ description: 'Sends Slack alerts for tagged build failures with clear links'
 
 inputs:
   status:
-    description: 'Build status: success, failure, or cancelled'
+    description: 'Alert status: deployed (artifacts published), failure, or cancelled'
     required: true
   workflow_name:
     description: 'Name of the workflow'
@@ -69,10 +69,29 @@ runs:
           echo "ref_type=branch" >> $GITHUB_OUTPUT
         fi
 
+        case "${{ inputs.status }}" in
+          deployed|success)
+            echo "headline=Build artifacts deployed" >> $GITHUB_OUTPUT
+            echo "status_label=deployed" >> $GITHUB_OUTPUT
+            ;;
+          failure)
+            echo "headline=Build failed" >> $GITHUB_OUTPUT
+            echo "status_label=failure" >> $GITHUB_OUTPUT
+            ;;
+          cancelled)
+            echo "headline=Build cancelled" >> $GITHUB_OUTPUT
+            echo "status_label=cancelled" >> $GITHUB_OUTPUT
+            ;;
+          *)
+            echo "headline=Build update" >> $GITHUB_OUTPUT
+            echo "status_label=${{ inputs.status }}" >> $GITHUB_OUTPUT
+            ;;
+        esac
+
     - name: 'Send Slack Alert'
       uses: slackapi/slack-github-action@d09f6a279ff492756a31df59952ee6dce8c9b772 # v1.14.0
       with:
-        payload: "{\"s3-url\":\"${{ inputs.console_url }}/\",\"type\":\"${{ steps.prepare-refs.outputs.ref_type }}\",\"reflike\":\"${{ steps.prepare-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.prepare-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.prepare-refs.outputs.firmware }}\",\"full-image\":\"${{ inputs.fullimage_url }}\",\"system-update\":\"${{ inputs.system_url }}\",\"version-file\":\"${{ inputs.version_file_url }}\",\"release-notes\":\"${{ inputs.release_notes_file_url }}\"}"
+        payload: "{\"headline\":\"${{ steps.prepare-refs.outputs.headline }}\",\"status\":\"${{ steps.prepare-refs.outputs.status_label }}\",\"s3-url\":\"${{ inputs.console_url }}/\",\"type\":\"${{ steps.prepare-refs.outputs.ref_type }}\",\"reflike\":\"${{ steps.prepare-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.prepare-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.prepare-refs.outputs.firmware }}\",\"full-image\":\"${{ inputs.fullimage_url }}\",\"system-update\":\"${{ inputs.system_url }}\",\"version-file\":\"${{ inputs.version_file_url }}\",\"release-notes\":\"${{ inputs.release_notes_file_url }}\"}"
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.webhook_url }}
       continue-on-error: false
