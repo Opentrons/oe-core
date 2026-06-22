@@ -81,7 +81,7 @@ When the action runs in a workflow job, it writes a **Build refs** table to the 
 
 This github action is written in typescript. Github Actions doesn't support typescript, it supports javascript. So the action is transpiled, which means there's a whole huge project setup to handle it.
 
-There's a package.json here which means you can (and should) `npm install` in this repo to get it set up. Use node 20.
+There's a package.json here which means you can (and should) `npm install` in this repo to get it set up. Use node 24.
 
 After that, `npm run build` will transpile the code to js in `dist/`. This needs to be checked in.
 
