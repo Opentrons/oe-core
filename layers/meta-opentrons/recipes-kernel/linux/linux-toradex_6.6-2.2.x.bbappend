@@ -9,4 +9,5 @@ SRC_URI += " \
         file://ftdi.cfg \
         file://usb.cfg \
         file://input.cfg \
+        file://cp210x.cfg \
         "
