@@ -1,4 +1,5 @@
 """A script to help update the releases.json file."""
+
 import os
 import sys
 import json
@@ -20,14 +21,14 @@ def main(args):
         exit(1)
 
     # Get the releases from the releases file
-    releases = {"production": {}}
+    releases = {"productionV2": {}}
     if os.path.exists(releases_file):
         print(f"reading releases file - {releases_file}")
         with open(releases_file, "r") as fh:
             releases = json.load(fh)
 
     # Update the releases dict with the latest version
-    releases.get("production", {}).update(
+    releases.get("productionV2", {}).update(
         {
             f"{version}": {
                 "fullImage": f"{base_url}/ot3-fullimage.tar",
@@ -42,7 +43,7 @@ def main(args):
     with open(releases_file, "w") as fh:
         json.dump(releases, fh)
     print(
-        f"Updated {releases_file} with - {version}: {releases['production'][version]}"
+        f"Updated {releases_file} with - {version}: {releases['productionV2'][version]}"
     )
 
 
