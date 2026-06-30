@@ -28,16 +28,14 @@ def main(args):
             releases = json.load(fh)
 
     # Update the releases dict with the latest version
-    releases.get("productionV2", {}).update(
-        {
-            f"{version}": {
-                "fullImage": f"{base_url}/ot3-fullimage.tar",
-                "system": f"{base_url}/ot3-system.zip",
-                "version": f"{base_url}/VERSION.json",
-                "releaseNotes": f"{base_url}/release-notes.md",
-            }
-        }
-    )
+    if 'productionV2' not in releases:
+        releases['productionV2'] = {}
+    releases['productionV2'][f'{version}'] = {
+        "fullImage": f"{base_url}/ot3-fullimage.tar",
+        "system": f"{base_url}/ot3-system.zip",
+        "version": f"{base_url}/VERSION.json",
+        "releaseNotes": f"{base_url}/release-notes.md",
+    }
 
     # Save the new releases.json file
     with open(releases_file, "w") as fh:
