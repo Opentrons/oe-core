@@ -1,0 +1,85 @@
+name: "Build Notification"
+description: "Single entrypoint for Flex build Slack notifications with routing rules."
+inputs:
+  workflow:
+    description: "Workflow rule set to apply (currently flex-build)."
+    required: true
+    default: "flex-build"
+  event_name:
+    description: "GitHub event name (for example workflow_dispatch)."
+    required: true
+  job_result:
+    description: "Job result: success, failure, cancelled, or skipped."
+    required: true
+  webhook_url:
+    description: "Slack incoming webhook for branch builds and fallback."
+    required: false
+    default: ""
+  webhook_url_tagged:
+    description: "Slack incoming webhook for tagged builds. Falls back to webhook_url when empty."
+    required: false
+    default: ""
+  workflow_name:
+    description: "Human-readable workflow name for the Slack payload."
+    required: false
+    default: ""
+  workflow_run_url:
+    description: "Link to the workflow run. Defaults to the current run URL."
+    required: false
+    default: ""
+  failed_jobs:
+    description: "Comma-separated failed job names (optional)."
+    required: false
+    default: ""
+  oe_core_ref:
+    description: "oe-core ref."
+    required: false
+    default: ""
+  monorepo_ref:
+    description: "Monorepo ref."
+    required: false
+    default: ""
+  firmware_ref:
+    description: "Firmware ref."
+    required: false
+    default: ""
+  variant:
+    description: "Build variant from decide-refs (internal-release, release, or empty)."
+    required: false
+    default: ""
+  console_url:
+    description: "S3 console URL."
+    required: false
+    default: ""
+  system_url:
+    description: "System update zip URL."
+    required: false
+    default: ""
+  fullimage_url:
+    description: "Full image tar URL."
+    required: false
+    default: ""
+  version_file_url:
+    description: "Version file URL."
+    required: false
+    default: ""
+  release_notes_file_url:
+    description: "Release notes file URL."
+    required: false
+    default: ""
+  dry_run:
+    description: "When true, evaluate routing and build payload but do not POST."
+    required: false
+    default: "false"
+outputs:
+  sent:
+    description: "true when a Slack notification was sent, false when skipped."
+  notification_kind:
+    description: "deployed, failure, cancelled, or none."
+  webhook_target:
+    description: "tagged, default, or none."
+  skip_reason:
+    description: "Why the notification was skipped, empty when sent."
+runs:
+  using: "node24"
+  main: "dist/index.js"

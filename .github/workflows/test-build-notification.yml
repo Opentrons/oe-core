@@ -1,0 +1,46 @@
+name: "Test the build-notification js action"
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/test-build-notification.yml"
+      - ".github/actions/build-notification/**"
+
+jobs:
+  check-action:
+    name: "check build notification action"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Fetch sources
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          submodules: false
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: "24"
+      - name: Set up js
+        run: |
+          cd .github/actions/build-notification
+          npm install
+      - name: Format
+        run: |
+          cd .github/actions/build-notification
+          npm run format-check
+      - name: Lint
+        run: |
+          cd .github/actions/build-notification
+          npm run lint
+      - name: Test
+        run: |
+          cd .github/actions/build-notification
+          npm run test
+      - name: Check built action is up to date
+        run: |
+          cd .github/actions/build-notification
+          npm run build
+          if ! git diff --quiet dist/index.js; then
+            echo "dist/index.js is out of date. Run 'npm run build' in .github/actions/build-notification and commit the result."
+            git diff --stat dist/index.js
+            exit 1
+          fi
