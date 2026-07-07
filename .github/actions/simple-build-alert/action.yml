@@ -1,18 +1,15 @@
 name: 'Simple Build Alert'
-description: 'Sends Slack alerts for tagged build failures with clear links'
+description: 'Posts Flex build status to a Slack Workflow webhook with artifact links'
 
 inputs:
   status:
-    description: 'Build status: success, failure, or cancelled'
+    description: 'Alert status: deployed (artifacts published), failure, or cancelled'
     required: true
   workflow_name:
-    description: 'Name of the workflow'
+    description: 'Name of the workflow (reserved for future message formatting)'
     required: true
-  failed_jobs:
-    description: 'Comma-separated list of failed jobs (optional)'
-    required: false
   webhook_url:
-    description: 'Slack webhook URL'
+    description: 'Slack Workflow trigger webhook URL (not an Incoming Webhook URL)'
     required: true
   console_url:
     description: 'S3 console URL (optional)'
@@ -21,7 +18,7 @@ inputs:
     description: 'System update zip URL (optional)'
     required: false
   fullimage_url:
-    description: 'Full image zip URL (optional)'
+    description: 'Full image tar URL (optional)'
     required: false
   version_file_url:
     description: 'Version file URL (optional)'
@@ -42,37 +39,32 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 'Prepare refs for payload'
-      id: prepare-refs
+    - name: 'Build Slack payload'
+      id: payload
       shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        INPUT_STATUS: ${{ inputs.status }}
+        INPUT_CONSOLE_URL: ${{ inputs.console_url }}
+        INPUT_SYSTEM_URL: ${{ inputs.system_url }}
+        INPUT_FULLIMAGE_URL: ${{ inputs.fullimage_url }}
+        INPUT_VERSION_FILE_URL: ${{ inputs.version_file_url }}
+        INPUT_RELEASE_NOTES_FILE_URL: ${{ inputs.release_notes_file_url }}
+        INPUT_OE_CORE_REF: ${{ inputs.oe-core_ref }}
+        INPUT_MONOREPO_REF: ${{ inputs.monorepo_ref }}
+        INPUT_FIRMWARE_REF: ${{ inputs.firmware_ref }}
       run: |
-        # Strip refs/tags/ or refs/heads/ prefix from refs
-        oe_core_display="${{ inputs.oe-core_ref }}"
-        oe_core_display="${oe_core_display#refs/tags/}"
-        oe_core_display="${oe_core_display#refs/heads/}"
-        echo "oe-core=${oe_core_display}" >> $GITHUB_OUTPUT
-        
-        monorepo_display="${{ inputs.monorepo_ref }}"
-        monorepo_display="${monorepo_display#refs/tags/}"
-        monorepo_display="${monorepo_display#refs/heads/}"
-        echo "monorepo=${monorepo_display}" >> $GITHUB_OUTPUT
-        
-        firmware_display="${{ inputs.firmware_ref }}"
-        firmware_display="${firmware_display#refs/tags/}"
-        firmware_display="${firmware_display#refs/heads/}"
-        echo "firmware=${firmware_display}" >> $GITHUB_OUTPUT
-        
-        # Determine type
-        if [[ "${{ inputs.monorepo_ref }}" == refs/tags/* ]]; then
-          echo "ref_type=tag" >> $GITHUB_OUTPUT
-        else
-          echo "ref_type=branch" >> $GITHUB_OUTPUT
-        fi
+        payload_json=$(python3 build_payload.py)
+        {
+          echo "json<<EOF"
+          echo "$payload_json"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
 
     - name: 'Send Slack Alert'
       uses: slackapi/slack-github-action@d09f6a279ff492756a31df59952ee6dce8c9b772 # v1.14.0
       with:
-        payload: "{\"s3-url\":\"${{ inputs.console_url }}/\",\"type\":\"${{ steps.prepare-refs.outputs.ref_type }}\",\"reflike\":\"${{ steps.prepare-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.prepare-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.prepare-refs.outputs.firmware }}\",\"full-image\":\"${{ inputs.fullimage_url }}\",\"system-update\":\"${{ inputs.system_url }}\",\"version-file\":\"${{ inputs.version_file_url }}\",\"release-notes\":\"${{ inputs.release_notes_file_url }}\"}"
+        payload: ${{ steps.payload.outputs.json }}
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.webhook_url }}
-      continue-on-error: false
+      continue-on-error: true

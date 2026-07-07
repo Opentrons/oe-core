@@ -1,227 +1,69 @@
 # Simple Build Alert
 
-A lightweight GitHub Action that sends Slack notifications for tagged build failures with automatic channel routing.
+Posts Flex image build results to Slack via a **Workflow trigger webhook**.
 
-## Features
+This action is used by `build-ot3-actions.yml`. It does not route to channels itself—the Slack Workflow you connect to the webhook decides where messages go and how they are formatted.
 
-- ✅ **Automatic channel routing** based on tag patterns
-- ✅ **Clear failure information** with direct workflow links
-- ✅ **Simple configuration** with just 4 optional inputs
-- ✅ **Smart defaults** for different release types
+## Required configuration
+
+### GitHub secret
+
+- **`SLACK_WEBHOOK_URL`** — Slack **Workflow trigger** URL (from Workflow Builder → Webhook trigger → copy URL).
+
+This must **not** be a classic Incoming Webhook (`hooks.slack.com/services/...`). Incoming webhooks expect `text`/`blocks` JSON and will return HTTP 400 for this payload shape.
+
+### Slack Workflow variables
+
+Add trigger variables matching the JSON keys emitted by `build_payload.py`:
+
+| Variable | Description |
+| -------- | ----------- |
+| `tag` | Monorepo tag (e.g. `ot3@4.0.0-beta.1`) or `None` for branch builds |
+| `headline` | Short summary (e.g. `Build artifacts deployed`) |
+| `status` | `deployed`, `failure`, or `cancelled` |
+| `type` | `tag` or `branch` |
+| `reflike` | oe-core ref (short form) |
+| `monorepo-reflike` | opentrons ref (short form) |
+| `firmware-reflike` | ot3-firmware ref (short form) |
+| `s3-url` | S3 console URL for the run |
+| `full-image` | Full image tar URL |
+| `system-update` | System zip URL |
+| `version-file` | VERSION.json URL |
+| `release-notes` | Release notes URL |
+
+For branch builds, `tag` is the literal string `None`—use a Workflow condition if you want different copy for tagged vs branch builds.
 
 ## Usage
 
 ```yaml
-- name: 'Send build alert'
-  uses: ./.github/actions/simple-build-alert
+- uses: ./.github/actions/simple-build-alert
+  continue-on-error: true
   with:
-    status: 'failure' # success, failure, or cancelled
-    workflow_name: 'App test, build, and deploy'
-    failed_jobs: 'js-unit-test,build-app' # optional
+    status: deployed # or failure, cancelled
+    workflow_name: 'Build Flex image on github workflows'
+    webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+    console_url: ${{ needs.run-build.outputs.console_url }}
+    system_url: ${{ needs.run-build.outputs.system_url }}
+    fullimage_url: ${{ needs.run-build.outputs.fullimage_url }}
+    version_file_url: ${{ needs.run-build.outputs.version_file_url }}
+    release_notes_file_url: ${{ needs.run-build.outputs.release_notes_file_url }}
+    oe-core_ref: ${{ needs.decide-refs.outputs.oe-core }}
+    monorepo_ref: ${{ needs.decide-refs.outputs.monorepo }}
+    firmware_ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
 ```
 
 ## Inputs
 
-| Input              | Required | Description                                                          |
-| ------------------ | -------- | -------------------------------------------------------------------- |
-| `status`           | ✅       | Build status: `success`, `failure`, or `cancelled`                   |
-| `workflow_name`    | ✅       | Name of the workflow that triggered the alert                        |
-| `failed_jobs`      | ❌       | Comma-separated list of failed jobs (e.g., `js-unit-test,build-app`) |
-
-## Automatic Channel Routing
-
-The action automatically routes notifications to different Slack channels based on the tag pattern:
-
-### Main Releases → `#release-cycle`
-
-- `v*` - Version releases (v7.2.0, v8.0.0, etc.)
-- `ot3@*` - OT3 releases (ot3@7.2.0, ot3@8.0.0, etc.)
-
-### Component Releases → `#builds`
-
-- `protocol-designer*` - Protocol Designer releases
-- `labware-library*` - Labware Library releases
-- `components*` - Components releases
-- `shared-data*` - Shared Data releases
-
-### AI Releases → `#builds`
-
-- `ai-client@*` - AI Client releases
-- `ai-server@*` - AI Server releases
-
-### Documentation Releases → `#builds`
-
-- `docs@*` - Documentation releases
-- `MKDOCS*` - MkDocs releases
-- `staging-docs@*` - Documentation staging
-- `staging-MKDOCS*` - MkDocs staging
-- `staging-mkdocs*` - MkDocs staging (lowercase)
-
-### Default → `#release-cycle`
-
-- Any other tag pattern defaults to the release cycle channel
-
-## Required Secrets
-
-You need to set up these repository secrets:
-
-### 1. Release Cycle Webhook
-
-- **Secret Name**: `OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL`
-- **Channel**: `#release-cycle`
-- **Used for**: Main releases (v*, ot3@*)
-
-### 2. Builds Channel Webhook
-
-- **Secret Name**: `OT_APP_ROBOTSTACK_SLACK_NOTIFICATION_WEBHOOK_URL`
-- **Channel**: `#builds`
-- **Used for**: Component, AI, and documentation releases
-
-## Setup Instructions
-
-### 1. Create Slack Webhooks
-
-#### For #release-cycle channel:
-
-1. Go to your Slack workspace
-2. Create a new app or use existing one
-3. Go to "Incoming Webhooks"
-4. Create webhook for `#release-cycle` channel
-5. Copy the webhook URL
-
-#### For #builds channel:
-
-1. Create another webhook for `#builds` channel
-2. Copy the webhook URL
-
-### 2. Add Repository Secrets
-
-1. Go to your repository settings: `https://github.com/YourOrg/YourRepo/settings/secrets/actions`
-2. Add these secrets:
-   - `OT_APP_RELEASE_SLACK_NOTIFICATION_WEBHOOK_URL` → Your #release-cycle webhook URL
-   - `OT_APP_ROBOTSTACK_SLACK_NOTIFICATION_WEBHOOK_URL` → Your #builds webhook URL
-
-### 3. Add to Workflows
-
-Add these notification jobs to any workflow:
-
-```yaml
-# Success notification
-notify-success:
-  name: 'Notify Build Success'
-  runs-on: 'ubuntu-latest'
-  needs: [job1, job2, job3] # Replace with your job names
-  if: always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && needs.job1.result == 'success' && needs.job2.result == 'success' && needs.job3.result == 'success'
-  steps:
-    - name: 'Send success alert'
-      uses: ./.github/actions/simple-build-alert
-      with:
-        status: 'success'
-        workflow_name: 'Your Workflow Name'
-
-# Failure notification
-notify-failure:
-  name: 'Notify Build Failure'
-  runs-on: 'ubuntu-latest'
-  needs: [job1, job2, job3] # Replace with your job names
-  if: always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && (needs.job1.result == 'failure' || needs.job2.result == 'failure' || needs.job3.result == 'failure')
-  steps:
-    - name: 'Determine failed jobs'
-      id: failed-jobs
-      shell: bash
-      run: |
-        failed_jobs=()
-        if [[ "${{ needs.job1.result }}" == "failure" ]]; then
-          failed_jobs+=("job1")
-        fi
-        if [[ "${{ needs.job2.result }}" == "failure" ]]; then
-          failed_jobs+=("job2")
-        fi
-        if [[ "${{ needs.job3.result }}" == "failure" ]]; then
-          failed_jobs+=("job3")
-        fi
-
-        IFS=','
-        echo "failed_jobs=${failed_jobs[*]}" >> $GITHUB_OUTPUT
-
-    - name: 'Send failure alert'
-      uses: ./.github/actions/simple-build-alert
-      with:
-        status: 'failure'
-        workflow_name: 'Your Workflow Name'
-        failed_jobs: ${{ steps.failed-jobs.outputs.failed_jobs }}
-
-# Cancelled notification
-notify-cancelled:
-  name: 'Notify Build Cancelled'
-  runs-on: 'ubuntu-latest'
-  needs: [job1, job2, job3] # Replace with your job names
-  if: always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && (needs.job1.result == 'cancelled' || needs.job2.result == 'cancelled' || needs.job3.result == 'cancelled')
-  steps:
-    - name: 'Send cancelled alert'
-      uses: ./.github/actions/simple-build-alert
-      with:
-        status: 'cancelled'
-        workflow_name: 'Your Workflow Name'
-```
-
-## Example Notifications
-
-### Success Notification
-
-```
-✅ Build Success
-Tag: v7.2.0
-Workflow: App test, build, and deploy
-Status: success
-View Details: [Open Workflow]
-```
-
-### Failure Notification
-
-```
-❌ Build Failed
-Tag: protocol-designer-v1.0.0
-Workflow: Protocol Designer test, build, and deploy
-Status: failure
-Failed Jobs: js-unit-test, build-app
-View Details: [Open Workflow]
-```
-
-### Cancelled Notification
-
-```
-⚠️ Build Cancelled
-Tag: v7.2.0
-Workflow: App test, build, and deploy
-Status: cancelled
-View Details: [Open Workflow]
-```
-
-## Testing
-
-### Test with Real Tags
-
-```bash
-# Test main release (goes to #release-cycle)
-git tag v7.2.0-test && git push origin v7.2.0-test
-
-# Test component release (goes to #builds)
-git tag protocol-designer-v1.0.0-test && git push origin protocol-designer-v1.0.0-test
-
-# Test AI release (goes to #builds)
-git tag ai-client@v1.0.0-test && git push origin ai-client@v1.0.0-test
-```
-
-## Customization
-
-The channel is determined by the webhook URL you provide. Each webhook URL is configured to post to a specific Slack channel.
-
-## Benefits
-
-- 🎯 **Focused**: Does exactly what you need, nothing more
-- 🔧 **Maintainable**: Easy to understand and modify
-- ⚡ **Fast**: No complex logic or multiple steps
-- 🛡️ **Reliable**: Fewer moving parts = fewer failure points
-- 📈 **Scalable**: Easy to copy to other workflows
-- 🎨 **Smart**: Automatic channel routing based on tag patterns
+| Input | Required | Description |
+| ----- | -------- | ----------- |
+| `status` | yes | `deployed`, `failure`, or `cancelled` (`success` is treated as `deployed`) |
+| `workflow_name` | yes | Workflow display name |
+| `webhook_url` | yes | Slack Workflow trigger URL |
+| `console_url` | no | S3 console link |
+| `system_url` | no | System update zip URL |
+| `fullimage_url` | no | Full image tar URL |
+| `version_file_url` | no | VERSION.json URL |
+| `release_notes_file_url` | no | Release notes URL |
+| `oe-core_ref` | no | Full git ref for oe-core |
+| `monorepo_ref` | no | Full git ref for opentrons |
+| `firmware_ref` | no | Full git ref for ot3-firmware |
