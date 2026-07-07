@@ -21,7 +21,7 @@ SRC_URI:append = " file://opentrons-audit-server.service"
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/audit-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-audit-server"
-OPENTRONS_APP_BUNDLE_USE_GLOBAL = "systemd-python python3-cryptography python3-cffi "
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python3-cryptography python3-cffi "
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
 
@@ -50,7 +50,7 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-audit-server.service.d
                        ${systemd_system_unitdir}/nginx.target.wants/opentrons-audit-server.service \
                        "
 
-RDEPENDS:${PN} += " nginx python3-systemd python3-cryptography "
+RDEPENDS:${PN} += " nginx python3-numpy python3-systemd python3-cryptography "
 
 DEPENDS += " cargo-native "
 
