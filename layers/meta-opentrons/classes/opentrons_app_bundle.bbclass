@@ -191,6 +191,7 @@ do_compile () {
       wheel==0.45.1 \
       expandvars==1.0.0 \
       cython==3.1.1 \
+      maturin==1.9.6 \
       setuptools_rust==1.11.1 \
       typing-extensions==4.15.0 \
       poetry-core==2.2.1 \
