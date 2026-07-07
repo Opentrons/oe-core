@@ -586,6 +586,12 @@ jobs:
           artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
+      # After S3 artifact upload (and monorepo release uploads when applicable), notify
+      # Slack that build outputs are deployed—not that cache sync or cleanup finished.
+      # Conditions: prior steps succeeded; run was workflow_dispatch (manual or cross-repo
+      # dispatch from opentrons tag/branch push). Branch builds always alert. Tagged monorepo
+      # builds alert only when decide-refs resolved a variant (internal-release or release),
+      # skipping tags that do not map to a publishable Flex image variant.
       - name: Send build deployed alert
         if: success() && github.event_name == 'workflow_dispatch' && (!startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') || needs.decide-refs.outputs.variant != '')
         uses: ./oe-core-for-workflow/.github/actions/simple-build-alert
