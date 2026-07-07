@@ -84,10 +84,7 @@ async function run(): Promise<void> {
   const decision = decideNotification(context)
 
   core.setOutput('sent', decision.send ? 'true' : 'false')
-  core.setOutput(
-    'notification_kind',
-    decision.send ? decision.kind : 'none'
-  )
+  core.setOutput('notification_kind', decision.send ? decision.kind : 'none')
   core.setOutput(
     'webhook_target',
     decision.send ? decision.webhookTarget : 'none'
