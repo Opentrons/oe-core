@@ -480,27 +480,6 @@ jobs:
       - name: Prune images
         if: always()
         run: docker image prune -af
-      - name: Push S3 cache
-        shell: bash
-        continue-on-error: true
-        run: |
-          aws_cp="aws s3 cp --no-progress"
-          cachedir=${LOCAL_CACHE:-./cache}
-          # Docker leaves root-owned files on bind-mounted cache; zip and rm need runner ownership.
-          if [ -d "$cachedir" ]; then
-            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
-          fi
-          for cachetype in downloads sstate git ; do
-              df -h
-              localzip="${cachedir}/../${cachetype}.zip"
-              thiscache=${cachedir}/${cachetype}
-              cd ${thiscache}
-              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
-              TIME="%E" time zip -q -r --filesync --symlinks  ${localzip} ./* 2>elapsed
-              echo "Refreshed cache in $(cat elapsed)" || 0
-              TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
-              echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
-          done
       - name: Gather results
         id: artifacts
         run: |
@@ -607,6 +586,29 @@ jobs:
           artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
+      # Defer cache upload until after S3 artifact and monorepo release uploads so
+      # build outputs are published before this slow zip-and-upload step runs.
+      - name: Push S3 cache
+        shell: bash
+        continue-on-error: true
+        run: |
+          aws_cp="aws s3 cp --no-progress"
+          cachedir=${LOCAL_CACHE:-./cache}
+          # Docker leaves root-owned files on bind-mounted cache; zip and rm need runner ownership.
+          if [ -d "$cachedir" ]; then
+            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
+          fi
+          for cachetype in downloads sstate git ; do
+              df -h
+              localzip="${cachedir}/../${cachetype}.zip"
+              thiscache=${cachedir}/${cachetype}
+              cd ${thiscache}
+              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
+              TIME="%E" time zip -q -r --filesync --symlinks  ${localzip} ./* 2>elapsed
+              echo "Refreshed cache in $(cat elapsed)" || 0
+              TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
+              echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
+          done
       # Ephemeral runners are destroyed after the job; cleanup is redundant but harmless.
       - name: Remove build data
         if: always()
