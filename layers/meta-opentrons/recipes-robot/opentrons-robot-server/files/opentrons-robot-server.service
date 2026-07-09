@@ -10,6 +10,8 @@ After=opentrons-ot3-canbus
 Wants=opentrons-pyro-nameserver.service
 After=opentrons-pyro-nameserver.service
 Wants=opentrons-hardware-api.service
+Wants=opentrons-audit-server.service
+After=opentrons-audit-server.service
 
 [Service]
 Type=notify
@@ -20,6 +22,7 @@ Environment=OT_API_FF_enableOT3HardwareController=true
 Environment=RUNNING_ON_PI=true
 Environment=PYTHONPATH=/opt/opentrons-robot-server:/usr/lib/python3.10/site-packages
 Environment=OT_ROBOT_SERVER_auth_server_uds=/run/opentrons-auth-server.sock
+Environment=OT_ROBOT_SERVER_audit_server_uds=/run/opentrons-audit-server.sock
 Environment=OT_ROBOT_SERVER_persistence_directory=%S/opentrons-robot-server
 Environment=OT_ROBOT_SERVER_images_directory=/data/images
 Environment=OT_ROBOT_SERVER_maximum_unused_protocols=20
