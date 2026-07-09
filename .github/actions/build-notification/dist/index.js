@@ -28271,6 +28271,7 @@ __nccwpck_require__.d(__webpack_exports__, {
   buildSlackPayload: () => (/* reexport */ buildSlackPayload),
   decideNotification: () => (/* reexport */ decideNotification),
   isTaggedBuild: () => (/* reexport */ isTaggedBuild),
+  parseRequestedNotificationKind: () => (/* reexport */ parseRequestedNotificationKind),
   refType: () => (/* reexport */ refType),
   resolveWebhookUrl: () => (/* reexport */ resolveWebhookUrl),
   selectWebhookTarget: () => (/* reexport */ selectWebhookTarget),
@@ -31226,6 +31227,7 @@ function getIDToken(aud) {
 ;// CONCATENATED MODULE: ./action/notification-rules.ts
 const HEADLINES = {
     deployed: 'Build artifacts deployed',
+    'cache-synced': "Build's done!",
     failure: 'Build failed',
     cancelled: 'Build cancelled',
 };
@@ -31252,8 +31254,60 @@ function resolveWebhookUrl(webhookTarget, defaultWebhookUrl, taggedWebhookUrl) {
     }
     return defaultWebhookUrl;
 }
-function decideNotification(context) {
+function parseRequestedNotificationKind(raw) {
+    if (raw === '' || raw === 'auto') {
+        return 'auto';
+    }
+    if (raw === 'deployed' ||
+        raw === 'cache-synced' ||
+        raw === 'failure' ||
+        raw === 'cancelled') {
+        return raw;
+    }
+    throw new Error(`Invalid notification_kind "${raw}". Expected auto, deployed, cache-synced, failure, or cancelled`);
+}
+function decideNotification(context, requestedKind = 'auto') {
+    if (requestedKind !== 'auto') {
+        return decideExplicitNotification(context, requestedKind);
+    }
     return decideFlexBuildNotification(context);
+}
+function decideExplicitNotification(context, kind) {
+    if (context.eventName !== 'workflow_dispatch') {
+        return skipDecision(`flex-build notifications only run on workflow_dispatch (got ${context.eventName})`);
+    }
+    const webhookTarget = selectWebhookTarget(context.monorepoRef);
+    switch (kind) {
+        case 'deployed':
+            if (context.jobResult !== 'success') {
+                return skipDecision(`deployed notifications require job_result success (got ${context.jobResult})`);
+            }
+            if (isTaggedBuild(context.monorepoRef) && context.variant === '') {
+                return skipDecision('tagged build without variant does not send deployed notifications');
+            }
+            return sendDecision('deployed', webhookTarget);
+        case 'cache-synced':
+            if (context.jobResult !== 'success') {
+                return skipDecision(`cache-synced notifications require job_result success (got ${context.jobResult})`);
+            }
+            if (!isTaggedBuild(context.monorepoRef)) {
+                return skipDecision('cache-synced notifications are sent for tagged builds only');
+            }
+            if (context.variant === '') {
+                return skipDecision('tagged build without variant does not send cache-synced notifications');
+            }
+            return sendDecision('cache-synced', 'tagged');
+        case 'failure':
+            if (context.jobResult !== 'failure') {
+                return skipDecision(`failure notifications require job_result failure (got ${context.jobResult})`);
+            }
+            return sendDecision('failure', webhookTarget);
+        case 'cancelled':
+            if (context.jobResult !== 'cancelled') {
+                return skipDecision(`cancelled notifications require job_result cancelled (got ${context.jobResult})`);
+            }
+            return sendDecision('cancelled', webhookTarget);
+    }
 }
 function decideFlexBuildNotification(context) {
     if (context.eventName !== 'workflow_dispatch') {
@@ -31391,7 +31445,7 @@ function run() {
             monorepoRef: readInput('monorepo_ref'),
             variant: readInput('variant'),
         };
-        const decision = decideNotification(context);
+        const decision = decideNotification(context, parseRequestedNotificationKind(readInput('notification_kind')));
         setOutput('sent', decision.send ? 'true' : 'false');
         setOutput('notification_kind', decision.send ? decision.kind : 'none');
         setOutput('webhook_target', decision.send ? decision.webhookTarget : 'none');

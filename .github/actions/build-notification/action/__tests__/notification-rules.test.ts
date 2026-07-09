@@ -95,6 +95,46 @@ describe('decideNotification for flex-build', () => {
       { send: false }
     )
   })
+
+  test('sends cache-synced for successful tagged builds with variant', () => {
+    expect(
+      decideNotification(
+        {
+          ...base,
+          jobResult: 'success',
+          monorepoRef: 'refs/tags/v7.5.0',
+          variant: 'release',
+        },
+        'cache-synced'
+      )
+    ).toMatchObject({
+      send: true,
+      kind: 'cache-synced',
+      webhookTarget: 'tagged',
+      statusLabel: 'cache-synced',
+      headline: "Build's done!",
+    })
+  })
+
+  test('skips cache-synced for branch builds', () => {
+    expect(
+      decideNotification({ ...base, jobResult: 'success' }, 'cache-synced')
+    ).toMatchObject({ send: false })
+  })
+
+  test('skips cache-synced for tagged builds without variant', () => {
+    expect(
+      decideNotification(
+        {
+          ...base,
+          jobResult: 'success',
+          monorepoRef: 'refs/tags/v7.5.0',
+          variant: '',
+        },
+        'cache-synced'
+      )
+    ).toMatchObject({ send: false })
+  })
 })
 
 describe('webhook destination routing', () => {

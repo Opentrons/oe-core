@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import {
   buildSlackPayload,
   decideNotification,
+  parseRequestedNotificationKind,
   resolveWebhookUrl,
   type JobResult,
   type WorkflowKind,
@@ -81,7 +82,10 @@ async function run(): Promise<void> {
     variant: readInput('variant'),
   }
 
-  const decision = decideNotification(context)
+  const decision = decideNotification(
+    context,
+    parseRequestedNotificationKind(readInput('notification_kind'))
+  )
 
   core.setOutput('sent', decision.send ? 'true' : 'false')
   core.setOutput('notification_kind', decision.send ? decision.kind : 'none')

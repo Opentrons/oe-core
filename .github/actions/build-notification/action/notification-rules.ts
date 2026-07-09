@@ -1,5 +1,10 @@
 export type JobResult = 'success' | 'failure' | 'cancelled' | 'skipped'
-export type NotificationKind = 'deployed' | 'failure' | 'cancelled'
+export type NotificationKind =
+  | 'deployed'
+  | 'cache-synced'
+  | 'failure'
+  | 'cancelled'
+export type RequestedNotificationKind = NotificationKind | 'auto'
 export type WorkflowKind = 'flex-build'
 export type WebhookTarget = 'tagged' | 'default'
 
@@ -55,6 +60,7 @@ export type SlackPayload = Record<string, string>
 
 const HEADLINES: Record<NotificationKind, string> = {
   deployed: 'Build artifacts deployed',
+  'cache-synced': "Build's done!",
   failure: 'Build failed',
   cancelled: 'Build cancelled',
 }
@@ -92,10 +98,92 @@ export function resolveWebhookUrl(
   return defaultWebhookUrl
 }
 
+export function parseRequestedNotificationKind(
+  raw: string
+): RequestedNotificationKind {
+  if (raw === '' || raw === 'auto') {
+    return 'auto'
+  }
+  if (
+    raw === 'deployed' ||
+    raw === 'cache-synced' ||
+    raw === 'failure' ||
+    raw === 'cancelled'
+  ) {
+    return raw
+  }
+  throw new Error(
+    `Invalid notification_kind "${raw}". Expected auto, deployed, cache-synced, failure, or cancelled`
+  )
+}
+
 export function decideNotification(
-  context: NotificationContext
+  context: NotificationContext,
+  requestedKind: RequestedNotificationKind = 'auto'
 ): NotificationDecision {
+  if (requestedKind !== 'auto') {
+    return decideExplicitNotification(context, requestedKind)
+  }
   return decideFlexBuildNotification(context)
+}
+
+function decideExplicitNotification(
+  context: NotificationContext,
+  kind: NotificationKind
+): NotificationDecision {
+  if (context.eventName !== 'workflow_dispatch') {
+    return skipDecision(
+      `flex-build notifications only run on workflow_dispatch (got ${context.eventName})`
+    )
+  }
+
+  const webhookTarget = selectWebhookTarget(context.monorepoRef)
+
+  switch (kind) {
+    case 'deployed':
+      if (context.jobResult !== 'success') {
+        return skipDecision(
+          `deployed notifications require job_result success (got ${context.jobResult})`
+        )
+      }
+      if (isTaggedBuild(context.monorepoRef) && context.variant === '') {
+        return skipDecision(
+          'tagged build without variant does not send deployed notifications'
+        )
+      }
+      return sendDecision('deployed', webhookTarget)
+    case 'cache-synced':
+      if (context.jobResult !== 'success') {
+        return skipDecision(
+          `cache-synced notifications require job_result success (got ${context.jobResult})`
+        )
+      }
+      if (!isTaggedBuild(context.monorepoRef)) {
+        return skipDecision(
+          'cache-synced notifications are sent for tagged builds only'
+        )
+      }
+      if (context.variant === '') {
+        return skipDecision(
+          'tagged build without variant does not send cache-synced notifications'
+        )
+      }
+      return sendDecision('cache-synced', 'tagged')
+    case 'failure':
+      if (context.jobResult !== 'failure') {
+        return skipDecision(
+          `failure notifications require job_result failure (got ${context.jobResult})`
+        )
+      }
+      return sendDecision('failure', webhookTarget)
+    case 'cancelled':
+      if (context.jobResult !== 'cancelled') {
+        return skipDecision(
+          `cancelled notifications require job_result cancelled (got ${context.jobResult})`
+        )
+      }
+      return sendDecision('cancelled', webhookTarget)
+  }
 }
 
 function decideFlexBuildNotification(

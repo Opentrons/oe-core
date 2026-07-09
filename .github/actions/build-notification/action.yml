@@ -11,12 +11,16 @@ inputs:
   job_result:
     description: "Job result: success, failure, cancelled, or skipped."
     required: true
+  notification_kind:
+    description: "Notification to evaluate: auto (default), deployed, cache-synced, failure, or cancelled."
+    required: false
+    default: "auto"
   webhook_url:
     description: "Slack incoming webhook for branch builds and fallback."
     required: false
     default: ""
   webhook_url_tagged:
-    description: "Slack incoming webhook for tagged builds. Falls back to webhook_url when empty."
+    description: "Slack workflow webhook for tagged builds. Falls back to webhook_url when empty."
     required: false
     default: ""
   workflow_name:
@@ -75,7 +79,7 @@ outputs:
   sent:
     description: "true when a Slack notification was sent, false when skipped."
   notification_kind:
-    description: "deployed, failure, cancelled, or none."
+    description: "deployed, cache-synced, failure, cancelled, or none."
   webhook_target:
     description: "tagged, default, or none."
   skip_reason:
