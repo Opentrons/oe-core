@@ -18,7 +18,8 @@ USERADD_PACKAGES = "${PN}"
 USERADD_PARAM:${PN} = "--system --home /run/ot-protocol \
                        --no-create-home --shell /bin/false \
                        --user-group ot-protocol"
-GROUPADD_PARAM:${PN} = "-r adm -r systemd-journal"
+GROUPMEMS_PARAM:${PN} = "--append --group adm ot-protocol; \
+                         --append --group systemd-journal ot-protocol"
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service opentrons-hardware-api.service"
