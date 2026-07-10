@@ -405,69 +405,18 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          # Size only the archives this job actually pulls (not the whole bucket).
-          # Mixed buckets can hold both .zip (this workflow) and leftover .tar.zst
-          # from experiments; summing everything falsely trips the 50GB skip.
-          #
-          # Format follows what this workflow pull/push uses — currently .zip.
-          # There is no "use zstd if installed" switch on main; when the tar.zst
-          # cache path lands, set cache_archive_ext=tar.zst (and extract with
-          # tar -I zstd) so the size gate stays aligned with the pull loop.
-          cache_types=(downloads sstate git)
-          cache_archive_ext=zip
-          cache_bucket="${S3_CACHE_ARN/arn:aws:s3:::/}"
-          s3_prefix="s3://${cache_bucket}"
-
-          sizeInBytes=0
-          for cachetype in "${cache_types[@]}"; do
-            key="${cachetype}.${cache_archive_ext}"
-            len=$(aws s3api head-object \
-              --bucket "${cache_bucket}" \
-              --key "${key}" \
-              --query ContentLength \
-              --output text 2>/dev/null || echo 0)
-            # Missing objects count as 0 (cold/partial cache is fine).
-            if [[ "${len}" =~ ^[0-9]+$ ]]; then
-              sizeInBytes=$((sizeInBytes + len))
-              echo "Cache object s3://${cache_bucket}/${key}: ${len} bytes"
-            else
-              echo "Cache object s3://${cache_bucket}/${key}: missing"
-            fi
-          done
-          sizeInGigabytes=$((sizeInBytes / 1024 / 1024 / 1024))
-          echo "Active ${cache_archive_ext} cache total: ${sizeInGigabytes}GB (${sizeInBytes} bytes)"
-
+          set -euo pipefail
+          cache_script=./oe-core-for-workflow/.github/scripts/s3-bitbake-cache.sh
+          chmod +x "$cache_script"
+          # Skip pull if the cache bucket is already huge so we keep room to build.
+          sizeInBytes=$(aws s3 ls "s3://${S3_CACHE_ARN/arn:aws:s3:::/}" --recursive --summarize | awk 'END{print}' | grep -o '[0-9].*' || echo 0)
+          sizeInGigabytes=$((sizeInBytes/1024/1024/1024))
           if [[ $sizeInGigabytes -gt 50 ]]; then
-              echo "Doing clean build without cache, size of active ${cache_archive_ext} archives: ${sizeInGigabytes}GB!"
+            echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
           else
-              aws_cp="aws s3 cp --no-progress"
-              cachedir=${LOCAL_CACHE:-./cache}
-              for cachetype in "${cache_types[@]}"; do
-                  local_archive="${cachedir}/../${cachetype}.${cache_archive_ext}"
-                  thiscache=${cachedir}/${cachetype}
-                  echo "Fetching cache for ${cachetype} to ${local_archive}"
-                  mkdir -p ${thiscache}
-                  max_attempts=3
-                  attempt=1
-                  while true; do
-                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.${cache_archive_ext} ${local_archive} 2>elapsed; then
-                      break
-                    fi
-                    if [[ $attempt -ge $max_attempts ]]; then
-                      echo "S3 fetch for ${cachetype} failed after ${max_attempts} attempts, skipping cache for this type"
-                      continue 2
-                    fi
-                    echo "S3 fetch attempt ${attempt} failed, retrying in $((attempt * 15))s..."
-                    sleep $((attempt * 15))
-                    attempt=$((attempt + 1))
-                  done
-                  echo "Fetched $(du -h ${local_archive} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || true
-                  TIME="%E" time unzip -q -u -o ${local_archive} -d ${thiscache} 2>elapsed
-                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || true
-                  # Remove archive immediately after extraction to free up space
-                  rm -f ${local_archive}
-                  echo "Removed ${local_archive} to free up space"
-              done
+            cachedir=${LOCAL_CACHE:-./cache}
+            s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
+            "$cache_script" pull "$s3_prefix" "$cachedir"
           fi
       - name: Cleanup before build
         run: |
@@ -615,28 +564,18 @@ jobs:
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       # Defer cache upload until after S3 artifact and monorepo release uploads so
-      # build outputs are published before this slow zip-and-upload step runs.
+      # build outputs are published before this slow archive-and-upload step runs.
+      # Uses tar.zst (faster than zip) and skips upload when the fingerprint is unchanged.
       - name: Push S3 cache
         shell: bash
         continue-on-error: true
         run: |
-          aws_cp="aws s3 cp --no-progress"
+          set -euo pipefail
+          cache_script=./oe-core-for-workflow/.github/scripts/s3-bitbake-cache.sh
+          chmod +x "$cache_script"
           cachedir=${LOCAL_CACHE:-./cache}
-          # Docker leaves root-owned files on bind-mounted cache; zip and rm need runner ownership.
-          if [ -d "$cachedir" ]; then
-            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
-          fi
-          for cachetype in downloads sstate git ; do
-              df -h
-              local_archive="${cachedir}/../${cachetype}.zip"
-              thiscache=${cachedir}/${cachetype}
-              cd ${thiscache}
-              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${local_archive}"
-              TIME="%E" time zip -q -r --filesync --symlinks  ${local_archive} ./* 2>elapsed
-              echo "Refreshed cache in $(cat elapsed)" || 0
-              TIME="%E" time ${aws_cp} ${local_archive} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
-              echo "Uploaded $(du -h $local_archive | cut -f 1)B in $(cat elapsed)" || 0
-          done
+          s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
+          "$cache_script" push "$s3_prefix" "$cachedir"
       # Ephemeral runners are destroyed after the job; cleanup is redundant but harmless.
       - name: Remove build data
         if: always()
