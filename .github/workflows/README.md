@@ -22,9 +22,14 @@ Builds are triggered:
 
 - There is a `LOCAL_CACHE` environment variable injected that points to a directory that will be present on subsequent builds on the same runner.
 - There is an `S3_CACHE_ARN` environment variable that is the ARN of an s3 bucket that can be used for caching.
-- Cache is stored on the S3 bucket as a big zip (since OE git cache needs to store empty directories and S3 doesn't do that on its own). We fetch cache before every build, and update `LOCAL_CACHE` with it. If the build succeeds, we update the zip and write it back.
+- Cache is stored on the S3 bucket as `downloads` / `sstate` / `git` **`tar.zst`** archives (tar preserves empty directories needed by the OE git cache). Legacy `.zip` objects are still readable on pull during migration.
+- Pull downloads the three archives **in parallel**, then extracts them sequentially.
+- Push fingerprints each cache tree (`path` + `size`, plus empty dirs). If the fingerprint matches the remote `*.manifest`, that cache type is **skipped** (no re-archive / re-upload).
+- Push uses multi-threaded `zstd` compression. After a successful `tar.zst` upload, the legacy `.zip` for that type is deleted from the bucket.
 - Build results get sent to an artifact bucket identified by `S3_ARTIFACT_ARN`.
 - We have to be a little more careful with removing working directories here than in normal github actions.
+
+Helpers live in [`.github/scripts/s3-bitbake-cache.sh`](../scripts/s3-bitbake-cache.sh).
 
 ## Docker image BuildKit cache (ECR)
 
