@@ -25,3 +25,20 @@ Builds are triggered:
 - Cache is stored on the S3 bucket as a big zip (since OE git cache needs to store empty directories and S3 doesn't do that on its own). We fetch cache before every build, and update `LOCAL_CACHE` with it. If the build succeeds, we update the zip and write it back.
 - Build results get sent to an artifact bucket identified by `S3_ARTIFACT_ARN`.
 - We have to be a little more careful with removing working directories here than in normal github actions.
+
+## Docker image BuildKit cache (ECR)
+
+The `run-build` job builds the oe-core `Dockerfile` on each ephemeral runner. When configured, BuildKit stores reusable image layers in ECR so repeated builds skip the expensive `apt-get` stack when `Dockerfile` is unchanged.
+
+Set these repository variables (per AWS account / infra stage):
+
+| Variable | Example value |
+| --- | --- |
+| `OT3_OE_DOCKER_ECR_REPOSITORY_PROD` | `123456789.dkr.ecr.us-east-2.amazonaws.com/ot3-oe-ci-image` |
+| `OT3_OE_DOCKER_ECR_REPOSITORY_DEV` | `123456789.dkr.ecr.us-east-2.amazonaws.com/ot3-oe-ci-image` |
+
+Cache tags look like `buildcache-<dockerfile-sha12>` on that repository. The workflow creates the ECR repository if it does not exist.
+
+The `ROBOT_STACK_AWS_OIDC_ROLE_ARN_*` role used for the build needs ECR permissions: `ecr:GetAuthorizationToken`, `ecr:CreateRepository`, `ecr:DescribeRepositories`, `ecr:BatchCheckLayerAvailability`, `ecr:GetDownloadUrlForLayer`, `ecr:BatchGetImage`, `ecr:PutImage`, `ecr:InitiateLayerUpload`, `ecr:UploadLayerPart`, `ecr:CompleteLayerUpload`.
+
+If the variables are unset, CI falls back to a plain `docker build` with no layer cache.
