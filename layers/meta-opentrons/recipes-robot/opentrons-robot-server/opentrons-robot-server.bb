@@ -15,6 +15,7 @@ INSANE_SKIP:${PN}:append = "already-stripped"
 inherit systemd get_ot_package_version useradd
 
 USERADD_PACKAGES = "${PN}"
+USERADD_DEPENDS = "systemd"
 USERADD_PARAM:${PN} = "--system --home /run/ot-protocol \
                        --no-create-home --shell /bin/false \
                        --user-group \
