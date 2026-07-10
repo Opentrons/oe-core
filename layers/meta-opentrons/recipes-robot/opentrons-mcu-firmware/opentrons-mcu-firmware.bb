@@ -2,7 +2,7 @@ DESCRIPTION = "builds and installs the update binaries for the ot3 firmware."
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
-inherit externalsrc pkgconfig cmake
+inherit opentrons-externalsrc pkgconfig cmake
 
 FIRMWARE_DIR="${libdir}/firmware"
 

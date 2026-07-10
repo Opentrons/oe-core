@@ -1,4 +1,4 @@
-inherit externalsrc
+inherit opentrons-externalsrc
 
 EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "opentrons"))}"
 
