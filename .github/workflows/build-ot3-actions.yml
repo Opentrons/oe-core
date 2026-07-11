@@ -351,7 +351,7 @@ jobs:
           echo "ECR_REPOSITORY=${ecr_repo}" >> "$GITHUB_ENV"
       - name: Login to Amazon ECR
         if: ${{ env.ECR_REPOSITORY != '' }}
-        uses: aws-actions/amazon-ecr-login@4625ce35226a7557230889aae2f52eb50ec3dcda # v2.0.1
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
         with:
           mask-password: false
       - name: Apply CI runner customizations
