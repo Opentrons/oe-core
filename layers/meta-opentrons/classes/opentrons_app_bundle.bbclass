@@ -50,8 +50,9 @@ OPENTRONS_APP_BUNDLE_SOURCE_VENV := "${B}/build-venv"
 # Extra environment args to pass to pip when building local packages
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL ??= ""
 
-# Shared pip download/wheel cache (CI sets /volumes/cache/pip). Empty keeps
-# pip's default per-user cache behavior for local builds.
+# Shared pip download/wheel cache (CI sets /volumes/cache/pip). Used under flock for
+# host buildenv installs and as a merge target after each recipe's private cache.
+# Parallel do_compile must not write this directory concurrently (pip lock contention).
 PIP_CACHE_DIR ??= ""
 
 # Host pip tooling tree shared across recipes when PIP_CACHE_DIR is set.
@@ -192,12 +193,24 @@ PIP_ARGS := "--no-compile \
              -t ${OPENTRONS_APP_BUNDLE_SOURCE_VENV}"
 
 do_compile () {
-   pip_cache_args=""
+   # Host buildenv install may use the shared pip cache (single writer via flock).
+   shared_pip_cache_args=""
    if [ -n "${PIP_CACHE_DIR}" ]; then
       mkdir -p "${PIP_CACHE_DIR}"
-      pip_cache_args="--cache-dir ${PIP_CACHE_DIR}"
-      bbnote "Using shared pip cache at ${PIP_CACHE_DIR}"
+      shared_pip_cache_args="--cache-dir ${PIP_CACHE_DIR}"
+      bbnote "Shared pip cache at ${PIP_CACHE_DIR} (buildenv + post-merge only)"
    fi
+
+   # Per-recipe cache for the parallel package installs so six servers do not
+   # contend on one pip cache directory.
+   private_pip_cache="${B}/pip-cache"
+   mkdir -p "${private_pip_cache}"
+   if [ -n "${PIP_CACHE_DIR}" ] && [ -d "${PIP_CACHE_DIR}" ]; then
+      # Same-filesystem hardlink seed: fast reads, no shared writers during install.
+      cp -aln "${PIP_CACHE_DIR}/." "${private_pip_cache}/" 2>/dev/null || true
+   fi
+   private_pip_cache_args="--cache-dir ${private_pip_cache}"
+   bbnote "Using private pip cache at ${private_pip_cache}"
 
    pip_buildenv="${OPENTRONS_APP_BUNDLE_PIP_BUILDENV}"
    mkdir -p "${pip_buildenv}"
@@ -211,7 +224,7 @@ do_compile () {
          [ "$(cat "${pip_buildenv}/.opentrons-pip-buildenv-complete")" != "${buildenv_spec}" ]; then
          bbnote "Installing host pip build tooling into ${pip_buildenv}"
          ${PYTHON} -m pip install \
-            ${pip_cache_args} \
+            ${shared_pip_cache_args} \
             -t ${pip_buildenv} \
             ${buildenv_spec}
          printf '%s\n' "${buildenv_spec}" > "${pip_buildenv}/.opentrons-pip-buildenv-complete"
@@ -223,7 +236,7 @@ do_compile () {
    bbnote "Installing pypi packages"
 
    PATH=${pip_buildenv}/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${pip_buildenv}:${PYTHONPATH} ${PYTHON} -m pip install \
-      ${pip_cache_args} \
+      ${private_pip_cache_args} \
       ${PIP_ARGS} \
       -r ${B}/pypi.txt \
 
@@ -231,7 +244,7 @@ do_compile () {
    bbnote "Building and installing local packages"
 
    PATH=${pip_buildenv}/bin/:${PATH} ${PIP_ENVARGS} ${OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${pip_buildenv}:${PYTHONPATH} ${PYTHON} -m pip install \
-      ${pip_cache_args} \
+      ${private_pip_cache_args} \
       -r ${B}/local.txt \
       ${PIP_ARGS} \
 
@@ -239,10 +252,20 @@ do_compile () {
    bbnote "Building and installing true source packages"
 
    PATH=${pip_buildenv}/bin/:${PATH} ${PIP_ENVARGS} ${OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${pip_buildenv}:${PYTHONPATH} ${PYTHON} -m pip install \
-      ${pip_cache_args} \
+      ${private_pip_cache_args} \
       ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT} \
       ${PIP_ARGS} \
 
+
+   # Merge this recipe's pip downloads into the shared cache for S3 / later runs.
+   if [ -n "${PIP_CACHE_DIR}" ]; then
+      (
+         flock 200
+         mkdir -p "${PIP_CACHE_DIR}"
+         cp -a "${private_pip_cache}/." "${PIP_CACHE_DIR}/"
+      ) 200>"${PIP_CACHE_DIR}.lock"
+      bbnote "Merged private pip cache into ${PIP_CACHE_DIR}"
+   fi
 
    bbnote "Done installing python packages"
 }
