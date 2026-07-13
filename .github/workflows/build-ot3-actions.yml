@@ -565,7 +565,7 @@ jobs:
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       # Defer cache upload until after S3 artifact and monorepo release uploads so
       # build outputs are published before this slow archive-and-upload step runs.
-      # Uses tar.zst (faster than zip) and skips upload when the fingerprint is unchanged.
+      # Writes <type>.tar.zst + <type>.manifest; skips when the fingerprint is unchanged.
       - name: Push S3 cache
         shell: bash
         continue-on-error: true
