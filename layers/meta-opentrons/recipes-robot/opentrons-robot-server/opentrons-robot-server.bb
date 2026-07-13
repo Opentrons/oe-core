@@ -27,7 +27,6 @@ SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.ser
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
 SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules file://opentrons-hardware-api.service file://opentrons-robot-server-permissions.conf"
 
-SYSTEMD_TMPFILES = "opentrons-robot-server-permissions.conf"
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
