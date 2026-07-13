@@ -50,6 +50,19 @@ OPENTRONS_APP_BUNDLE_SOURCE_VENV := "${B}/build-venv"
 # Extra environment args to pass to pip when building local packages
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL ??= ""
 
+# Shared pip download/wheel cache (CI sets /volumes/cache/pip). Empty keeps
+# pip's default per-user cache behavior for local builds.
+PIP_CACHE_DIR ??= ""
+
+# Host pip tooling tree shared across recipes when PIP_CACHE_DIR is set.
+# Parallel do_compile tasks flock on this directory so only one populates it.
+OPENTRONS_APP_BUNDLE_PIP_BUILDENV = "${@'${PIP_CACHE_DIR}/../pip-buildenv' if (d.getVar('PIP_CACHE_DIR') or '').strip() else '${B}/pip-buildenv'}"
+
+# Target package installs: default forces source builds for correct cross-arch.
+# Set to empty in conf to allow binary wheels (experiment only).
+OPENTRONS_APP_BUNDLE_PIP_NO_BINARY ??= ":all:"
+OPENTRONS_APP_BUNDLE_PIP_NO_BINARY_ARG = "${@'--no-binary %s' % d.getVar('OPENTRONS_APP_BUNDLE_PIP_NO_BINARY').strip() if (d.getVar('OPENTRONS_APP_BUNDLE_PIP_NO_BINARY') or '').strip() else ''}"
+
 PIP_ENVARGS := " \
    STAGING_INCDIR=${STAGING_INCDIR} \
    STAGING_LIBDIR=${STAGING_LIBDIR} \
@@ -138,7 +151,7 @@ do_rewrite_requirements[vardeps] += " OPENTRONS_APP_BUNDLE_USE_GLOBAL OPENTRONS_
 addtask do_rewrite_requirements after do_configure before do_compile
 
 do_configure:prepend () {
-   mkdir -p ${B}/pip-buildenv
+   mkdir -p ${OPENTRONS_APP_BUNDLE_PIP_BUILDENV}
    cd ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}
    bbplain "Getting dependencies in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
    if [[ "${OPENTRONS_APP_BUNDLE_STRIP_HASHES}" = "no" ]] ; then
@@ -171,7 +184,7 @@ do_configure:prepend () {
 do_configure[vardeps] += "OPENTRONS_APP_BUNDLE_STRIP_HASHES OPENTRONS_APP_BUNDLE_PROJECT_ROOT"
 
 PIP_ARGS := "--no-compile \
-             --no-binary :all: \
+             ${OPENTRONS_APP_BUNDLE_PIP_NO_BINARY_ARG} \
              --progress-bar off \
              --force-reinstall \
              --no-deps \
@@ -179,38 +192,54 @@ PIP_ARGS := "--no-compile \
              -t ${OPENTRONS_APP_BUNDLE_SOURCE_VENV}"
 
 do_compile () {
-   mkdir -p ${B}/pip-buildenv
+   pip_cache_args=""
+   if [ -n "${PIP_CACHE_DIR}" ]; then
+      mkdir -p "${PIP_CACHE_DIR}"
+      pip_cache_args="--cache-dir ${PIP_CACHE_DIR}"
+      bbnote "Using shared pip cache at ${PIP_CACHE_DIR}"
+   fi
+
+   pip_buildenv="${OPENTRONS_APP_BUNDLE_PIP_BUILDENV}"
+   mkdir -p "${pip_buildenv}"
+   bbnote "Using pip buildenv at ${pip_buildenv}"
+
+   # Serialize population of a shared host buildenv across parallel recipes.
+   buildenv_spec="hatchling==1.27.0 hatch-vcs==0.5.0 hatch-vcs-tunable==0.0.1a3 hatch-dependency-coversion==0.0.1a4 hatch-fancy-pypi-readme==25.1.0 flit==3.12.0 flit-core==3.12.0 flit-scm==1.7.0 setuptools==80.9.0 setuptools-scm[toml]==9.2.1 wheel==0.45.1 expandvars==1.0.0 cython==3.1.1 setuptools_rust==1.11.1 typing-extensions==4.15.0 poetry-core==2.2.1"
+   (
+      flock 200
+      if [ ! -f "${pip_buildenv}/.opentrons-pip-buildenv-complete" ] || \
+         [ "$(cat "${pip_buildenv}/.opentrons-pip-buildenv-complete")" != "${buildenv_spec}" ]; then
+         bbnote "Installing host pip build tooling into ${pip_buildenv}"
+         ${PYTHON} -m pip install \
+            ${pip_cache_args} \
+            -t ${pip_buildenv} \
+            ${buildenv_spec}
+         printf '%s\n' "${buildenv_spec}" > "${pip_buildenv}/.opentrons-pip-buildenv-complete"
+      else
+         bbnote "Reusing existing pip buildenv at ${pip_buildenv}"
+      fi
+   ) 200>"${pip_buildenv}.lock"
 
    bbnote "Installing pypi packages"
 
-   ${PYTHON} -m pip install \
-      -t ${B}/pip-buildenv \
-      hatchling==1.27.0 hatch-vcs==0.5.0 hatch-vcs-tunable==0.0.1a3 hatch-dependency-coversion==0.0.1a4 hatch-fancy-pypi-readme==25.1.0 \
-      flit==3.12.0 flit-core==3.12.0 flit-scm==1.7.0 \
-      setuptools==80.9.0 setuptools-scm[toml]==9.2.1 \
-      wheel==0.45.1 \
-      expandvars==1.0.0 \
-      cython==3.1.1 \
-      setuptools_rust==1.11.1 \
-      typing-extensions==4.15.0 \
-      poetry-core==2.2.1 \
-
-
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   PATH=${pip_buildenv}/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${pip_buildenv}:${PYTHONPATH} ${PYTHON} -m pip install \
+      ${pip_cache_args} \
       ${PIP_ARGS} \
       -r ${B}/pypi.txt \
 
 
    bbnote "Building and installing local packages"
 
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   PATH=${pip_buildenv}/bin/:${PATH} ${PIP_ENVARGS} ${OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${pip_buildenv}:${PYTHONPATH} ${PYTHON} -m pip install \
+      ${pip_cache_args} \
       -r ${B}/local.txt \
       ${PIP_ARGS} \
 
 
    bbnote "Building and installing true source packages"
 
-   PATH=${B}/pip-buildenv/bin/:${PATH} ${PIP_ENVARGS} ${OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${B}/pip-buildenv:${PYTHONPATH} ${PYTHON} -m pip install \
+   PATH=${pip_buildenv}/bin/:${PATH} ${PIP_ENVARGS} ${OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL} PYTHONPATH=${pip_buildenv}:${PYTHONPATH} ${PYTHON} -m pip install \
+      ${pip_cache_args} \
       ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT} \
       ${PIP_ARGS} \
 
@@ -218,7 +247,7 @@ do_compile () {
    bbnote "Done installing python packages"
 }
 
-do_compile[vardeps] += "OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL"
+do_compile[vardeps] += "OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL PIP_CACHE_DIR OPENTRONS_APP_BUNDLE_PIP_NO_BINARY"
 do_compile[dirs] += " ${OPENTRONS_APP_BUNDLE_SOURCE_VENV}"
 
 do_install () {

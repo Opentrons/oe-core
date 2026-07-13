@@ -1,17 +1,43 @@
 #!/usr/bin/env bash
 # BitBake cache helpers for oe-core CI.
 #
-# Stores downloads/sstate/git as tar.zst (preserves empty dirs for OE git cache).
+# Stores cache trees as tar.zst (preserves empty dirs for OE git cache).
 # Push skips archive+upload when a content fingerprint matches the remote manifest.
 # Pull prefers tar.zst and falls back to legacy zip.
+#
+# Cache types default to: downloads sstate git pnpm electron pip pip-buildenv
+# Override with S3_BITBAKE_CACHE_TYPES (comma-separated), e.g. CI skips git:
+#   S3_BITBAKE_CACHE_TYPES=downloads,sstate,pnpm,electron,pip,pip-buildenv
 set -euo pipefail
 
-CACHE_TYPES=(downloads sstate git)
+DEFAULT_CACHE_TYPES=(downloads sstate git pnpm electron pip pip-buildenv)
+CACHE_TYPES=("${DEFAULT_CACHE_TYPES[@]}")
 # Set by ensure_tools: zstd | zip
 ARCHIVE_FORMAT="${ARCHIVE_FORMAT:-}"
 
 log() {
   echo "$@"
+}
+
+resolve_cache_types() {
+  local raw="${S3_BITBAKE_CACHE_TYPES:-}"
+  local t
+  if [[ -z "$raw" ]]; then
+    CACHE_TYPES=("${DEFAULT_CACHE_TYPES[@]}")
+  else
+    CACHE_TYPES=()
+    # shellcheck disable=SC2086
+    for t in ${raw//,/ }; do
+      t="${t#"${t%%[![:space:]]*}"}"
+      t="${t%"${t##*[![:space:]]}"}"
+      [[ -n "$t" ]] && CACHE_TYPES+=("$t")
+    done
+  fi
+  if [[ ${#CACHE_TYPES[@]} -eq 0 ]]; then
+    log "ERROR: S3_BITBAKE_CACHE_TYPES resolved to an empty list" >&2
+    return 1
+  fi
+  log "Using cache types: ${CACHE_TYPES[*]}"
 }
 
 ensure_tools() {
@@ -150,6 +176,7 @@ download_object() {
 pull_all() {
   local s3_prefix="$1"
   local cachedir="$2"
+  resolve_cache_types
   ensure_tools
 
   local -a pids=()
@@ -259,6 +286,11 @@ push_one() {
   file_count=$(find "$thiscache" -type f 2>/dev/null | wc -l | tr -d ' ')
   log "Cache ${cachetype}: ${file_count} files, $(du -sh "$thiscache" | cut -f1)"
 
+  if [[ "$file_count" -eq 0 ]]; then
+    log "Cache ${cachetype} empty; skipping"
+    return 0
+  fi
+
   df -h
   log "Fingerprinting ${cachetype} at ${thiscache}"
   local fp_start fp_end
@@ -308,6 +340,7 @@ push_one() {
 push_all() {
   local s3_prefix="$1"
   local cachedir="$2"
+  resolve_cache_types
   ensure_tools
 
   if [[ -d "$cachedir" ]]; then
@@ -326,6 +359,10 @@ Usage:
   $0 ensure-tools
   $0 pull <s3_prefix> <cachedir>
   $0 push <s3_prefix> <cachedir>
+
+Optional env:
+  S3_BITBAKE_CACHE_TYPES   Comma-separated subset of:
+                           downloads,sstate,git,pnpm,electron,pip,pip-buildenv
 EOF
 }
 
