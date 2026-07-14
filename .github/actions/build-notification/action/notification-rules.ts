@@ -1,9 +1,6 @@
 export type JobResult = 'success' | 'failure' | 'cancelled' | 'skipped'
 export type NotificationKind =
-  | 'deployed'
-  | 'cache-synced'
-  | 'failure'
-  | 'cancelled'
+  'deployed' | 'cache-synced' | 'failure' | 'cancelled'
 export type RequestedNotificationKind = NotificationKind | 'auto'
 export type WorkflowKind = 'flex-build'
 export type WebhookTarget = 'tagged' | 'default'
