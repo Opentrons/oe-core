@@ -22,9 +22,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac450576c45d9d4ea57 # v3.11.1
-
       - name: Build classic (docker build) and buildx images
         shell: bash
         run: |
@@ -44,6 +41,9 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::Buildx build (no ECR cache)"
+          # Match CI: docker-container driver + --load (ECR cache omitted for equivalence test)
+          docker buildx rm oe-ci-builder >/dev/null 2>&1 || true
+          docker buildx create --name oe-ci-builder --driver docker-container --use --bootstrap
           docker buildx build "${build_args[@]}" --tag ot3-image:after --load "$tmp_dir"
           echo "::endgroup::"
 
@@ -78,13 +78,13 @@ jobs:
           echo "after  export sha256: ${after_hash}"
 
           if [[ "${before_hash}" != "${after_hash}" ]]; then
-            echo "::error::Rootfs content hashes differ (expected for timestamped layers sometimes — checking dpkg)"
-            docker run --rm ot3-image:before bash -lc 'dpkg -l | sha256sum; uv --version; id; cat /etc/os-release'
-            docker run --rm ot3-image:after  bash -lc 'dpkg -l | sha256sum; uv --version; id; cat /etc/os-release'
-            before_dpkg=$(docker run --rm ot3-image:before bash -lc 'dpkg -l | sha256sum')
-            after_dpkg=$(docker run --rm ot3-image:after bash -lc 'dpkg -l | sha256sum')
+            echo "::warning::Rootfs content hashes differ — checking dpkg / tools for functional equivalence"
+            before_dpkg=$(docker run --rm --entrypoint bash ot3-image:before -lc 'dpkg -l | sha256sum')
+            after_dpkg=$(docker run --rm --entrypoint bash ot3-image:after -lc 'dpkg -l | sha256sum')
             echo "before dpkg: ${before_dpkg}"
             echo "after  dpkg: ${after_dpkg}"
+            docker run --rm --entrypoint bash ot3-image:before -lc 'uv --version; id; cat /etc/os-release'
+            docker run --rm --entrypoint bash ot3-image:after -lc 'uv --version; id; cat /etc/os-release'
             if [[ "${before_dpkg}" != "${after_dpkg}" ]]; then
               echo "::error::Installed package sets differ"
               exit 1
@@ -96,5 +96,5 @@ jobs:
 
           # Functional smoke: same key tools present
           for img in ot3-image:before ot3-image:after; do
-            docker run --rm "$img" bash -lc 'command -v bitbake || true; command -v uv; uv --version; python3 --version; locale | grep LANG'
+            docker run --rm --entrypoint bash "$img" -lc 'command -v uv; uv --version; python3 --version; locale | grep LANG'
           done
