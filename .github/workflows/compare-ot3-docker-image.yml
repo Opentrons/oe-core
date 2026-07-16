@@ -3,6 +3,14 @@ name: Compare ot3 Docker image builders
 
 on:
   workflow_dispatch:
+  # Also on push so we can run from a feature branch before the workflow exists on main.
+  push:
+    branches:
+      - feat/ci-docker-ecr-buildkit-cache
+    paths:
+      - .github/workflows/compare-ot3-docker-image.yml
+      - Dockerfile
+      - start.sh
 
 permissions:
   contents: read
