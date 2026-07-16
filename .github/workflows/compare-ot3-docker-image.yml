@@ -1,0 +1,92 @@
+# One-shot verification: classic docker build vs buildx produce the same rootfs.
+name: Compare ot3 Docker image builders
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac450576c45d9d4ea57 # v3.11.1
+
+      - name: Build classic (docker build) and buildx images
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp_dir=$(mktemp -d)
+          cp start.sh "$tmp_dir/"
+
+          build_args=(
+            -f ./Dockerfile
+            --build-arg "username=$(whoami)"
+            --build-arg "host_uid=$(id -u)"
+            --build-arg "host_gid=$(id -g)"
+          )
+
+          echo "::group::Classic docker build"
+          docker build "${build_args[@]}" --tag ot3-image:before "$tmp_dir"
+          echo "::endgroup::"
+
+          echo "::group::Buildx build (no ECR cache)"
+          docker buildx build "${build_args[@]}" --tag ot3-image:after --load "$tmp_dir"
+          echo "::endgroup::"
+
+      - name: Compare exported rootfs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "::group::Image metadata"
+          docker image inspect ot3-image:before --format 'before Id={{.Id}} Size={{.Size}}'
+          docker image inspect ot3-image:after --format 'after  Id={{.Id}} Size={{.Size}}'
+          echo "::endgroup::"
+
+          docker create --name before ot3-image:before >/dev/null
+          docker create --name after ot3-image:after >/dev/null
+
+          docker export before | tar -t | sort > /tmp/before.list
+          docker export after  | tar -t | sort > /tmp/after.list
+
+          echo "::group::File list diff"
+          if diff -u /tmp/before.list /tmp/after.list; then
+            echo "File lists match."
+          else
+            echo "File lists differ."
+            exit 1
+          fi
+          echo "::endgroup::"
+
+          before_hash=$(docker export before | sha256sum | awk '{print $1}')
+          after_hash=$(docker export after | sha256sum | awk '{print $1}')
+          echo "before export sha256: ${before_hash}"
+          echo "after  export sha256: ${after_hash}"
+
+          if [[ "${before_hash}" != "${after_hash}" ]]; then
+            echo "::error::Rootfs content hashes differ (expected for timestamped layers sometimes — checking dpkg)"
+            docker run --rm ot3-image:before bash -lc 'dpkg -l | sha256sum; uv --version; id; cat /etc/os-release'
+            docker run --rm ot3-image:after  bash -lc 'dpkg -l | sha256sum; uv --version; id; cat /etc/os-release'
+            before_dpkg=$(docker run --rm ot3-image:before bash -lc 'dpkg -l | sha256sum')
+            after_dpkg=$(docker run --rm ot3-image:after bash -lc 'dpkg -l | sha256sum')
+            echo "before dpkg: ${before_dpkg}"
+            echo "after  dpkg: ${after_dpkg}"
+            if [[ "${before_dpkg}" != "${after_dpkg}" ]]; then
+              echo "::error::Installed package sets differ"
+              exit 1
+            fi
+            echo "Package sets match; export hash mismatch is likely metadata/timestamps only."
+          else
+            echo "Rootfs content hashes match exactly."
+          fi
+
+          # Functional smoke: same key tools present
+          for img in ot3-image:before ot3-image:after; do
+            docker run --rm "$img" bash -lc 'command -v bitbake || true; command -v uv; uv --version; python3 --version; locale | grep LANG'
+          done
