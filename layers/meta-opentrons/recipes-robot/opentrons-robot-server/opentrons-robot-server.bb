@@ -25,7 +25,7 @@ USERADD_PARAM:${PN} = "--system --home /run/ot-protocol \
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service opentrons-hardware-api.service"
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
-SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules file://opentrons-hardware-api.service"
+SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules file://opentrons-hardware-api.service file://opentrons-robot-server-permissions.conf"
 
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
@@ -69,6 +69,10 @@ do_install:append () {
     # install the hardware api service files
     install -m 0644 ${WORKDIR}/opentrons-hardware-api.service ${D}${systemd_system_unitdir}
 
+    # install the tmpfiles configuration
+    install -d ${D}${nonarch_libdir}/tmpfiles.d
+    install -m 0644 ${WORKDIR}/opentrons-robot-server-permissions.conf ${D}${nonarch_libdir}/tmpfiles.d/
+
     # remove pycaches
     rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
 }
@@ -78,6 +82,7 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d
                        ${sysconfdir}/udev/rules.d/95-opentrons-udev.rules \
                        ${sysconfdir}/release-notes.md \
                        ${systemd_system_unitdir}/opentrons-hardware-api.service \
+                       ${nonarch_libdir}/tmpfiles.d/opentrons-robot-server-permissions.conf \
                        "
 
 RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy python3-pyusb "
