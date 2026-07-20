@@ -353,7 +353,7 @@ jobs:
         if: ${{ env.ECR_REPOSITORY != '' }}
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
         with:
-          mask-password: false
+          mask-password: true
       - name: Apply CI runner customizations
         run: |
           # Ephemeral runners may not permit writing /etc/sysctl*; apply runtime settings only.
