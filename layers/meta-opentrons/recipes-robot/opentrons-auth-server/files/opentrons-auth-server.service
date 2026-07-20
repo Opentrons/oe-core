@@ -2,6 +2,8 @@
 Description=Opentrons Auth HTTP Server
 Wants=nginx.service
 After=nginx.service
+Wants=opentrons-audit-server.service
+After=opentrons-audit-server.service
 
 [Service]
 Type=notify
@@ -10,6 +12,7 @@ ExecStart=python3 -m auth_server --uds /run/opentrons-auth-server.sock
 StateDirectory=opentrons-auth-server
 Environment=PYTHONPATH=/opt/opentrons-auth-server
 Environment=OT_AUTH_SERVER_persistence_directory=/var/lib/opentrons-auth-server
+Environment=OT_AUTH_SERVER_audit_server_uds=/run/opentrons-audit-server.sock
 Restart=on-failure
 TimeoutStartSec=3min
 # We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
