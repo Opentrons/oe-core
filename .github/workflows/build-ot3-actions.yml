@@ -443,14 +443,14 @@ jobs:
               aws_cp="aws s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
               for cachetype in "${cache_types[@]}"; do
-                  localzip="${cachedir}/../${cachetype}.${cache_archive_ext}"
+                  local_archive="${cachedir}/../${cachetype}.${cache_archive_ext}"
                   thiscache=${cachedir}/${cachetype}
-                  echo "Fetching cache for ${cachetype} to ${localzip}"
+                  echo "Fetching cache for ${cachetype} to ${local_archive}"
                   mkdir -p ${thiscache}
                   max_attempts=3
                   attempt=1
                   while true; do
-                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.${cache_archive_ext} ${localzip} 2>elapsed; then
+                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.${cache_archive_ext} ${local_archive} 2>elapsed; then
                       break
                     fi
                     if [[ $attempt -ge $max_attempts ]]; then
@@ -461,12 +461,12 @@ jobs:
                     sleep $((attempt * 15))
                     attempt=$((attempt + 1))
                   done
-                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || true
-                  TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
+                  echo "Fetched $(du -h ${local_archive} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || true
+                  TIME="%E" time unzip -q -u -o ${local_archive} -d ${thiscache} 2>elapsed
                   echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || true
                   # Remove archive immediately after extraction to free up space
-                  rm -f ${localzip}
-                  echo "Removed ${localzip} to free up space"
+                  rm -f ${local_archive}
+                  echo "Removed ${local_archive} to free up space"
               done
           fi
       - name: Cleanup before build
@@ -628,14 +628,14 @@ jobs:
           fi
           for cachetype in downloads sstate git ; do
               df -h
-              localzip="${cachedir}/../${cachetype}.zip"
+              local_archive="${cachedir}/../${cachetype}.zip"
               thiscache=${cachedir}/${cachetype}
               cd ${thiscache}
-              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
-              TIME="%E" time zip -q -r --filesync --symlinks  ${localzip} ./* 2>elapsed
+              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${local_archive}"
+              TIME="%E" time zip -q -r --filesync --symlinks  ${local_archive} ./* 2>elapsed
               echo "Refreshed cache in $(cat elapsed)" || 0
-              TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
-              echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
+              TIME="%E" time ${aws_cp} ${local_archive} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
+              echo "Uploaded $(du -h $local_archive | cut -f 1)B in $(cat elapsed)" || 0
           done
       # Ephemeral runners are destroyed after the job; cleanup is redundant but harmless.
       - name: Remove build data
