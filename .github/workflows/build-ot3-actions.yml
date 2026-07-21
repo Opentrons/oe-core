@@ -405,24 +405,52 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         run: |
-          # fetch cache if the size is less than 20GB, so we have enough space to build image.
-          sizeInBytes=`aws s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
-          sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
+          # Size only the archives this job actually pulls (not the whole bucket).
+          # Mixed buckets can hold both .zip (this workflow) and leftover .tar.zst
+          # from experiments; summing everything falsely trips the 50GB skip.
+          #
+          # Format follows what this workflow pull/push uses — currently .zip.
+          # There is no "use zstd if installed" switch on main; when the tar.zst
+          # cache path lands, set cache_archive_ext=tar.zst (and extract with
+          # tar -I zstd) so the size gate stays aligned with the pull loop.
+          cache_types=(downloads sstate git)
+          cache_archive_ext=zip
+          cache_bucket="${S3_CACHE_ARN/arn:aws:s3:::/}"
+          s3_prefix="s3://${cache_bucket}"
+
+          sizeInBytes=0
+          for cachetype in "${cache_types[@]}"; do
+            key="${cachetype}.${cache_archive_ext}"
+            len=$(aws s3api head-object \
+              --bucket "${cache_bucket}" \
+              --key "${key}" \
+              --query ContentLength \
+              --output text 2>/dev/null || echo 0)
+            # Missing objects count as 0 (cold/partial cache is fine).
+            if [[ "${len}" =~ ^[0-9]+$ ]]; then
+              sizeInBytes=$((sizeInBytes + len))
+              echo "Cache object s3://${cache_bucket}/${key}: ${len} bytes"
+            else
+              echo "Cache object s3://${cache_bucket}/${key}: missing"
+            fi
+          done
+          sizeInGigabytes=$((sizeInBytes / 1024 / 1024 / 1024))
+          echo "Active ${cache_archive_ext} cache total: ${sizeInGigabytes}GB (${sizeInBytes} bytes)"
+
           if [[ $sizeInGigabytes -gt 50 ]]; then
-              echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
+              echo "Doing clean build without cache, size of active ${cache_archive_ext} archives: ${sizeInGigabytes}GB!"
           else
               aws_cp="aws s3 cp --no-progress"
               cachedir=${LOCAL_CACHE:-./cache}
-              s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
-              for cachetype in downloads sstate git ; do
-                  localzip="${cachedir}/../${cachetype}.zip"
+              for cachetype in "${cache_types[@]}"; do
+                  localzip="${cachedir}/../${cachetype}.${cache_archive_ext}"
                   thiscache=${cachedir}/${cachetype}
                   echo "Fetching cache for ${cachetype} to ${localzip}"
                   mkdir -p ${thiscache}
                   max_attempts=3
                   attempt=1
                   while true; do
-                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.zip ${localzip} 2>elapsed; then
+                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.${cache_archive_ext} ${localzip} 2>elapsed; then
                       break
                     fi
                     if [[ $attempt -ge $max_attempts ]]; then
@@ -436,7 +464,7 @@ jobs:
                   echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || true
                   TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
                   echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || true
-                  # Remove zip file immediately after extraction to free up space
+                  # Remove archive immediately after extraction to free up space
                   rm -f ${localzip}
                   echo "Removed ${localzip} to free up space"
               done
