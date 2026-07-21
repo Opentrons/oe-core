@@ -408,14 +408,16 @@ jobs:
           set -euo pipefail
           cache_script=./oe-core-for-workflow/.github/scripts/s3-bitbake-cache.sh
           chmod +x "$cache_script"
-          # Skip pull if the cache bucket is already huge so we keep room to build.
-          sizeInBytes=$(aws s3 ls "s3://${S3_CACHE_ARN/arn:aws:s3:::/}" --recursive --summarize | awk 'END{print}' | grep -o '[0-9].*' || echo 0)
-          sizeInGigabytes=$((sizeInBytes/1024/1024/1024))
+          cachedir=${LOCAL_CACHE:-./cache}
+          s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
+          # Size only .tar.zst archives this job pulls (not whole-bucket sum —
+          # leftover .zip objects must not force a cold build).
+          sizeInBytes=$("$cache_script" active-size-bytes "$s3_prefix")
+          sizeInGigabytes=$((sizeInBytes / 1024 / 1024 / 1024))
+          echo "Active tar.zst cache total: ${sizeInGigabytes}GB (${sizeInBytes} bytes)"
           if [[ $sizeInGigabytes -gt 50 ]]; then
-            echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
+            echo "Doing clean build without cache, size of active tar.zst archives: ${sizeInGigabytes}GB!"
           else
-            cachedir=${LOCAL_CACHE:-./cache}
-            s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
             "$cache_script" pull "$s3_prefix" "$cachedir"
           fi
       - name: Cleanup before build

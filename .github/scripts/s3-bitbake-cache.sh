@@ -206,12 +206,40 @@ push_all() {
   done
 }
 
+# Sum ContentLength of the .tar.zst archives pull would fetch (not the whole
+# bucket — leftover .zip / other keys must not trip the 50GB skip gate).
+# Prints a single integer byte count on stdout.
+active_archive_size_bytes() {
+  local s3_prefix="$1"
+  local cache_bucket="${s3_prefix#s3://}"
+  cache_bucket="${cache_bucket%%/*}"
+  local sizeInBytes=0
+  local cachetype key len
+
+  for cachetype in "${CACHE_TYPES[@]}"; do
+    key="${cachetype}.tar.zst"
+    len=$(aws s3api head-object \
+      --bucket "${cache_bucket}" \
+      --key "${key}" \
+      --query ContentLength \
+      --output text 2>/dev/null || echo 0)
+    if [[ "${len}" =~ ^[0-9]+$ ]]; then
+      sizeInBytes=$((sizeInBytes + len))
+      log "Cache object s3://${cache_bucket}/${key}: ${len} bytes" >&2
+    else
+      log "Cache object s3://${cache_bucket}/${key}: missing" >&2
+    fi
+  done
+  echo "${sizeInBytes}"
+}
+
 usage() {
   cat <<EOF
 Usage:
   $0 require-zstd
   $0 pull <s3_prefix> <cachedir>
   $0 push <s3_prefix> <cachedir>
+  $0 active-size-bytes <s3_prefix>
 EOF
 }
 
@@ -228,6 +256,10 @@ main() {
     push)
       if [[ $# -ne 3 ]]; then usage; exit 1; fi
       push_all "$2" "$3"
+      ;;
+    active-size-bytes)
+      if [[ $# -ne 2 ]]; then usage; exit 1; fi
+      active_archive_size_bytes "$2"
       ;;
     *)
       usage
