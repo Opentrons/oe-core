@@ -125,6 +125,8 @@ jobs:
           # Set these repo variables (Settings → Actions → Variables):
           # - RUNNER_API_URL_PROD
           # - RUNNER_API_URL_DEV
+          # - OT3_OE_DOCKER_ECR_REPOSITORY_PROD (e.g. 123456789.dkr.ecr.us-east-2.amazonaws.com/ot3-oe-ci-image)
+          # - OT3_OE_DOCKER_ECR_REPOSITORY_DEV
           API_URL: ${{ inputs.infra-stage == 'stage-dev' && vars.RUNNER_API_URL_DEV || vars.RUNNER_API_URL_PROD }}
           INFRA_STAGE: ${{ inputs.infra-stage }}
           VARIANT: ${{ needs.decide-refs.outputs.variant }}
@@ -333,6 +335,25 @@ jobs:
           esac
           echo "S3_ARTIFACT_ARN=${bucket}" >> "$GITHUB_ENV"
           echo "Uploading artifacts to ${bucket/arn:aws:s3:::/}"
+      - name: Set ECR repository for Docker build cache
+        shell: bash
+        run: |
+          if [[ "${{ matrix.build_env }}" == "stage-dev" ]]; then
+            ecr_repo="${{ vars.OT3_OE_DOCKER_ECR_REPOSITORY_DEV }}"
+          else
+            ecr_repo="${{ vars.OT3_OE_DOCKER_ECR_REPOSITORY_PROD }}"
+          fi
+          if [[ -z "$ecr_repo" ]]; then
+            echo "OT3_OE_DOCKER_ECR_REPOSITORY_* not set for ${{ matrix.build_env }}; Docker build will run without ECR layer cache."
+          else
+            echo "Using ECR repository ${ecr_repo} for BuildKit layer cache"
+          fi
+          echo "ECR_REPOSITORY=${ecr_repo}" >> "$GITHUB_ENV"
+      - name: Login to Amazon ECR
+        if: ${{ env.ECR_REPOSITORY != '' }}
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        with:
+          mask-password: true
       - name: Apply CI runner customizations
         run: |
           # Ephemeral runners may not permit writing /etc/sysctl*; apply runtime settings only.
@@ -349,18 +370,46 @@ jobs:
           sudo mount -o remount,exec /tmp 2>/dev/null || true
           sudo mount | grep tmp || true
       - name: Build container
+        shell: bash
         run: |
+          set -euo pipefail
           cd oe-core
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
-          cp start.sh $tmp_dir/
-          # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
-          # Defaults in Dockerfile are 1001:1001; ec2-user is often 1000 — without this, cleanup/gather hit Permission denied.
-          docker build -f ./Dockerfile \
-            --build-arg "username=$(whoami)" \
-            --build-arg "host_uid=$(id -u)" \
-            --build-arg "host_gid=$(id -g)" \
-            --tag "ot3-image:latest" \
-            $tmp_dir
+          cp start.sh "$tmp_dir/"
+          dockerfile_cache_key=$(sha256sum Dockerfile | awk '{print substr($1, 1, 12)}')
+          build_args=(
+            -f ./Dockerfile
+            --build-arg "username=$(whoami)"
+            --build-arg "host_uid=$(id -u)"
+            --build-arg "host_gid=$(id -g)"
+            --tag "ot3-image:latest"
+          )
+
+          if [[ -n "${ECR_REPOSITORY:-}" ]]; then
+            repo_name="${ECR_REPOSITORY#*/}"
+            aws ecr describe-repositories --repository-names "$repo_name" >/dev/null 2>&1 || \
+              aws ecr create-repository \
+                --repository-name "$repo_name" \
+                --image-tag-mutability MUTABLE \
+                --encryption-configuration encryptionType=AES256
+
+            cache_ref="${ECR_REPOSITORY}:buildcache-${dockerfile_cache_key}"
+            echo "Building with BuildKit ECR layer cache: ${cache_ref}"
+
+            docker buildx rm oe-ci-builder >/dev/null 2>&1 || true
+            docker buildx create --name oe-ci-builder --driver docker-container --use --bootstrap
+
+            docker buildx build \
+              "${build_args[@]}" \
+              --cache-from "type=registry,ref=${cache_ref}" \
+              --cache-to "type=registry,ref=${cache_ref},mode=max" \
+              --load \
+              "$tmp_dir"
+          else
+            echo "Building without ECR layer cache"
+            # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
+            docker build "${build_args[@]}" "$tmp_dir"
+          fi
           cd ..
       - name: Apply unconditional CI config overrides
         run: |
