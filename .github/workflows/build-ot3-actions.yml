@@ -275,32 +275,52 @@ jobs:
           submodules: false
           fetch-depth: 0
           path: ./oe-core-for-workflow
-      - name: Fetch oe-core source
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          submodules: false
-          fetch-depth: 0
-          ref: ${{needs.decide-refs.outputs.oe-core}}
-          path: ./oe-core
-      - name: Fetch monorepo source
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          fetch-depth: 0
-          ref: ${{ needs.decide-refs.outputs.monorepo }}
-          repository: Opentrons/opentrons
-          path: ./opentrons
-      - name: Fetch ot3-firmware source
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          fetch-depth: 0
-          ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
-          repository: Opentrons/ot3-firmware
-          path: ./ot3-firmware
+      - name: Fetch oe-core, monorepo, and firmware sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OE_CORE_REF: ${{ needs.decide-refs.outputs.oe-core }}
+          MONOREPO_REF: ${{ needs.decide-refs.outputs.monorepo }}
+          OT3_FIRMWARE_REF: ${{ needs.decide-refs.outputs.ot3-firmware }}
+        run: |
+          set -euo pipefail
+
+          # Parallel full-history clones (same as actions/checkout fetch-depth: 0).
+          # Prefer Authorization header over embedding the token in the URL.
+          git_auth=(-c "http.https://github.com/.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)")
+
+          clone_repo() {
+            local repo="$1"
+            local ref="$2"
+            local dest="$3"
+            echo "::group::Clone ${repo} @ ${ref} -> ${dest}"
+            rm -rf "${dest}"
+            git "${git_auth[@]}" clone --origin origin "https://github.com/${repo}.git" "${dest}"
+            git -C "${dest}" "${git_auth[@]}" fetch --prune --no-recurse-submodules origin "${ref}"
+            git -C "${dest}" checkout --force --detach FETCH_HEAD
+            # Drop credentials stored for subsequent unauthenticated git use.
+            git -C "${dest}" config --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+            echo "Checked out $(git -C "${dest}" rev-parse --short HEAD) in ${dest}"
+            echo "::endgroup::"
+          }
+
+          clone_repo Opentrons/oe-core "${OE_CORE_REF}" ./oe-core &
+          pid_oe=$!
+          clone_repo Opentrons/opentrons "${MONOREPO_REF}" ./opentrons &
+          pid_mono=$!
+          clone_repo Opentrons/ot3-firmware "${OT3_FIRMWARE_REF}" ./ot3-firmware &
+          pid_fw=$!
+
+          fail=0
+          wait "${pid_oe}" || fail=1
+          wait "${pid_mono}" || fail=1
+          wait "${pid_fw}" || fail=1
+          if [[ "${fail}" -ne 0 ]]; then
+            echo "One or more source clones failed" >&2
+            exit 1
+          fi
       - name: Sync oe-core submodules
         run: |
-          chown -R `whoami` oe-core
-          chown -R `whoami` opentrons
-          chown -R `whoami` ot3-firmware
+          chown -R "$(whoami)" oe-core opentrons ot3-firmware
           cd oe-core
           ./update.sh
           cd ..
