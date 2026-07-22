@@ -433,6 +433,8 @@ jobs:
           cd ..
       - name: Apply unconditional CI config overrides
         run: |
+          cachedir=${LOCAL_CACHE:-./cache}
+          mkdir -p "${cachedir}"/{downloads,sstate,git,pnpm,electron,pip,pip-buildenv}
           cd oe-core
           echo "" >> ./conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./conf/local.conf
@@ -473,6 +475,9 @@ jobs:
 
       - name: Pull S3 cache
         shell: bash
+        env:
+          # Skip the ~13GB git archive in CI; monorepo/firmware use externalsrc bind mounts.
+          S3_BITBAKE_CACHE_TYPES: downloads,sstate,pnpm,electron,pip,pip-buildenv
         run: |
           set -euo pipefail
           cache_script=./oe-core-for-workflow/.github/scripts/s3-bitbake-cache.sh
@@ -640,6 +645,8 @@ jobs:
       - name: Push S3 cache
         shell: bash
         continue-on-error: true
+        env:
+          S3_BITBAKE_CACHE_TYPES: downloads,sstate,pnpm,electron,pip,pip-buildenv
         run: |
           set -euo pipefail
           cache_script=./oe-core-for-workflow/.github/scripts/s3-bitbake-cache.sh
