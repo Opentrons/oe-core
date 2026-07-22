@@ -125,6 +125,8 @@ jobs:
           # Set these repo variables (Settings → Actions → Variables):
           # - RUNNER_API_URL_PROD
           # - RUNNER_API_URL_DEV
+          # - OT3_OE_DOCKER_ECR_REPOSITORY_PROD (e.g. 123456789.dkr.ecr.us-east-2.amazonaws.com/ot3-oe-ci-image)
+          # - OT3_OE_DOCKER_ECR_REPOSITORY_DEV
           API_URL: ${{ inputs.infra-stage == 'stage-dev' && vars.RUNNER_API_URL_DEV || vars.RUNNER_API_URL_PROD }}
           INFRA_STAGE: ${{ inputs.infra-stage }}
           VARIANT: ${{ needs.decide-refs.outputs.variant }}
@@ -273,32 +275,52 @@ jobs:
           submodules: false
           fetch-depth: 0
           path: ./oe-core-for-workflow
-      - name: Fetch oe-core source
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          submodules: false
-          fetch-depth: 0
-          ref: ${{needs.decide-refs.outputs.oe-core}}
-          path: ./oe-core
-      - name: Fetch monorepo source
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          fetch-depth: 0
-          ref: ${{ needs.decide-refs.outputs.monorepo }}
-          repository: Opentrons/opentrons
-          path: ./opentrons
-      - name: Fetch ot3-firmware source
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          fetch-depth: 0
-          ref: ${{ needs.decide-refs.outputs.ot3-firmware }}
-          repository: Opentrons/ot3-firmware
-          path: ./ot3-firmware
+      - name: Fetch oe-core, monorepo, and firmware sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OE_CORE_REF: ${{ needs.decide-refs.outputs.oe-core }}
+          MONOREPO_REF: ${{ needs.decide-refs.outputs.monorepo }}
+          OT3_FIRMWARE_REF: ${{ needs.decide-refs.outputs.ot3-firmware }}
+        run: |
+          set -euo pipefail
+
+          # Parallel full-history clones (same as actions/checkout fetch-depth: 0).
+          # Prefer Authorization header over embedding the token in the URL.
+          git_auth=(-c "http.https://github.com/.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 -w0)")
+
+          clone_repo() {
+            local repo="$1"
+            local ref="$2"
+            local dest="$3"
+            echo "::group::Clone ${repo} @ ${ref} -> ${dest}"
+            rm -rf "${dest}"
+            git "${git_auth[@]}" clone --origin origin "https://github.com/${repo}.git" "${dest}"
+            git -C "${dest}" "${git_auth[@]}" fetch --prune --no-recurse-submodules origin "${ref}"
+            git -C "${dest}" checkout --force --detach FETCH_HEAD
+            # Drop credentials stored for subsequent unauthenticated git use.
+            git -C "${dest}" config --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+            echo "Checked out $(git -C "${dest}" rev-parse --short HEAD) in ${dest}"
+            echo "::endgroup::"
+          }
+
+          clone_repo Opentrons/oe-core "${OE_CORE_REF}" ./oe-core &
+          pid_oe=$!
+          clone_repo Opentrons/opentrons "${MONOREPO_REF}" ./opentrons &
+          pid_mono=$!
+          clone_repo Opentrons/ot3-firmware "${OT3_FIRMWARE_REF}" ./ot3-firmware &
+          pid_fw=$!
+
+          fail=0
+          wait "${pid_oe}" || fail=1
+          wait "${pid_mono}" || fail=1
+          wait "${pid_fw}" || fail=1
+          if [[ "${fail}" -ne 0 ]]; then
+            echo "One or more source clones failed" >&2
+            exit 1
+          fi
       - name: Sync oe-core submodules
         run: |
-          chown -R `whoami` oe-core
-          chown -R `whoami` opentrons
-          chown -R `whoami` ot3-firmware
+          chown -R "$(whoami)" oe-core opentrons ot3-firmware
           cd oe-core
           ./update.sh
           cd ..
@@ -333,6 +355,25 @@ jobs:
           esac
           echo "S3_ARTIFACT_ARN=${bucket}" >> "$GITHUB_ENV"
           echo "Uploading artifacts to ${bucket/arn:aws:s3:::/}"
+      - name: Set ECR repository for Docker build cache
+        shell: bash
+        run: |
+          if [[ "${{ matrix.build_env }}" == "stage-dev" ]]; then
+            ecr_repo="${{ vars.OT3_OE_DOCKER_ECR_REPOSITORY_DEV }}"
+          else
+            ecr_repo="${{ vars.OT3_OE_DOCKER_ECR_REPOSITORY_PROD }}"
+          fi
+          if [[ -z "$ecr_repo" ]]; then
+            echo "OT3_OE_DOCKER_ECR_REPOSITORY_* not set for ${{ matrix.build_env }}; Docker build will run without ECR layer cache."
+          else
+            echo "Using ECR repository ${ecr_repo} for BuildKit layer cache"
+          fi
+          echo "ECR_REPOSITORY=${ecr_repo}" >> "$GITHUB_ENV"
+      - name: Login to Amazon ECR
+        if: ${{ env.ECR_REPOSITORY != '' }}
+        uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
+        with:
+          mask-password: true
       - name: Apply CI runner customizations
         run: |
           # Ephemeral runners may not permit writing /etc/sysctl*; apply runtime settings only.
@@ -349,23 +390,51 @@ jobs:
           sudo mount -o remount,exec /tmp 2>/dev/null || true
           sudo mount | grep tmp || true
       - name: Build container
+        shell: bash
         run: |
+          set -euo pipefail
           cd oe-core
           tmp_dir=$(mktemp -d -t ci-XXXXXXX)
-          cp start.sh $tmp_dir/
-          # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
-          # Defaults in Dockerfile are 1001:1001; ec2-user is often 1000 — without this, cleanup/gather hit Permission denied.
-          docker build -f ./Dockerfile \
-            --build-arg "username=$(whoami)" \
-            --build-arg "host_uid=$(id -u)" \
-            --build-arg "host_gid=$(id -g)" \
-            --tag "ot3-image:latest" \
-            $tmp_dir
+          cp start.sh "$tmp_dir/"
+          dockerfile_cache_key=$(sha256sum Dockerfile | awk '{print substr($1, 1, 12)}')
+          build_args=(
+            -f ./Dockerfile
+            --build-arg "username=$(whoami)"
+            --build-arg "host_uid=$(id -u)"
+            --build-arg "host_gid=$(id -g)"
+            --tag "ot3-image:latest"
+          )
+
+          if [[ -n "${ECR_REPOSITORY:-}" ]]; then
+            repo_name="${ECR_REPOSITORY#*/}"
+            aws ecr describe-repositories --repository-names "$repo_name" >/dev/null 2>&1 || \
+              aws ecr create-repository \
+                --repository-name "$repo_name" \
+                --image-tag-mutability MUTABLE \
+                --encryption-configuration encryptionType=AES256
+
+            cache_ref="${ECR_REPOSITORY}:buildcache-${dockerfile_cache_key}"
+            echo "Building with BuildKit ECR layer cache: ${cache_ref}"
+
+            docker buildx rm oe-ci-builder >/dev/null 2>&1 || true
+            docker buildx create --name oe-ci-builder --driver docker-container --use --bootstrap
+
+            docker buildx build \
+              "${build_args[@]}" \
+              --cache-from "type=registry,ref=${cache_ref}" \
+              --cache-to "type=registry,ref=${cache_ref},mode=max" \
+              --load \
+              "$tmp_dir"
+          else
+            echo "Building without ECR layer cache"
+            # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
+            docker build "${build_args[@]}" "$tmp_dir"
+          fi
           cd ..
       - name: Apply unconditional CI config overrides
         run: |
           cachedir=${LOCAL_CACHE:-./cache}
-          mkdir -p "${cachedir}"/{pip,pip-buildenv}
+          mkdir -p "${cachedir}"/{downloads,sstate,git,pnpm,electron,pip,pip-buildenv}
           cd oe-core
           echo "" >> ./conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./conf/local.conf
@@ -407,42 +476,24 @@ jobs:
 
       - name: Pull S3 cache
         shell: bash
+        env:
+          # Skip the ~13GB git archive in CI; monorepo/firmware use externalsrc bind mounts.
+          S3_BITBAKE_CACHE_TYPES: downloads,sstate,pnpm,electron,pip,pip-buildenv
         run: |
-          # fetch cache if the size is less than 20GB, so we have enough space to build image.
-          sizeInBytes=`aws s3 ls s3://${S3_CACHE_ARN/arn:aws:s3:::/} --recursive --summarize | awk END'{print}' | grep -o [0-9].*`
-          sizeInGigabytes=$(($sizeInBytes/1024/1024/1024))
+          set -euo pipefail
+          cache_script=./oe-core-for-workflow/.github/scripts/s3-bitbake-cache.sh
+          chmod +x "$cache_script"
+          cachedir=${LOCAL_CACHE:-./cache}
+          s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
+          # Size only .tar.zst archives this job pulls (not whole-bucket sum —
+          # leftover .zip objects must not force a cold build).
+          sizeInBytes=$("$cache_script" active-size-bytes "$s3_prefix")
+          sizeInGigabytes=$((sizeInBytes / 1024 / 1024 / 1024))
+          echo "Active tar.zst cache total: ${sizeInGigabytes}GB (${sizeInBytes} bytes)"
           if [[ $sizeInGigabytes -gt 50 ]]; then
-              echo "Doing clean build without cache, size of cache: ${sizeInGigabytes}GB!"
+            echo "Doing clean build without cache, size of active tar.zst archives: ${sizeInGigabytes}GB!"
           else
-              aws_cp="aws s3 cp --no-progress"
-              cachedir=${LOCAL_CACHE:-./cache}
-              s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
-              for cachetype in downloads sstate git ; do
-                  localzip="${cachedir}/../${cachetype}.zip"
-                  thiscache=${cachedir}/${cachetype}
-                  echo "Fetching cache for ${cachetype} to ${localzip}"
-                  mkdir -p ${thiscache}
-                  max_attempts=3
-                  attempt=1
-                  while true; do
-                    if TIME="%E" time $aws_cp ${s3_prefix}/${cachetype}.zip ${localzip} 2>elapsed; then
-                      break
-                    fi
-                    if [[ $attempt -ge $max_attempts ]]; then
-                      echo "S3 fetch for ${cachetype} failed after ${max_attempts} attempts, skipping cache for this type"
-                      continue 2
-                    fi
-                    echo "S3 fetch attempt ${attempt} failed, retrying in $((attempt * 15))s..."
-                    sleep $((attempt * 15))
-                    attempt=$((attempt + 1))
-                  done
-                  echo "Fetched $(du -h ${localzip} | cut -f 1)B in $(cat elapsed), extracting to ${thiscache}" || true
-                  TIME="%E" time unzip -q -u -o ${localzip} -d ${thiscache} 2>elapsed
-                  echo "Extracted $(du -h -d 1 $thiscache | tail -n 1 | cut -f 1)B to ${thiscache} in $(cat elapsed)" || true
-                  # Remove zip file immediately after extraction to free up space
-                  rm -f ${localzip}
-                  echo "Removed ${localzip} to free up space"
-              done
+            "$cache_script" pull "$s3_prefix" "$cachedir"
           fi
       - name: Cleanup before build
         run: |
@@ -590,28 +641,20 @@ jobs:
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       # Defer cache upload until after S3 artifact and monorepo release uploads so
-      # build outputs are published before this slow zip-and-upload step runs.
+      # build outputs are published before this slow archive-and-upload step runs.
+      # Writes <type>.tar.zst + <type>.manifest; skips when the fingerprint is unchanged.
       - name: Push S3 cache
         shell: bash
         continue-on-error: true
+        env:
+          S3_BITBAKE_CACHE_TYPES: downloads,sstate,pnpm,electron,pip,pip-buildenv
         run: |
-          aws_cp="aws s3 cp --no-progress"
+          set -euo pipefail
+          cache_script=./oe-core-for-workflow/.github/scripts/s3-bitbake-cache.sh
+          chmod +x "$cache_script"
           cachedir=${LOCAL_CACHE:-./cache}
-          # Docker leaves root-owned files on bind-mounted cache; zip and rm need runner ownership.
-          if [ -d "$cachedir" ]; then
-            sudo chown -R "$(id -u):$(id -g)" "$cachedir"
-          fi
-          for cachetype in downloads sstate git ; do
-              df -h
-              localzip="${cachedir}/../${cachetype}.zip"
-              thiscache=${cachedir}/${cachetype}
-              cd ${thiscache}
-              echo "Refreshing cache for ${cachetype} from ${thiscache} to ${localzip}"
-              TIME="%E" time zip -q -r --filesync --symlinks  ${localzip} ./* 2>elapsed
-              echo "Refreshed cache in $(cat elapsed)" || 0
-              TIME="%E" time ${aws_cp} ${localzip} s3://${S3_CACHE_ARN/arn:aws:s3:::/}/${cachetype}.zip 2>elapsed
-              echo "Uploaded $(du -h $localzip | cut -f 1)B in $(cat elapsed)" || 0
-          done
+          s3_prefix="s3://${S3_CACHE_ARN/arn:aws:s3:::/}"
+          "$cache_script" push "$s3_prefix" "$cachedir"
       # Ephemeral runners are destroyed after the job; cleanup is redundant but harmless.
       - name: Remove build data
         if: always()
