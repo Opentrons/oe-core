@@ -62,17 +62,20 @@ runs:
         firmware_display="${firmware_display#refs/heads/}"
         echo "firmware=${firmware_display}" >> $GITHUB_OUTPUT
         
-        # Determine type
+        # Determine type and tag (None for branch builds). Slack Workflow
+        # templates use the `tag` field for "Tag - …" in the message body.
         if [[ "${{ inputs.monorepo_ref }}" == refs/tags/* ]]; then
           echo "ref_type=tag" >> $GITHUB_OUTPUT
+          echo "tag=${monorepo_display}" >> $GITHUB_OUTPUT
         else
           echo "ref_type=branch" >> $GITHUB_OUTPUT
+          echo "tag=None" >> $GITHUB_OUTPUT
         fi
 
     - name: 'Send Slack Alert'
       uses: slackapi/slack-github-action@d09f6a279ff492756a31df59952ee6dce8c9b772 # v1.14.0
       with:
-        payload: "{\"s3-url\":\"${{ inputs.console_url }}/\",\"type\":\"${{ steps.prepare-refs.outputs.ref_type }}\",\"reflike\":\"${{ steps.prepare-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.prepare-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.prepare-refs.outputs.firmware }}\",\"full-image\":\"${{ inputs.fullimage_url }}\",\"system-update\":\"${{ inputs.system_url }}\",\"version-file\":\"${{ inputs.version_file_url }}\",\"release-notes\":\"${{ inputs.release_notes_file_url }}\"}"
+        payload: "{\"tag\":\"${{ steps.prepare-refs.outputs.tag }}\",\"s3-url\":\"${{ inputs.console_url }}/\",\"type\":\"${{ steps.prepare-refs.outputs.ref_type }}\",\"reflike\":\"${{ steps.prepare-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.prepare-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.prepare-refs.outputs.firmware }}\",\"full-image\":\"${{ inputs.fullimage_url }}\",\"system-update\":\"${{ inputs.system_url }}\",\"version-file\":\"${{ inputs.version_file_url }}\",\"release-notes\":\"${{ inputs.release_notes_file_url }}\"}"
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.webhook_url }}
       continue-on-error: false
