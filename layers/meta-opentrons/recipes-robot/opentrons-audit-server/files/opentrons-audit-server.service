@@ -16,7 +16,7 @@ Environment=PYTHONPATH=/opt/opentrons-audit-server
 Environment=OT_AUDIT_SERVER_persistence_directory=/var/lib/opentrons-audit-server
 Environment=OT_AUDIT_SERVER_key_server_uds=/run/opentrons-key-server.sock
 Environment=OT_AUDIT_SERVER_auth_server_uds=/run/opentrons-auth-server.sock
-Environment=OT_AUDIT_SERVER_robot_server_url=http://localhost:31950
+Environment=OT_AUDIT_SERVER_robot_server_uds=/run/aiohttp.sock
 Restart=on-failure
 TimeoutStartSec=3min
 # We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
