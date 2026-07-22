@@ -46,4 +46,4 @@ Cache tags look like `buildcache-<dockerfile-sha12>` on that repository. The wor
 
 The `ROBOT_STACK_AWS_OIDC_ROLE_ARN_*` role used for the build needs ECR permissions: `ecr:GetAuthorizationToken`, `ecr:CreateRepository`, `ecr:DescribeRepositories`, `ecr:BatchCheckLayerAvailability`, `ecr:GetDownloadUrlForLayer`, `ecr:BatchGetImage`, `ecr:PutImage`, `ecr:InitiateLayerUpload`, `ecr:UploadLayerPart`, `ecr:CompleteLayerUpload`.
 
-If the variables are unset, CI falls back to a plain `docker build` with no layer cache.
+If the variables are unset, or any ECR/BuildKit cache step fails (bad URI, auth, push denied), CI treats that as a cache miss and falls back to a plain `docker build`.

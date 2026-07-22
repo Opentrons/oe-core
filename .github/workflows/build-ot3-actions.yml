@@ -363,21 +363,15 @@ jobs:
           else
             ecr_repo="${{ vars.OT3_OE_DOCKER_ECR_REPOSITORY_PROD }}"
           fi
-          # Require a real registry URI (account.dkr.ecr.region.amazonaws.com/repo).
-          # Placeholder values like "na" / "n/a" must not enable BuildKit cache push.
-          ecr_repo_lc="$(printf '%s' "$ecr_repo" | tr '[:upper:]' '[:lower:]')"
-          if [[ -z "$ecr_repo" || "$ecr_repo_lc" =~ ^(na|n/?a|none|null|-)$ ]]; then
+          if [[ -z "$ecr_repo" ]]; then
             echo "OT3_OE_DOCKER_ECR_REPOSITORY_* not set for ${{ matrix.build_env }}; Docker build will run without ECR layer cache."
-            ecr_repo=""
-          elif [[ ! "$ecr_repo_lc" =~ \.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/ ]]; then
-            echo "::error::OT3_OE_DOCKER_ECR_REPOSITORY_* must be a full ECR URI (got: ${ecr_repo})"
-            exit 1
           else
             echo "Using ECR repository ${ecr_repo} for BuildKit layer cache"
           fi
           echo "ECR_REPOSITORY=${ecr_repo}" >> "$GITHUB_ENV"
       - name: Login to Amazon ECR
         if: ${{ env.ECR_REPOSITORY != '' }}
+        continue-on-error: true
         uses: aws-actions/amazon-ecr-login@062b18b96a7aff071d4dc91bc00c4c1a7945b076 # v2.0.1
         with:
           mask-password: true
@@ -412,7 +406,15 @@ jobs:
             --tag "ot3-image:latest"
           )
 
-          if [[ -n "${ECR_REPOSITORY:-}" ]]; then
+          build_without_ecr_cache() {
+            echo "Building without ECR layer cache"
+            # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
+            docker build "${build_args[@]}" "$tmp_dir"
+          }
+
+          # Any ECR/BuildKit failure (bad var, auth, missing repo, push denied) is a
+          # cache miss: fall back to a plain docker build so the job still proceeds.
+          if [[ -n "${ECR_REPOSITORY:-}" ]] && {
             repo_name="${ECR_REPOSITORY#*/}"
             aws ecr describe-repositories --repository-names "$repo_name" >/dev/null 2>&1 || \
               aws ecr create-repository \
@@ -432,10 +434,12 @@ jobs:
               --cache-to "type=registry,ref=${cache_ref},mode=max" \
               --load \
               "$tmp_dir"
+          }; then
+            echo "Built with ECR layer cache"
           else
-            echo "Building without ECR layer cache"
-            # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
-            docker build "${build_args[@]}" "$tmp_dir"
+            echo "::warning::ECR BuildKit cache unavailable; treating as cache miss and building without registry cache"
+            docker buildx rm oe-ci-builder >/dev/null 2>&1 || true
+            build_without_ecr_cache
           fi
           cd ..
       - name: Apply unconditional CI config overrides
