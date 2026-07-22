@@ -2,9 +2,14 @@
 # BitBake S3 cache for oe-core CI.
 #
 # Local trees (under <cachedir>/):
-#   downloads/   BitBake DL_DIR
-#   sstate/      BitBake SSTATE_DIR
-#   git/         BitBake GITDIR
+#   downloads/      BitBake DL_DIR
+#   sstate/         BitBake SSTATE_DIR
+#   git/            BitBake GITDIR
+#   pnpm/ electron/ pip/ pip-buildenv/  optional language tooling caches
+#
+# Override which trees are pulled/pushed with S3_BITBAKE_CACHE_TYPES
+# (comma-separated). CI skips the large git archive, e.g.:
+#   S3_BITBAKE_CACHE_TYPES=downloads,sstate,pnpm,electron,pip,pip-buildenv
 #
 # S3 objects (under <s3_prefix>/):
 #   <type>.tar.zst     archive of that tree (tar + zstd; preserves empty dirs)
@@ -15,6 +20,7 @@
 #         Missing objects are skipped (cold / partial cache is fine).
 #   push  Fingerprint each local tree. If it matches the remote .manifest, skip.
 #         Otherwise archive to .tar.zst, upload it, and write .manifest.
+#         Empty trees are not uploaded.
 #
 # Busting: change tree contents so the fingerprint no longer matches .manifest,
 # or delete the S3 objects. First merge of this format expects a cache miss;
@@ -24,10 +30,32 @@
 # script does not install packages.
 set -euo pipefail
 
-CACHE_TYPES=(downloads sstate git)
+DEFAULT_CACHE_TYPES=(downloads sstate git pnpm electron pip pip-buildenv)
+CACHE_TYPES=("${DEFAULT_CACHE_TYPES[@]}")
 
 log() {
   echo "$@"
+}
+
+resolve_cache_types() {
+  local raw="${S3_BITBAKE_CACHE_TYPES:-}"
+  local t
+  if [[ -z "$raw" ]]; then
+    CACHE_TYPES=("${DEFAULT_CACHE_TYPES[@]}")
+  else
+    CACHE_TYPES=()
+    # shellcheck disable=SC2086
+    for t in ${raw//,/ }; do
+      t="${t#"${t%%[![:space:]]*}"}"
+      t="${t%"${t##*[![:space:]]}"}"
+      [[ -n "$t" ]] && CACHE_TYPES+=("$t")
+    done
+  fi
+  if [[ ${#CACHE_TYPES[@]} -eq 0 ]]; then
+    log "ERROR: S3_BITBAKE_CACHE_TYPES resolved to an empty list" >&2
+    return 1
+  fi
+  log "Using cache types: ${CACHE_TYPES[*]}"
 }
 
 require_zstd() {
@@ -88,6 +116,7 @@ download_with_retries() {
 pull_all() {
   local s3_prefix="$1"
   local cachedir="$2"
+  resolve_cache_types
   require_zstd
   mkdir -p "$cachedir"
 
@@ -194,6 +223,7 @@ push_one() {
 push_all() {
   local s3_prefix="$1"
   local cachedir="$2"
+  resolve_cache_types
   require_zstd
 
   if [[ -d "$cachedir" ]]; then
@@ -211,6 +241,7 @@ push_all() {
 # Prints a single integer byte count on stdout.
 active_archive_size_bytes() {
   local s3_prefix="$1"
+  resolve_cache_types
   local cache_bucket="${s3_prefix#s3://}"
   cache_bucket="${cache_bucket%%/*}"
   local sizeInBytes=0
@@ -240,6 +271,10 @@ Usage:
   $0 pull <s3_prefix> <cachedir>
   $0 push <s3_prefix> <cachedir>
   $0 active-size-bytes <s3_prefix>
+
+Optional env:
+  S3_BITBAKE_CACHE_TYPES   Comma-separated subset of:
+                           downloads,sstate,git,pnpm,electron,pip,pip-buildenv
 EOF
 }
 
