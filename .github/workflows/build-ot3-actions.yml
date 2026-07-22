@@ -343,8 +343,15 @@ jobs:
           else
             ecr_repo="${{ vars.OT3_OE_DOCKER_ECR_REPOSITORY_PROD }}"
           fi
-          if [[ -z "$ecr_repo" ]]; then
+          # Require a real registry URI (account.dkr.ecr.region.amazonaws.com/repo).
+          # Placeholder values like "na" / "n/a" must not enable BuildKit cache push.
+          ecr_repo_lc="$(printf '%s' "$ecr_repo" | tr '[:upper:]' '[:lower:]')"
+          if [[ -z "$ecr_repo" || "$ecr_repo_lc" =~ ^(na|n/?a|none|null|-)$ ]]; then
             echo "OT3_OE_DOCKER_ECR_REPOSITORY_* not set for ${{ matrix.build_env }}; Docker build will run without ECR layer cache."
+            ecr_repo=""
+          elif [[ ! "$ecr_repo_lc" =~ \.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com/ ]]; then
+            echo "::error::OT3_OE_DOCKER_ECR_REPOSITORY_* must be a full ECR URI (got: ${ecr_repo})"
+            exit 1
           else
             echo "Using ECR repository ${ecr_repo} for BuildKit layer cache"
           fi
