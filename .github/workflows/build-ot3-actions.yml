@@ -319,10 +319,28 @@ jobs:
             exit 1
           fi
       - name: Sync oe-core submodules
+        shell: bash
         run: |
+          set -euo pipefail
           chown -R "$(whoami)" oe-core opentrons ot3-firmware
           cd oe-core
-          ./update.sh
+          # Toradex git hosts occasionally return 502; retry before failing the job.
+          max_attempts=5
+          attempt=1
+          while true; do
+            echo "Syncing oe-core submodules (attempt ${attempt}/${max_attempts})"
+            if ./update.sh; then
+              break
+            fi
+            if [[ "${attempt}" -ge "${max_attempts}" ]]; then
+              echo "Submodule sync failed after ${max_attempts} attempts" >&2
+              exit 1
+            fi
+            sleep_secs=$((attempt * 30))
+            echo "Submodule sync failed; retrying in ${sleep_secs}s..."
+            sleep "${sleep_secs}"
+            attempt=$((attempt + 1))
+          done
           cd ..
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
@@ -363,11 +381,16 @@ jobs:
           else
             ecr_repo="${{ vars.OT3_OE_DOCKER_ECR_REPOSITORY_PROD }}"
           fi
-          if [[ -z "$ecr_repo" ]]; then
-            echo "OT3_OE_DOCKER_ECR_REPOSITORY_* not set for ${{ matrix.build_env }}; Docker build will run without ECR layer cache."
-          else
-            echo "Using ECR repository ${ecr_repo} for BuildKit layer cache"
-          fi
+          # Placeholder / unset vars must not enable BuildKit registry cache.
+          case "$(echo "${ecr_repo}" | tr '[:upper:]' '[:lower:]')" in
+            ""|na|n/a|none|null)
+              ecr_repo=""
+              echo "OT3_OE_DOCKER_ECR_REPOSITORY_* not set for ${{ matrix.build_env }}; Docker build will run without ECR layer cache."
+              ;;
+            *)
+              echo "Using ECR repository ${ecr_repo} for BuildKit layer cache"
+              ;;
+          esac
           echo "ECR_REPOSITORY=${ecr_repo}" >> "$GITHUB_ENV"
       - name: Login to Amazon ECR
         if: ${{ env.ECR_REPOSITORY != '' }}
@@ -405,30 +428,41 @@ jobs:
             --tag "ot3-image:latest"
           )
 
-          if [[ -n "${ECR_REPOSITORY:-}" ]]; then
-            repo_name="${ECR_REPOSITORY#*/}"
-            aws ecr describe-repositories --repository-names "$repo_name" >/dev/null 2>&1 || \
-              aws ecr create-repository \
-                --repository-name "$repo_name" \
-                --image-tag-mutability MUTABLE \
-                --encryption-configuration encryptionType=AES256
-
-            cache_ref="${ECR_REPOSITORY}:buildcache-${dockerfile_cache_key}"
-            echo "Building with BuildKit ECR layer cache: ${cache_ref}"
-
-            docker buildx rm oe-ci-builder >/dev/null 2>&1 || true
-            docker buildx create --name oe-ci-builder --driver docker-container --use --bootstrap
-
-            docker buildx build \
-              "${build_args[@]}" \
-              --cache-from "type=registry,ref=${cache_ref}" \
-              --cache-to "type=registry,ref=${cache_ref},mode=max" \
-              --load \
-              "$tmp_dir"
-          else
+          build_without_ecr_cache() {
             echo "Building without ECR layer cache"
             # Must match host runner uid/gid so bind-mounted oe-core/cache are writable (see Dockerfile).
             docker build "${build_args[@]}" "$tmp_dir"
+          }
+
+          if [[ -n "${ECR_REPOSITORY:-}" ]]; then
+            if ! (
+              set -euo pipefail
+              repo_name="${ECR_REPOSITORY#*/}"
+              aws ecr describe-repositories --repository-names "$repo_name" >/dev/null 2>&1 || \
+                aws ecr create-repository \
+                  --repository-name "$repo_name" \
+                  --image-tag-mutability MUTABLE \
+                  --encryption-configuration encryptionType=AES256
+
+              cache_ref="${ECR_REPOSITORY}:buildcache-${dockerfile_cache_key}"
+              echo "Building with BuildKit ECR layer cache: ${cache_ref}"
+
+              docker buildx rm oe-ci-builder >/dev/null 2>&1 || true
+              docker buildx create --name oe-ci-builder --driver docker-container --use --bootstrap
+
+              docker buildx build \
+                "${build_args[@]}" \
+                --cache-from "type=registry,ref=${cache_ref}" \
+                --cache-to "type=registry,ref=${cache_ref},mode=max" \
+                --load \
+                "$tmp_dir"
+            ); then
+              echo "BuildKit ECR cache path failed; falling back to plain docker build" >&2
+              docker buildx rm oe-ci-builder >/dev/null 2>&1 || true
+              build_without_ecr_cache
+            fi
+          else
+            build_without_ecr_cache
           fi
           cd ..
       - name: Apply unconditional CI config overrides
@@ -477,8 +511,8 @@ jobs:
       - name: Pull S3 cache
         shell: bash
         env:
-          # Skip the ~13GB git archive in CI; monorepo/firmware use externalsrc bind mounts.
-          S3_BITBAKE_CACHE_TYPES: downloads,sstate,pnpm,electron,pip,pip-buildenv
+          # Include git during tar.zst cache warm-up so cold BitBake is less exposed to Toradex.
+          S3_BITBAKE_CACHE_TYPES: downloads,sstate,git,pnpm,electron,pip,pip-buildenv
         run: |
           set -euo pipefail
           cache_script=./oe-core-for-workflow/.github/scripts/s3-bitbake-cache.sh
@@ -647,7 +681,8 @@ jobs:
         shell: bash
         continue-on-error: true
         env:
-          S3_BITBAKE_CACHE_TYPES: downloads,sstate,pnpm,electron,pip,pip-buildenv
+          # Keep in sync with Pull S3 cache while warming the tar.zst git archive.
+          S3_BITBAKE_CACHE_TYPES: downloads,sstate,git,pnpm,electron,pip,pip-buildenv
         run: |
           set -euo pipefail
           cache_script=./oe-core-for-workflow/.github/scripts/s3-bitbake-cache.sh
