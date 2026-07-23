@@ -8,8 +8,9 @@
 #   pnpm/ electron/ pip/ pip-buildenv/  optional language tooling caches
 #
 # Override which trees are pulled/pushed with S3_BITBAKE_CACHE_TYPES
-# (comma-separated). CI skips the large git archive, e.g.:
+# (comma-separated). CI may omit large trees, e.g.:
 #   S3_BITBAKE_CACHE_TYPES=downloads,sstate,pnpm,electron,pip,pip-buildenv
+# During tar.zst warm-up, CI includes git to reduce live Toradex fetches.
 #
 # S3 objects (under <s3_prefix>/):
 #   <type>.tar.zst     archive of that tree (tar + zstd; preserves empty dirs)
@@ -55,7 +56,8 @@ resolve_cache_types() {
     log "ERROR: S3_BITBAKE_CACHE_TYPES resolved to an empty list" >&2
     return 1
   fi
-  log "Using cache types: ${CACHE_TYPES[*]}"
+  # stderr so command-substitution callers (active-size-bytes) get only the integer.
+  log "Using cache types: ${CACHE_TYPES[*]}" >&2
 }
 
 require_zstd() {
@@ -249,11 +251,14 @@ active_archive_size_bytes() {
 
   for cachetype in "${CACHE_TYPES[@]}"; do
     key="${cachetype}.tar.zst"
-    len=$(aws s3api head-object \
+    if ! len=$(aws s3api head-object \
       --bucket "${cache_bucket}" \
       --key "${key}" \
       --query ContentLength \
-      --output text 2>/dev/null || echo 0)
+      --output text 2>/dev/null); then
+      log "Cache object s3://${cache_bucket}/${key}: missing" >&2
+      continue
+    fi
     if [[ "${len}" =~ ^[0-9]+$ ]]; then
       sizeInBytes=$((sizeInBytes + len))
       log "Cache object s3://${cache_bucket}/${key}: ${len} bytes" >&2

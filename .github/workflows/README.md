@@ -23,7 +23,7 @@ Builds are triggered:
 - There is a `LOCAL_CACHE` environment variable injected that points to a directory that will be present on subsequent builds on the same runner.
 - There is an `S3_CACHE_ARN` environment variable that is the ARN of an s3 bucket that can be used for caching.
 - BitBake cache trees are stored on S3 as **`tar.zst`** plus a **`.manifest`** fingerprint. Helper: [`.github/scripts/s3-bitbake-cache.sh`](../scripts/s3-bitbake-cache.sh).
-- Default types: `downloads`, `sstate`, `git`, `pnpm`, `electron`, `pip`, `pip-buildenv`. CI sets `S3_BITBAKE_CACHE_TYPES=downloads,sstate,pnpm,electron,pip,pip-buildenv` (skips the large `git` archive; monorepo/firmware use `externalsrc` bind mounts).
+- Default types: `downloads`, `sstate`, `git`, `pnpm`, `electron`, `pip`, `pip-buildenv`. CI currently sets `S3_BITBAKE_CACHE_TYPES=downloads,sstate,git,pnpm,electron,pip,pip-buildenv` (includes `git` while warming the tar.zst cache so BitBake is less exposed to Toradex).
 - **Pull:** download each configured `.tar.zst` that exists (in parallel), then extract sequentially. Missing objects mean a cold/partial cache.
 - **Push:** fingerprint each tree (`path` + `size`, plus empty dirs). If it matches the remote `.manifest`, skip; otherwise archive with `zstd` and upload `.tar.zst` + `.manifest`. Empty trees are not uploaded.
 - **zstd** must already be on the ephemeral runner image (the script prints `zstd --version` or fails; it does not install packages).
