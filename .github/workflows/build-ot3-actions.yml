@@ -46,7 +46,7 @@ jobs:
     name: "Lint BitBake recipes"
     steps:
       - name: Checkout oe-core
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: false
           fetch-depth: 1
@@ -101,7 +101,7 @@ jobs:
     name: "deciding refs to build"
     steps:
       - name: Fetch initial sources for action
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: false
           path: ./oe-core-for-workflow
@@ -270,7 +270,7 @@ jobs:
       release_notes_file_url: ${{ steps.upload-results.outputs.release_notes_file_url }}
     steps:
       - name: Fetch initial sources for action
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: false
           fetch-depth: 0
@@ -715,7 +715,7 @@ jobs:
     if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success' && needs.decide-refs.outputs.variant != ''
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: "Send success alert"
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
@@ -738,7 +738,7 @@ jobs:
     if: always() && github.event_name == 'workflow_dispatch' && startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: "Send failure alert"
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
@@ -761,7 +761,7 @@ jobs:
     if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'success'
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: "Send success alert"
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
@@ -784,7 +784,7 @@ jobs:
     if: always() && github.event_name == 'workflow_dispatch' && !startsWith(needs.decide-refs.outputs.monorepo, 'refs/tags/') && needs.run-build.result == 'failure'
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: "Send failure alert"
         uses: ./.github/actions/simple-build-alert
         continue-on-error: true
