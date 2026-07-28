@@ -62,6 +62,8 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/opentrons-robot-server.service ${D}${systemd_system_unitdir}/opentrons-robot-server.service
     install -d ${D}${systemd_system_unitdir}/opentrons-robot-server.service.d
     install -m 0644 ${B}/robot-server-version.conf ${D}${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf
+    install -d ${D}${systemd_system_unitdir}/opentrons-hardware-api.service.d
+    install -m 0644 ${B}/robot-server-version.conf ${D}${systemd_system_unitdir}/opentrons-hardware-api.service.d/robot-server-version.conf
     install -m 0644 ${WORKDIR}/opentrons-ot3-canbus.service ${D}${systemd_system_unitdir}/opentrons-ot3-canbus.service
     install -d ${D}${sysconfdir}/udev/rules.d/
     install -m 0644 ${WORKDIR}/95-opentrons-udev.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-udev.rules
@@ -79,6 +81,8 @@ do_install:append () {
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d \
                        ${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf \
+                       ${systemd_system_unitdir/opentrons-hardware-api.service.d \
+                       ${systemd_system_unitdir}/opentrons-hardware-api.service.d/robot-server-version.conf \
                        ${sysconfdir}/udev/rules.d/95-opentrons-udev.rules \
                        ${sysconfdir}/release-notes.md \
                        ${systemd_system_unitdir}/opentrons-hardware-api.service \
