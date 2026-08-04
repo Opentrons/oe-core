@@ -1,5 +1,7 @@
 [Unit]
 Description=Jupyter notebook server
+Requires=opentrons-remote-access-allowed.service
+After=opentrons-remote-access-allowed.service
 
 [Service]
 Type=simple
