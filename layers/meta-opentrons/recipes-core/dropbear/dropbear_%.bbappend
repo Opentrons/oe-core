@@ -24,4 +24,9 @@ do_install:append() {
    install -m 0644 ${WORKDIR}/require-remote-access.conf "${D}${systemd_system_unitdir}/dropbear\@.service.d/require-remote-access.conf"
 }
 
-FILES:${PN} += " /root /root/.ssh ${systemd_system_unitdir}/dropbear@.service.d/require-remote-access.conf"
+FILES:${PN} += " \
+   /root \
+   /root/.ssh \
+   ${systemd_system_unitdir}/dropbear\@.service.d \
+   ${systemd_system_unitdir}/dropbear\@.service.d/require-remote-access.conf \
+   "
