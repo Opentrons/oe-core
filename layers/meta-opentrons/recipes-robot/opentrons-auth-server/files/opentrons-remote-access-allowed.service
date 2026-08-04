@@ -1,0 +1,17 @@
+[Unit]
+Description=Opentrons remote-access-allowed trigger service
+Requires=opentrons-auth-server.service
+After=opentrons-auth-server.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=PYTHONPATH=/opt/opentrons-auth-server
+Environment=CHECK_REMOTE_ACCESS_auth_server_uds=/run/opentrons-auth-server.sock
+Environment=CHECK_REMOTE_ACCESS_override_file=/etc/.allow-remote-access
+ExecStart=/usr/bin/ot_check_remote_access_allowed
+
+
+[Install]
+RequiredBy=dropbear@.service
+RequiredBy=jupyter.service

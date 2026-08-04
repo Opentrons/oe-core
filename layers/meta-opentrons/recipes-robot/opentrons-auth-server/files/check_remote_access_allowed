@@ -1,0 +1,48 @@
+#!/usr/bin/python3
+
+import asyncio
+import sys
+import os
+import traceback
+import json
+
+import logging
+
+logging.basicConfig(level=logging.ERROR)
+
+
+async def _do_check():
+    import aiohttp
+
+    uds = os.environ["CHECK_REMOTE_ACCESS_auth_server_uds"]
+    connector = aiohttp.UnixConnector(path=uds)
+    async with aiohttp.ClientSession(
+        connector=connector,
+        base_url="http://localhost",
+    ) as session:
+        async with session.get("auth/settings/accessControlEnabled") as response:
+            response.raise_for_status()
+            response_bytes = await response.read()
+
+    parsed_response = json.loads(response_bytes)
+    if parsed_response["data"]["accessControlEnabled"] is False:
+        print("Allowing remote access: CRS is disabled")
+        return 0
+    path = os.environ["CHECK_REMOTE_ACCESS_override_file"]
+    if os.path.exists(path):
+        print("Allowing remote access: override file exists")
+        return 0
+    print("Disallowing remote access: CRS is enabled and no override exists")
+    return 1
+
+
+async def check():
+    try:
+        return await _do_check()
+    except Exception:
+        print("Disallowing remote access: error in check process")
+        traceback.print_exc()
+        return 2
+
+
+sys.exit(asyncio.run(check()))
