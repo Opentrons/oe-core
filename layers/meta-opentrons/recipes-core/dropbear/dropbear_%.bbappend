@@ -27,6 +27,6 @@ do_install:append() {
 FILES:${PN} += " \
    /root \
    /root/.ssh \
-   ${systemd_system_unitdir}/dropbear\@.service.d \
-   ${systemd_system_unitdir}/dropbear\@.service.d/require-remote-access.conf \
+   ${systemd_system_unitdir}/dropbear@.service.d \
+   ${systemd_system_unitdir}/dropbear@.service.d/require-remote-access.conf \
    "
