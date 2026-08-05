@@ -20,8 +20,8 @@ do_install:append() {
    fi
 
    # install remote access config
-   install -d -m 0644 "${D}${systemd_system_unitdir}/dropbear\@.service.d"
-   install -m 0644 ${WORKDIR}/require-remote-access.conf "${D}${systemd_system_unitdir}/dropbear\@.service.d/require-remote-access.conf"
+   install -d -m 0644 "${D}${systemd_system_unitdir}/dropbear@.service.d"
+   install -m 0644 ${WORKDIR}/require-remote-access.conf "${D}${systemd_system_unitdir}/dropbear@.service.d/require-remote-access.conf"
 }
 
 FILES:${PN} += " \
