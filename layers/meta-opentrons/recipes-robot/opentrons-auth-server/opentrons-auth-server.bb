@@ -41,10 +41,10 @@ do_install:append () {
 
     install -d ${D}/${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-auth-server.service ${D}/${systemd_system_unitdir}/opentrons-auth-server.service
-
     install -m 0644 ${WORKDIR}/opentrons-remote-access-allowed.service ${D}/${systemd_system_unitdir}/opentrons-remote-access-allowed.service
 
-    install -m 0744 ${WORKDIR}/check_remote_access_allowed ${D}/${bindir}/opentrons_check_remote_access_allowed
+    install -d ${D}${bindir}
+    install -m 0744 ${WORKDIR}/check_remote_access_allowed ${D}${bindir}/opentrons_check_remote_access_allowed
 
     # remove pycaches
     rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
