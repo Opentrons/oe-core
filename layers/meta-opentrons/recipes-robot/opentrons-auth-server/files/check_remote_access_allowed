@@ -10,12 +10,14 @@ import logging
 
 logging.basicConfig(level=logging.ERROR)
 
+if "/opt/opentrons-auth-server" not in sys.path:
+    sys.path.append("/opt/opentrons-auth-server")
+
 
 async def _do_check():
     import aiohttp
 
-    uds = os.environ["CHECK_REMOTE_ACCESS_auth_server_uds"]
-    connector = aiohttp.UnixConnector(path=uds)
+    connector = aiohttp.UnixConnector(path="/run/opentrons-auth-server.sock")
     async with aiohttp.ClientSession(
         connector=connector,
         base_url="http://localhost",
@@ -28,8 +30,7 @@ async def _do_check():
     if parsed_response["data"]["accessControlEnabled"] is False:
         print("Allowing remote access: CRS is disabled")
         return 0
-    path = os.environ["CHECK_REMOTE_ACCESS_override_file"]
-    if os.path.exists(path):
+    if os.path.exists("/etc/opentrons-allow-remote-access"):
         print("Allowing remote access: override file exists")
         return 0
     print("Disallowing remote access: CRS is enabled and no override exists")
