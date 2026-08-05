@@ -44,7 +44,7 @@ do_install:append () {
 
     install -m 0644 ${WORKDIR}/opentrons-remote-access-allowed.service ${D}/${systemd_system_unitdir}/opentrons-remote-access-allowed.service
 
-    install -m 0744 ${WORKDIR}/check_remote_access_allowed ${D}/${bindir}/check_remote_access_allowed
+    install -m 0744 ${WORKDIR}/check_remote_access_allowed ${D}/${bindir}/opentrons_check_remote_access_allowed
 
     # remove pycaches
     rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
@@ -53,7 +53,7 @@ do_install:append () {
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-auth-server.service.d \
                        ${systemd_system_unitdir}/opentrons-auth-server.service.d/auth-server-version.conf \
                        ${systemd_system_unitdir}/opentrons-remote-access-allowed.service \
-                       ${bindir}/check_remote_access_allowed \
+                       ${bindir}/opentrons_check_remote_access_allowed \
                        "
 
 RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi "

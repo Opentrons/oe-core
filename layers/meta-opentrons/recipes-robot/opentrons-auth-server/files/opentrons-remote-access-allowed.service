@@ -6,7 +6,7 @@ After=opentrons-auth-server.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/ot_check_remote_access_allowed
+ExecStart=/usr/bin/opentrons_check_remote_access_allowed
 
 
 [Install]
