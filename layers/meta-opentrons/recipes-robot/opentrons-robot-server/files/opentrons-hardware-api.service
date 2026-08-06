@@ -8,7 +8,7 @@ Before=opentrons-robot-server.service
 
 [Service]
 # Ensure the subprocess is enabled to continue
-ExecCondition=/bin/sh -c 'test ! -r /data/feature_flags.json || /usr/bin/jq -ne "try (input.disableHardwareSubprocess != true) catch true" /data/feature_flags.json'
+ExecCondition=/usr/bin/jq -r -e '.enableHardwareSubprocess?' /data/feature_flags.json
 
 # If ExecConditions were met proceed to start the Hardware API subprocess
 Type=notify
