@@ -210,7 +210,7 @@ fakeroot do_create_filesystem() {
     mkfs.ext4 -F ${USERFS_OUTPUT} -d ${USERFS_DIR}
 
     # create the userfs tarball
-    tar --xattrs --xattrs-include=* --sort=name --format=posix --numeric-owner -cf ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar -C ${USERFS_DIR} ./
+    tar --xattrs --xattrs-include=* --owner=root:0 --group=root:0 --sort=name --format=posix --numeric-owner -cf ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar -C ${USERFS_DIR} ./
 
     # compress the tarball
     xz -f -k -c -9 ${XZ_DEFAULTS} --check=crc32 ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar > ${DEPLOY_DIR_IMAGE}/${IMAGE_LINK_NAME}.userfs.tar.xz
