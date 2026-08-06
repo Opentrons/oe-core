@@ -10,4 +10,4 @@ ExecStart=/usr/bin/opentrons_check_remote_access_allowed
 
 [Install]
 RequiredBy=dropbear@.service
-RequiredBy=jupyter.service
+RequiredBy=jupyter-notebook.service
