@@ -14,7 +14,7 @@ if "/opt/opentrons-auth-server" not in sys.path:
     sys.path.append("/opt/opentrons-auth-server")
 
 
-async def _do_check():
+async def _http_check() -> bool:
     import aiohttp
 
     connector = aiohttp.UnixConnector(path="/run/opentrons-auth-server.sock")
@@ -25,25 +25,82 @@ async def _do_check():
         async with session.get("auth/settings/accessControlEnabled") as response:
             response.raise_for_status()
             response_bytes = await response.read()
-
     parsed_response = json.loads(response_bytes)
-    if parsed_response["data"]["accessControlEnabled"] is False:
-        print("Allowing remote access: CRS is disabled")
-        return 0
+    return parsed_response["data"]["accessControlEnabled"]
+
+
+async def _do_check(timeout: int | None):
     if os.path.exists("/etc/opentrons-allow-remote-access"):
         print("Allowing remote access: override file exists")
+        return 0
+
+    tries = 0
+    while True:
+        try:
+            enabled = await _http_check()
+            break
+        except Exception:
+            if timeout is None or tries < timeout:
+                tries += 1
+                await asyncio.sleep(1)
+            else:
+                print(
+                    f"Disallowing remote access: no override exists and the auth-server cannot be reached after {tries} seconds"
+                )
+                return 1
+
+    if enabled is False:
+        print("Allowing remote access: CRS is disabled")
         return 0
     print("Disallowing remote access: CRS is enabled and no override exists")
     return 1
 
 
-async def check():
+async def check(timeout: int | None):
     try:
-        return await _do_check()
+        return await _do_check(timeout)
     except Exception:
         print("Disallowing remote access: error in check process")
         traceback.print_exc()
         return 2
 
 
-sys.exit(asyncio.run(check()))
+def timeout_or(argv: list[str]) -> int | None:
+    if len(sys.argv) < 2:
+        return None
+    if ("-h", "--help") in sys.argv[1]:
+        print(f"{sys.argv[0]} [-h | --help] [TIMEOUT]")
+        print(f"-h | --help: print this")
+        print(
+            f"TIMEOUT: a whole number greater than 0 in seconds to wait for auth server"
+        )
+        print()
+        print(
+            "Checks whether remote access is allowed. Exits with 0 if allowed, not-0 otherwise."
+        )
+        print(
+            "Access is allowed if either /etc/opentrons-allow-remote-access exists or if "
+        )
+        print(
+            "opentrons-auth-server is active and GET /auth/settings/accessControlEnabled indicates "
+        )
+        print("that CRS is disabled (i.e., has data.accessControlEnabled != true). ")
+        print(
+            "Will retry this HTTP call once per second for up to TIMEOUT seconds if it does not "
+        )
+        print("have a status of 200.")
+        sys.exit(-1)
+
+    possible_val = sys.argv[1]
+    try:
+        val = int(sys.argv[1])
+    except ValueError:
+        sys.stderr.write(f"Bad timeout: {sys.argv[1]} must be an int\n")
+        return None
+    if val < 1:
+        sys.stderr.write(f"Bad timeout: {sys.argv[1]} must be greater than 0\n")
+        return None
+    return val
+
+
+sys.exit(asyncio.run(check(timeout_or(sys.argv))))
