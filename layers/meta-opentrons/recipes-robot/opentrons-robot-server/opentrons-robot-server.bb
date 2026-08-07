@@ -19,7 +19,7 @@ USERADD_DEPENDS = "systemd"
 USERADD_PARAM:${PN} = "--system --home /run/ot-protocol \
                        --no-create-home --shell /bin/false \
                        --user-group \
-                       -G adm,systemd-journal \
+                       -G adm,systemd-journal,disk \
                        ot-protocol"
 
 SYSTEMD_AUTO_ENABLE = "enable"
