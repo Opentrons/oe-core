@@ -21,6 +21,7 @@ SRC_URI:append = "\
     file://opentrons-auth-server.service \
     file://check_remote_access_allowed \
     file://opentrons-remote-access-allowed.service \
+    file://opentrons-disable-crs \
     "
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/auth-server"
@@ -45,6 +46,7 @@ do_install:append () {
 
     install -d ${D}${bindir}
     install -m 0744 ${WORKDIR}/check_remote_access_allowed ${D}${bindir}/opentrons_check_remote_access_allowed
+    install -m 0700 ${WORKDIR}/opentrons-disable-crs ${D}${bindir}/opentrons_disable_crs
 
     # remove pycaches
     rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
@@ -54,9 +56,10 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-auth-server.service.d 
                        ${systemd_system_unitdir}/opentrons-auth-server.service.d/auth-server-version.conf \
                        ${systemd_system_unitdir}/opentrons-remote-access-allowed.service \
                        ${bindir}/opentrons_check_remote_access_allowed \
+                       ${bindir}/opentrons_disable_crs \
                        "
 
-RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi "
+RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi bash "
 
 DEPENDS += " cargo-native "
 

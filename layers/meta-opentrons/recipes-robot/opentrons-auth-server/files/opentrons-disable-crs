@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Disable compliance-ready software.
+
+die() {
+    echo "Failed: ${1}"
+    exit 1
+}
+
+echo -n 'Password: '
+read -rs password
+
+serial=$(cat /var/serial)
+
+[ "${password}" = "${serial}-0000" ] || die "Incorrect password"
+
+echo "Exiting CRS"
+rm -rf /var/lib/opentrons-auth-server
+echo "Rebooting"
+reboot
