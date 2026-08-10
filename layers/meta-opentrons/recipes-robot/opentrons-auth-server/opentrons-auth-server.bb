@@ -59,7 +59,7 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-auth-server.service.d 
                        ${bindir}/opentrons_disable_crs \
                        "
 
-RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi "
+RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi bash "
 
 DEPENDS += " cargo-native "
 
