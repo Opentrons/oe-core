@@ -12,6 +12,7 @@ After=opentrons-pyro-nameserver.service
 Wants=opentrons-hardware-api.service
 Wants=opentrons-audit-server.service
 After=opentrons-audit-server.service
+PartOf=opentrons-pyro-nameserver.service opentrons-hardware-api.service
 
 [Service]
 Type=notify
