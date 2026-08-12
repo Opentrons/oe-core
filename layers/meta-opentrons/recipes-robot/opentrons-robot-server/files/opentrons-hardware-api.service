@@ -5,6 +5,7 @@ After=opentrons-ot3-canbus.service
 Wants=opentrons-pyro-nameserver.service
 After=opentrons-pyro-nameserver.service
 Before=opentrons-robot-server.service
+PartOf=opentrons-pyro-nameserver.service opentrons-robot-server.service
 
 [Service]
 # Ensure the subprocess is enabled to continue

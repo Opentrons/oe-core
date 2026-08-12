@@ -1,6 +1,7 @@
 [Unit]
 Description=System service for the Python Remote Objects Nameserver
 Before=opentrons-robot-server.service
+PartOf=opentrons-hardware-api.service opentrons-robot-server.service
 
 [Service]
 # Begin the Opentrons Pyro5 Nameserver
