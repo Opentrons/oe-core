@@ -17,8 +17,10 @@ SRC_URI += "file://system-connections-location.conf \
 FILES:${PN} += "/etc/NetworkManager/conf.d/system-connections-location.conf \
                 /etc/NetworkManager/conf.d/disable-uap0.conf \
                 ${systemd_system_unitdir}/opentrons-init-systemconnections.service \
+                ${systemd_system_unitdir}/NetworkManager.service.wants/opentrons-init-systemconnections.service \
                 ${systemd_system_unitdir}/mlan0-desync-check.service \
                 ${systemd_system_unitdir}/mlan0-desync-check.timer \
+                ${systemd_system_unitdir}/timers.target.wants/mlan0-desync-check.timer \
                 ${sbindir}/mlan0-desync-check.sh \
                 /usr/share/default-connections/wired-linklocal.nmconnection \
                 /usr/share/default-connections/wired.nmconnection \
@@ -47,6 +49,8 @@ do_install:append() {
 	install -m 0755 ${WORKDIR}/mlan0-desync-check.sh ${D}${sbindir}/mlan0-desync-check.sh
 	install -m 0644 ${WORKDIR}/mlan0-desync-check.service ${D}${systemd_system_unitdir}/mlan0-desync-check.service
 	install -m 0644 ${WORKDIR}/mlan0-desync-check.timer ${D}${systemd_system_unitdir}/mlan0-desync-check.timer
+	install -d ${D}${systemd_system_unitdir}/timers.target.wants
+	ln -s ../mlan0-desync-check.timer ${D}${systemd_system_unitdir}/timers.target.wants/mlan0-desync-check.timer
 }
 
 SYSTEMD_AUTO_ENABLE = "enable"
