@@ -15,6 +15,9 @@ serial=$(cat /var/serial)
 [ "${password}" = "${serial}-0000" ] || die "Incorrect password"
 
 echo "Exiting CRS"
+systemctl stop opentrons-auth-server
+systemctl stop opentrons-audit-server
 rm -rf /var/lib/opentrons-auth-server
+rm -rf /var/lib/opentrons-audit-server
 echo "Rebooting"
 reboot
