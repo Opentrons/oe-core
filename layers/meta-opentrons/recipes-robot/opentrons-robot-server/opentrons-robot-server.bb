@@ -15,14 +15,18 @@ INSANE_SKIP:${PN}:append = "already-stripped"
 inherit systemd get_ot_package_version useradd
 
 USERADD_PACKAGES = "${PN}"
+USERADD_DEPENDS = "systemd"
 USERADD_PARAM:${PN} = "--system --home /run/ot-protocol \
                        --no-create-home --shell /bin/false \
-                       --user-group ot-protocol"
+                       --user-group \
+                       -G adm,systemd-journal,disk,dialout \
+                       ot-protocol"
 
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-robot-server.service opentrons-ot3-canbus.service opentrons-hardware-api.service"
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
-SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules file://opentrons-hardware-api.service"
+SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-canbus.service file://95-opentrons-udev.rules file://opentrons-hardware-api.service file://opentrons-robot-server-permissions.conf"
+
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
@@ -58,6 +62,8 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/opentrons-robot-server.service ${D}${systemd_system_unitdir}/opentrons-robot-server.service
     install -d ${D}${systemd_system_unitdir}/opentrons-robot-server.service.d
     install -m 0644 ${B}/robot-server-version.conf ${D}${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf
+    install -d ${D}${systemd_system_unitdir}/opentrons-hardware-api.service.d
+    install -m 0644 ${B}/robot-server-version.conf ${D}${systemd_system_unitdir}/opentrons-hardware-api.service.d/robot-server-version.conf
     install -m 0644 ${WORKDIR}/opentrons-ot3-canbus.service ${D}${systemd_system_unitdir}/opentrons-ot3-canbus.service
     install -d ${D}${sysconfdir}/udev/rules.d/
     install -m 0644 ${WORKDIR}/95-opentrons-udev.rules ${D}${sysconfdir}/udev/rules.d/95-opentrons-udev.rules
@@ -65,15 +71,22 @@ do_install:append () {
     # install the hardware api service files
     install -m 0644 ${WORKDIR}/opentrons-hardware-api.service ${D}${systemd_system_unitdir}
 
+    # install the tmpfiles configuration
+    install -d ${D}${nonarch_libdir}/tmpfiles.d
+    install -m 0644 ${WORKDIR}/opentrons-robot-server-permissions.conf ${D}${nonarch_libdir}/tmpfiles.d/
+
     # remove pycaches
     rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
 }
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d \
                        ${systemd_system_unitdir}/opentrons-robot-server.service.d/robot-server-version.conf \
+                       ${systemd_system_unitdir/opentrons-hardware-api.service.d \
+                       ${systemd_system_unitdir}/opentrons-hardware-api.service.d/robot-server-version.conf \
                        ${sysconfdir}/udev/rules.d/95-opentrons-udev.rules \
                        ${sysconfdir}/release-notes.md \
                        ${systemd_system_unitdir}/opentrons-hardware-api.service \
+                       ${nonarch_libdir}/tmpfiles.d/opentrons-robot-server-permissions.conf \
                        "
 
 RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy python3-pyusb "

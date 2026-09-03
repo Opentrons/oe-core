@@ -3,7 +3,9 @@
 # bookworm is the latest tested debian version for scarthgap per
 # https://docs.yoctoproject.org/5.0.12/ref-manual/system-requirements.html
 FROM python:3.12-bookworm
-COPY --from=ghcr.io/astral-sh/uv:0.9.17 /uv /uvx /bin/
+# Keep in sync with required-version in the opentrons monorepo (uv.toml and each
+# project's [tool.uv]); do_configure runs `uv export --frozen` inside that tree.
+COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /uvx /bin/
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
 

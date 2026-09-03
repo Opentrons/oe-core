@@ -1,0 +1,13 @@
+[Unit]
+Description=Opentrons remote-access-allowed trigger service
+After=opentrons-auth-server.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/opentrons_check_remote_access_allowed
+
+
+[Install]
+RequiredBy=dropbear@.service
+RequiredBy=jupyter-notebook.service

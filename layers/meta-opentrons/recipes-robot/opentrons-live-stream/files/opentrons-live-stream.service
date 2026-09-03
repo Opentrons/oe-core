@@ -28,5 +28,8 @@ ExecStart=/bin/sh -c 'ffmpeg \
 Restart=on-failure
 RestartSec=3
 
+# We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
+PrivateTmp=yes
+
 [Install]
 WantedBy=multi-user.target

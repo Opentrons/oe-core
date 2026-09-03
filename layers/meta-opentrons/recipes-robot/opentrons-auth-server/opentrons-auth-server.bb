@@ -17,7 +17,12 @@ inherit systemd get_ot_package_version
 SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE:${PN} = "opentrons-auth-server.service"
 FILESEXTRAPATHS:prepend = "${THISDIR}/files:"
-SRC_URI:append = " file://opentrons-auth-server.service"
+SRC_URI:append = "\
+    file://opentrons-auth-server.service \
+    file://check_remote_access_allowed \
+    file://opentrons-remote-access-allowed.service \
+    file://opentrons-disable-crs \
+    "
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/auth-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-auth-server"
@@ -37,6 +42,11 @@ do_install:append () {
 
     install -d ${D}/${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/opentrons-auth-server.service ${D}/${systemd_system_unitdir}/opentrons-auth-server.service
+    install -m 0644 ${WORKDIR}/opentrons-remote-access-allowed.service ${D}/${systemd_system_unitdir}/opentrons-remote-access-allowed.service
+
+    install -d ${D}${bindir}
+    install -m 0744 ${WORKDIR}/check_remote_access_allowed ${D}${bindir}/opentrons_check_remote_access_allowed
+    install -m 0700 ${WORKDIR}/opentrons-disable-crs ${D}${bindir}/opentrons_disable_crs
 
     # remove pycaches
     rm -rf ${D}${OPENTRONS_APP_BUNDLE_DIR}/**/__pycache__
@@ -44,9 +54,12 @@ do_install:append () {
 
 FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-auth-server.service.d \
                        ${systemd_system_unitdir}/opentrons-auth-server.service.d/auth-server-version.conf \
+                       ${systemd_system_unitdir}/opentrons-remote-access-allowed.service \
+                       ${bindir}/opentrons_check_remote_access_allowed \
+                       ${bindir}/opentrons_disable_crs \
                        "
 
-RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi "
+RDEPENDS:${PN} += " python3-pyjwt nginx python3-systemd argon2 python3-argon2-cffi bash "
 
 DEPENDS += " cargo-native "
 
