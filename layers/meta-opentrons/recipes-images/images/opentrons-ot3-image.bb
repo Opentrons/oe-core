@@ -17,6 +17,7 @@ DEPENDS += "rsync-native zip-native \
     opentrons-pyro-nameserver \
     opentrons-live-stream \
     ffmpeg \
+    zipstream-ng
     "
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
@@ -50,7 +51,7 @@ IMAGE_INSTALL:append = " \
     timestamp-service networkmanager \
     ${@bb.utils.contains('DISTRO_FEATURES', 'systemd', 'timestamp-service systemd-analyze', '', d)} \
     weston-xwayland weston weston-init imx-gpu-viv \
-    plymouth mosquitto hidapi \
+    plymouth mosquitto zipstream-ng hidapi \
     python3 python3-misc python3-modules python3-pip \
     robot-app-wayland-launch opentrons-robot-app \
     opentrons-auth-server opentrons-robot-server opentrons-system-server opentrons-update-server opentrons-key-server opentrons-audit-server \
