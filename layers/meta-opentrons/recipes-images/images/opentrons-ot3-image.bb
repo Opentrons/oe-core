@@ -17,7 +17,6 @@ DEPENDS += "rsync-native zip-native \
     opentrons-pyro-nameserver \
     opentrons-live-stream \
     ffmpeg \
-    zipstream-ng
     "
 IMAGE_FSTYPES += "ext4.xz teziimg"
 
