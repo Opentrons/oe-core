@@ -30,7 +30,7 @@ SRC_URI:append = " file://opentrons-robot-server.service file://opentrons-ot3-ca
 
 OPENTRONS_APP_BUNDLE_PROJECT_ROOT = "${S}/robot-server"
 OPENTRONS_APP_BUNDLE_DIR = "/opt/opentrons-robot-server"
-OPENTRONS_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq mosquitto python3-pyro5 zipstream-ng"
+OPENTRONS_APP_BUNDLE_USE_GLOBAL = "numpy systemd-python python-can wrapt pyzmq mosquitto python3-pyro5 python-zipstream-ng"
 OPENTRONS_APP_BUNDLE_STRIP_HASHES = "yes"
 OPENTRONS_APP_BUNDLE_EXTRA_PIP_ENVARGS_LOCAL = "OPENTRONS_PROJECT=${OPENTRONS_PROJECT} ${@get_ot_package_version_override(d)}"
 OPENTRONS_APP_BUNDLE_PACKAGE_SOURCE = "uv"
@@ -94,7 +94,7 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-robot-server.service.d
                        ${bindir}/subprocess-enablement \
                        "
 
-RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy python3-pyusb zipstream-ng bash"
+RDEPENDS:${PN} += " udev python3-numpy python3-systemd nginx python-can python3-pyzmq libgpiod-python python-aionotify mosquitto python-byonoy python3-pyusb python-zipstream-ng bash"
 DEPENDS += " cargo-native "
 
 inherit opentrons_app_bundle
