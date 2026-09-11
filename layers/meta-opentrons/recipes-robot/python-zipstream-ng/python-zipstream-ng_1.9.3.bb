@@ -10,4 +10,4 @@ SRC_URI[sha256sum] = "6cebd055025699c0af594c76a9452cdf13f4be67ee005b6907f0d3c9c6
 inherit pypi python_setuptools_build_meta
 
 PYPI_PACKAGE="python-zipstream-ng"
-
+S = "${WORKDIR}/zipstream_ng-1.9.3"
