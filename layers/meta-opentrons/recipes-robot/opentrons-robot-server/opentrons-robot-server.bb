@@ -76,6 +76,7 @@ do_install:append () {
     install -m 0644 ${WORKDIR}/opentrons-robot-server-permissions.conf ${D}${nonarch_libdir}/tmpfiles.d/
 
     # install the subprocess enablement toggling script
+    install -d ${D}/${bindir}
     install -m 0700 ${WORKDIR}/subprocess-enablement ${D}/${bindir}
 
     # remove pycaches
