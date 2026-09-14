@@ -168,6 +168,9 @@ do_make_rootfs_changes() {
     printf "PRETTY_HOSTNAME=opentrons\n" > ${IMAGE_ROOTFS}${sysconfdir}/machine-info
     printf "DEPLOYMENT=development\n" >> ${IMAGE_ROOTFS}${sysconfdir}/machine-info
 
+    # set galcore contiguousSize to 64MiB
+    printf "options galcore contiguousSize=67108864\n" > ${IMAGE_ROOTFS}${sysconfdir}/modprobe.d/galcore.conf
+
     # copy the boot files to the /boot dir
     rsync -aL --chown=root:root  ${DEPLOY_DIR_IMAGE}/Image.gz ${IMAGE_ROOTFS}/boot/
     rsync -aL --chown=root:root  ${DEPLOY_DIR_IMAGE}/boot.scr* ${IMAGE_ROOTFS}/boot/boot.scr
