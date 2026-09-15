@@ -1,0 +1,10 @@
+[Unit]
+Description=Opentrons mlan0 Wi-Fi desync check
+Documentation=file:///usr/sbin/mlan0-desync-check.sh
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/mlan0-desync-check.sh
+TimeoutStartSec=90

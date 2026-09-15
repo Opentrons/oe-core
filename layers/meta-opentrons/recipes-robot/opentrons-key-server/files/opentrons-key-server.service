@@ -21,6 +21,8 @@ Environment=OT_KEY_SERVER_tls_directory=%S/opentrons-key-server/tls
 Environment=OT_KEY_SERVER_tls_server_integration=systemd-nginx
 Restart=on-failure
 TimeoutStartSec=3min
+# We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
+PrivateTmp=yes
 
 [Install]
 WantedBy=multi-user.target

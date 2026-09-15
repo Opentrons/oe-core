@@ -30,5 +30,5 @@ outputs:
   authoritative-ref:
     description: "the ref used to decide unspecified repo refs (first specified of monorepo, oe-core)"
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
