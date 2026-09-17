@@ -1,7 +1,8 @@
 DESCRIPTION = "nodeJS Evented I/O for V8 JavaScript"
 HOMEPAGE = "http://nodejs.org"
-LICENSE = "MIT & ISC & BSD-2-Clause & BSD-3-Clause & Artistic-2.0 & Apache-2.0"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=1fdf4f79da4006c3b5183fddc768f1c8"
+LICENSE = "MIT & ISC & BSD-2-Clause & BSD-3-Clause & Artistic-2.0 & Apache-2.0 & BlueOak-1.0.0"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=9f816753e8bdfe4576cb87159a0cd60c"
+FILESEXTRAPATHS:prepend := "${THISDIR}/nodejs-24:"
 
 CVE_PRODUCT = "nodejs node.js"
 
@@ -22,33 +23,24 @@ COMPATIBLE_HOST:powerpc64le = "null"
 
 SRC_URI = "https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
            file://0001-Do-not-use-glob-in-deps.patch \
-           file://0001-Disable-running-gyp-files-for-bundled-deps.patch \
-           file://0004-v8-don-t-override-ARM-CFLAGS.patch \
-           file://system-c-ares.patch \
-           file://0001-liftoff-Correct-function-signatures.patch \
-           file://libatomic.patch \
-           file://0001-deps-disable-io_uring-support-in-libuv.patch \
-           file://0001-positional-args.patch \
-           file://0001-custom-env.patch \
-           file://0001-build-remove-redundant-mXX-flags-for-V8.patch \
+           file://0002-v8-don-t-override-ARM-CFLAGS.patch \
+           file://0003-system-c-ares.patch \
+           file://0004-liftoff-Correct-function-signatures.patch \
+           file://0006-deps-disable-io_uring-support-in-libuv.patch \
+           file://0007-positional-args.patch \
+           file://0008-custom-env.patch \
+           file://0010-v8-fix-Wtemplate-body-error-with-GCC-15-on-ia32.patch \
            file://run-ptest \
            "
 SRC_URI:append:class-target = " \
-           file://0001-Using-native-binaries.patch \
+           file://0009-Using-native-binaries.patch \
            "
-SRC_URI:append:toolchain-clang:powerpc64le = " \
-           file://0001-ppc64-Do-not-use-mminimal-toc-with-clang.patch \
-           "
-SRC_URI[sha256sum] = "4c138012bb5352f49822a8f3e6d1db71e00639d0c36d5b6756f91e4c6f30b683"
+SRC_URI[sha256sum] = "a7ab562ed2369a29c68b72fa00e3103bcdfe37063dff799c6acc8e404e275fcd"
 
-S = "${WORKDIR}/node-v${PV}"
+S = "${UNPACKDIR}/node-v${PV}"
 
 # v8 errors out if you have set CCACHE
 CCACHE = ""
-
-# Use '-flax-vector-conversions' to permit conversions between vectors
-# with differing element types or numbers of subparts
-CFLAGS:append:toolchain-gcc:arm = " -flax-vector-conversions"
 
 def map_nodejs_arch(a, d):
     import re
@@ -74,8 +66,8 @@ PACKAGECONFIG ??= "ares brotli icu zlib"
 PACKAGECONFIG[ares] = "--shared-cares,,c-ares c-ares-native"
 PACKAGECONFIG[brotli] = "--shared-brotli,,brotli brotli-native"
 PACKAGECONFIG[icu] = "--with-intl=system-icu,--without-intl,icu icu-native"
-PACKAGECONFIG[libuv] = "--shared-libuv,,libuv"
-PACKAGECONFIG[nghttp2] = "--shared-nghttp2,,nghttp2"
+PACKAGECONFIG[libuv] = "--shared-libuv,,libuv libuv-native"
+PACKAGECONFIG[nghttp2] = "--shared-nghttp2,,nghttp2 nghttp2-native"
 PACKAGECONFIG[shared] = "--shared"
 PACKAGECONFIG[zlib] = "--shared-zlib,,zlib"
 
@@ -96,7 +88,7 @@ python prune_sources() {
     if 'zlib' in d.getVar('PACKAGECONFIG'):
         shutil.rmtree(d.getVar('S') + '/deps/zlib')
 }
-do_unpack[postfuncs] += "prune_sources"
+do_patch[postfuncs] += "prune_sources"
 
 # V8's JIT infrastructure requires binaries such as mksnapshot and
 # mkpeephole to be run in the host during the build. However, these
@@ -133,8 +125,6 @@ python do_create_v8_qemu_wrapper () {
 do_create_v8_qemu_wrapper[dirs] = "${B}"
 addtask create_v8_qemu_wrapper after do_configure before do_compile
 
-LDFLAGS:append:x86 = " -latomic"
-
 export CC_host
 export CFLAGS_host
 export CXX_host
@@ -160,9 +150,12 @@ do_configure () {
                ${PACKAGECONFIG_CONFARGS}
 }
 
+do_compile:prepend:class-target() {
+    install -D ${B}/v8-qemu-wrapper.sh ${B}/out/Release/v8-qemu-wrapper.sh
+}
+
 do_compile () {
     install -D ${RECIPE_SYSROOT_NATIVE}/etc/ssl/openssl.cnf ${B}/deps/openssl/nodejs-openssl.cnf
-    install -D ${B}/v8-qemu-wrapper.sh ${B}/out/Release/v8-qemu-wrapper.sh
     oe_runmake BUILDTYPE=Release
 }
 
@@ -209,6 +202,13 @@ python set_gyp_variables () {
 }
 
 python __anonymous () {
+    # do_create_v8_qemu_wrapper is not needed for the native build, so make sure it
+    # gets deleted otherwise target info ends up in its signature making the native
+    # build target specific.
+    if bb.data.inherits_class('native', d):
+        bb.build.deltask('do_create_v8_qemu_wrapper', d)
+        return
+
     # 32 bit target and 64 bit host (x86-64 or aarch64) have different bit width
     if d.getVar("SITEINFO_BITS") == "32" and "64" in d.getVar("BUILD_ARCH"):
         d.setVar("HOST_AND_TARGET_SAME_WIDTH", "0")
