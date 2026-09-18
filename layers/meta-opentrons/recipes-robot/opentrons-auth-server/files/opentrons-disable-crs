@@ -19,5 +19,18 @@ systemctl stop opentrons-auth-server
 systemctl stop opentrons-audit-server
 rm -rf /var/lib/opentrons-auth-server
 rm -rf /var/lib/opentrons-audit-server
+
+# Disable pyro flags when leaving CRS.
+flags=/data/feature_flags.json
+if [ -r "${flags}" ]; then
+    temp=$(mktemp) || die "Could not create temp file"
+    if jq '.enableHardwareSubprocess = false | .enableProtocolSubprocess = false' "${flags}" > "${temp}" && [ -s "${temp}" ]; then
+        mv "${temp}" "${flags}" || die "Could not update ${flags}"
+    else
+        rm -f "${temp}"
+        die "Could not disable subprocess flags in ${flags}"
+    fi
+fi
+
 echo "Rebooting"
 reboot
