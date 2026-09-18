@@ -4,6 +4,9 @@ Before=opentrons-robot-server.service
 PartOf=opentrons-hardware-api.service opentrons-robot-server.service
 
 [Service]
+# Start only when /data/feature_flags.json exists and either subprocess flag is true
+ExecCondition=/bin/sh -c 'test -r /data/feature_flags.json && /usr/bin/jq -ne "try ((input.enableHardwareSubprocess == true) or (input.enableProtocolSubprocess == true)) catch false" /data/feature_flags.json'
+
 # Begin the Opentrons Pyro5 Nameserver
 ExecStart=/bin/pyro5-ns 
 
