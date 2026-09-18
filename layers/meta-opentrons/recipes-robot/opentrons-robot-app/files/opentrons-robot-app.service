@@ -21,6 +21,8 @@ ExitType=cgroup
 NotifyAccess=all
 Restart=always
 KillSignal=SIGKILL
+# We're using PrivateTmp for its feature of automatically cleaning up if the service crashes.
+PrivateTmp=yes
 
 [Install]
 WantedBy=multi-user.target

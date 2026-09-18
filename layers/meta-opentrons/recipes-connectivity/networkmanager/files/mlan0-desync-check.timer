@@ -1,0 +1,15 @@
+[Unit]
+Description=Periodically run mlan0 Wi-Fi desync check
+After=NetworkManager.service
+
+[Timer]
+# First run after boot once Wi-Fi has had time to associate.
+OnBootSec=90s
+# Catch silent desync without relying on NetworkManager dispatcher events.
+OnUnitActiveSec=60s
+AccuracySec=15s
+Persistent=true
+Unit=mlan0-desync-check.service
+
+[Install]
+WantedBy=timers.target

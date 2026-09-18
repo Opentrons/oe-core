@@ -1,0 +1,47 @@
+#!/bin/bash
+
+JSON_FILE="/data/feature_flags.json"
+TEMP_FILE=$(mktemp)
+
+SUBPROCESS_SETTING=""
+ENABLEMENT_SETTING=""
+
+case "$1" in
+  --enable-subprocess)
+    SUBPROCESS_SETTING="true"
+    ENABLEMENT_SETTING="ENABLE"
+    ;;
+  --disable-subprocess)
+    SUBPROCESS_SETTING="false"
+    ENABLEMENT_SETTING="DISABLE"
+    ;;
+  *)
+    echo "Hint: Use $0 {--enable-subprocess | --disable-subprocess}" >&2
+    exit 1
+    ;;
+esac
+
+# Check if the feature flag JSON file exists
+if [ ! -f "$JSON_FILE" ]; then
+  echo "Error: File $JSON_FILE not found." >&2
+  rm -f "$TEMP_FILE"
+  exit 1
+fi
+
+# Update the subprocess fields
+# NOTE: the 'disableHardwareSubprocess' flag is 'false' when enabled and 'true' when disabled
+jq --argjson state "$SUBPROCESS_SETTING" '.enableProtocolSubprocess = $state | .enableHardwareSubprocess = $state | .disableHardwareSubprocess = ($state | not)' "$JSON_FILE" > "$TEMP_FILE"
+
+# Verify write success before replacing original file
+if [ $? -eq 0 ] && [ -s "$TEMP_FILE" ]; then
+  mv "$TEMP_FILE" "$JSON_FILE"
+  echo "Updated 'enableProtocolSubprocess', 'enableHardwareSubprocess' and 'disableHardwareSubprocess' fields to $ENABLEMENT_SETTING subprocesses in $JSON_FILE."
+else
+  echo "Error: Failed to update feature flag JSON file." >&2
+  rm -f "$TEMP_FILE"
+  exit 1
+fi
+
+# Reboot the robot, subprocess settings will take effect
+echo "Initiating system reboot..."
+systemctl reboot
