@@ -50,7 +50,7 @@ FILES:${PN}:append = " ${systemd_system_unitdir/opentrons-audit-server.service.d
                        ${systemd_system_unitdir}/nginx.target.wants/opentrons-audit-server.service \
                        "
 
-RDEPENDS:${PN} += " nginx python3-numpy python3-systemd python3-cryptography "
+RDEPENDS:${PN} += " nginx python3-numpy python3-systemd python3-cryptography python-zipstream-ng"
 
 DEPENDS += " cargo-native "
 
