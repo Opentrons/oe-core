@@ -72,12 +72,21 @@ runs:
           echo "tag=None" >> $GITHUB_OUTPUT
         fi
 
+        # Human-readable result for Slack templates that share one webhook for
+        # success and failure (replace hardcoded "Builds Done" with {{headline}}).
+        case "${{ inputs.status }}" in
+          success) echo "headline=Build succeeded" >> $GITHUB_OUTPUT ;;
+          failure) echo "headline=Build failed" >> $GITHUB_OUTPUT ;;
+          cancelled) echo "headline=Build cancelled" >> $GITHUB_OUTPUT ;;
+          *) echo "headline=Build ${{ inputs.status }}" >> $GITHUB_OUTPUT ;;
+        esac
+
     - name: 'Send Slack Alert'
       uses: slackapi/slack-github-action@d09f6a279ff492756a31df59952ee6dce8c9b772 # v1.14.0
       with:
-        # Include status so Slack Workflow templates can distinguish success vs failure
+        # status + headline so Slack Workflow templates can distinguish outcomes
         # (success/failure share the same webhook URL in build-ot3-actions.yml).
-        payload: "{\"status\":\"${{ inputs.status }}\",\"tag\":\"${{ steps.prepare-refs.outputs.tag }}\",\"s3-url\":\"${{ inputs.console_url }}/\",\"type\":\"${{ steps.prepare-refs.outputs.ref_type }}\",\"reflike\":\"${{ steps.prepare-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.prepare-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.prepare-refs.outputs.firmware }}\",\"full-image\":\"${{ inputs.fullimage_url }}\",\"system-update\":\"${{ inputs.system_url }}\",\"version-file\":\"${{ inputs.version_file_url }}\",\"release-notes\":\"${{ inputs.release_notes_file_url }}\"}"
+        payload: "{\"status\":\"${{ inputs.status }}\",\"headline\":\"${{ steps.prepare-refs.outputs.headline }}\",\"tag\":\"${{ steps.prepare-refs.outputs.tag }}\",\"s3-url\":\"${{ inputs.console_url }}/\",\"type\":\"${{ steps.prepare-refs.outputs.ref_type }}\",\"reflike\":\"${{ steps.prepare-refs.outputs.oe-core }}\",\"monorepo-reflike\":\"${{ steps.prepare-refs.outputs.monorepo }}\",\"firmware-reflike\":\"${{ steps.prepare-refs.outputs.firmware }}\",\"full-image\":\"${{ inputs.fullimage_url }}\",\"system-update\":\"${{ inputs.system_url }}\",\"version-file\":\"${{ inputs.version_file_url }}\",\"release-notes\":\"${{ inputs.release_notes_file_url }}\"}"
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.webhook_url }}
       continue-on-error: false
