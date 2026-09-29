@@ -7,6 +7,7 @@ SRCREV = "fe48647496798cac77976e310ee95da000b436c9"
 SRC_URI = " \
 	git://github.com/morrownr/88x2bu-20210702;protocol=https;branch=main \
 	file://0001-fix-makefile.patch \
+    file://0002-fix-hack-version-chekc-for-6.6.157.patch \
 "
 PV = "5.13.1-git"
 

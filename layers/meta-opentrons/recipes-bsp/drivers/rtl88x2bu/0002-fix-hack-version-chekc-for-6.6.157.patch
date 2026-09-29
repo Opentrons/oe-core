@@ -1,0 +1,28 @@
+From 898b6c0502edeef64abb4dbed2435f2cf49b379d Mon Sep 17 00:00:00 2001
+From: Seth Foster <seth@opentrons.com>
+Date: Mon, 28 Sep 2026 16:29:16 -0400
+Subject: [PATCH] fix: hack version check for 6.6.157
+
+---
+ os_dep/linux/usb_intf.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/os_dep/linux/usb_intf.c b/os_dep/linux/usb_intf.c
+index 78b8885..35815aa 100644
+--- a/os_dep/linux/usb_intf.c
++++ b/os_dep/linux/usb_intf.c
+@@ -362,11 +362,7 @@ struct rtw_usb_drv usb_drv = {
+ 	.usbdrv.reset_resume   = rtw_resume,
+ #endif
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)) && (LINUX_VERSION_CODE < KERNEL_VERSION(6, 8, 0)) && !defined(RHEL95)
+-	.usbdrv.drvwrap.driver.shutdown = rtw_dev_shutdown,
+-#else
+ 	.usbdrv.driver.shutdown = rtw_dev_shutdown,
+-#endif
+ };
+ 
+ static inline int RT_usb_endpoint_dir_in(const struct usb_endpoint_descriptor *epd)
+-- 
+2.52.0
+
