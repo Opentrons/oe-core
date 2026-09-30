@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+# This mitigates an unknown bug that can cause old files to accumulate in /var/log/journal/.
+#
+# systemd-journald stores persistent logs in /var/log/journal/<machine-id>/.
+# opentrons-update-server is supposed to ensure the machine ID stays constant across boots.
+# Occasionally, something unknown goes wrong with that, and the machine ID changes.
+# systemd-journald will not automatically clean up logs if they have a "foreign" machine ID,
+# so we need to do it ourselves here.
+#
+# For debuggability, we keep the most recent orphan.
+
+import re
+import shutil
+import sys
+from pathlib import Path
+
+JOURNAL_ROOT = Path("/var/log/journal")
+MACHINE_ID_FILE = Path("/etc/machine-id")
+MACHINE_ID_DIR = re.compile(r"^[0-9a-f]{32}$")
+
+
+def main() -> int:
+    current_machine_id = MACHINE_ID_FILE.read_text().strip()
+    if not current_machine_id:
+        print("Refusing to prune journals: /etc/machine-id is empty.")
+        return 1
+
+    all_entries = sorted(
+        (e for e in JOURNAL_ROOT.iterdir() if e.is_dir()),
+        key=lambda e: e.stat().st_mtime,  # Order oldest to newest.
+    )
+    orphans = [
+        e
+        for e in all_entries
+        if MACHINE_ID_DIR.fullmatch(e.name) and e.name != current_machine_id
+    ]
+    to_delete = orphans[:-1]  # Delete all orphans except the newest.
+
+    for path in to_delete:
+        print(
+            f"Deleting stray journal directory {path.name} "
+            f"because machine-id is {current_machine_id}."
+        )
+        shutil.rmtree(path)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
