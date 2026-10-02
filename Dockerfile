@@ -2,10 +2,11 @@
 
 # bookworm is the latest tested debian version for scarthgap per
 # https://docs.yoctoproject.org/5.0.12/ref-manual/system-requirements.html
-FROM python:3.12-bookworm
+# Pin by digest so rebuilds do not silently pick a moved tag.
+FROM python:3.12-bookworm@sha256:dbbe4ceb97851e2e5fa83798b239811f871cb743b259ba3563737349f6bcfaa0
 # Keep in sync with required-version in the opentrons monorepo (uv.toml and each
 # project's [tool.uv]); do_configure runs `uv export --frozen` inside that tree.
-COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12.1@sha256:cf4eedcaa81655197f625739489effcbe71b61ceb1506f332c3facae5deceded /uv /uvx /bin/
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
 
@@ -27,9 +28,9 @@ RUN rm /bin/sh && ln -s bash /bin/sh
 
 # Set the locale to en_US.UTF-8, because the Yocto build fails without any locale set.
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 
 
@@ -37,30 +38,35 @@ ENV LC_ALL en_US.UTF-8
 # The container can only write files to host directories, if it uses the same user ID and
 # group ID owning the host directories. The host_uid and group_uid are passed to the docker build
 # command with the --build-arg option. By default, they are both 1001. The docker image creates
-# a group with host_gid and a user with host_uid and adds the user to the group. The symbolic
-# name of the group and user is ot3.
+# a group with host_gid and a user with host_uid and adds the user to the group.
 ARG host_uid=1001
 ARG host_gid=1001
 ARG username=opentrons-ci
 
-ENV USER_NAME ${username}
-ENV PROJECT ot3
-RUN groupadd -g $host_gid $USER_NAME || true \
-    && useradd -g $host_gid -m -s /bin/bash -u $host_uid $USER_NAME || true \
-    && usermod -aG sudo $USER_NAME \
+ENV USER_NAME=${username}
+ENV PROJECT=ot3
+RUN if [ "$host_uid" -eq 0 ] || [ "$host_gid" -eq 0 ]; then \
+      echo "Refusing to build with root host_uid/host_gid; pass a non-root uid/gid" >&2; \
+      exit 1; \
+    fi \
+    && groupadd -g "$host_gid" "$USER_NAME" || true \
+    && useradd -g "$host_gid" -m -s /bin/bash -u "$host_uid" "$USER_NAME" || true \
+    && usermod -aG sudo "$USER_NAME" \
     && echo "$USER_NAME  ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # This volume should have the containing directory mounted into it. This is done because the
 # containing directory may change frequently and should not be cached.
-RUN mkdir -p /volumes/oe-core && mkdir -p /volumes/cache
+RUN mkdir -p /volumes/oe-core /volumes/cache \
+    && chown -R "${host_uid}:${host_gid}" /volumes/oe-core /volumes/cache
 
 
-# Perform the Yocto build as user ot3 (not as root).
+# Perform the Yocto build as a non-root user (not as root).
 # NOTE: The USER command does not set the environment variable HOME.
-
-# By default, docker runs as root. However, Yocto builds should not be run as root, but as a 
-# normal user. Hence, we switch to the newly created user ot3.
-USER $USER_NAME
+#
+# By default, docker runs as root. However, Yocto builds should not be run as root, but as a
+# normal user. Use the numeric uid:gid so the final image identity is unambiguously non-root
+# even when the build-arg username collides with an existing account.
+USER ${host_uid}:${host_gid}
 
 RUN git config --global user.name "Opentrons" && \
     git config --global user.email engineering@opentrons.com && \
@@ -70,10 +76,10 @@ RUN git config --global user.name "Opentrons" && \
 
 # Create the directory structure for the Yocto build in the container. The lowest two directory
 # levels must be the same as on the host.
-ENV BUILD_INPUT_DIR /volumes/oe-core
-ENV BUILD_OUTPUT_DIR ${BUILD_INPUT_DIR}/build
-COPY start.sh /start.sh
-RUN sudo chown $USER_NAME:$USER_NAME /start.sh && chmod ug+rwx /start.sh
+ENV BUILD_INPUT_DIR=/volumes/oe-core
+ENV BUILD_OUTPUT_DIR=${BUILD_INPUT_DIR}/build
+COPY --chown=${host_uid}:${host_gid} start.sh /start.sh
+RUN chmod ug+rwx /start.sh
 
 WORKDIR $BUILD_INPUT_DIR
 
