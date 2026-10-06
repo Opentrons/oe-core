@@ -1,0 +1,9 @@
+[Unit]
+Description=Prune orphaned systemd journal directories
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ot-prune-orphaned-journals
+
+[Install]
+WantedBy=multi-user.target

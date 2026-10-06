@@ -12,19 +12,23 @@ SRC_URI += "file://system-connections-location.conf \
             file://mlan0-desync-check.sh \
             file://mlan0-desync-check.service \
             file://mlan0-desync-check.timer \
+            file://disable-wifi-powersave.conf \
 "
 
 FILES:${PN} += "/etc/NetworkManager/conf.d/system-connections-location.conf \
                 /etc/NetworkManager/conf.d/disable-uap0.conf \
                 ${systemd_system_unitdir}/opentrons-init-systemconnections.service \
+                ${systemd_system_unitdir}/NetworkManager.service.wants/opentrons-init-systemconnections.service \
                 ${systemd_system_unitdir}/mlan0-desync-check.service \
                 ${systemd_system_unitdir}/mlan0-desync-check.timer \
+                ${systemd_system_unitdir}/timers.target.wants/mlan0-desync-check.timer \
                 ${sbindir}/mlan0-desync-check.sh \
                 /usr/share/default-connections/wired-linklocal.nmconnection \
                 /usr/share/default-connections/wired.nmconnection \
                 /usr/share/default-connections/wired-end0-linklocal.nmconnection \
                 /usr/share/default-connections/wired-end0.nmconnection \
                 /etc/NetworkManager/dispatcher.d/bounce-mlan0.sh \
+                /etc/NetworkManager/conf.d/disable-wifi-powersave.conf \
 "
 
 do_install:append() {
@@ -32,6 +36,7 @@ do_install:append() {
 	install -d ${D}/etc/NetworkManager/conf.d
 	install -m 644 ${WORKDIR}/system-connections-location.conf ${D}/etc/NetworkManager/conf.d/
 	install -m 644 ${WORKDIR}/disable-uap0.conf ${D}/etc/NetworkManager/conf.d/
+    install -m 644 ${WORKDIR}/disable-wifi-powersave.conf ${D}/etc/NetworkManager/conf.d/
 	install -d ${D}/usr/share/default-connections
 	install -m 600 ${WORKDIR}/wired-linklocal.nmconnection ${D}/usr/share/default-connections/wired-linklocal.nmconnection
 	install -m 600 ${WORKDIR}/wired.nmconnection ${D}/usr/share/default-connections/wired.nmconnection
@@ -47,6 +52,8 @@ do_install:append() {
 	install -m 0755 ${WORKDIR}/mlan0-desync-check.sh ${D}${sbindir}/mlan0-desync-check.sh
 	install -m 0644 ${WORKDIR}/mlan0-desync-check.service ${D}${systemd_system_unitdir}/mlan0-desync-check.service
 	install -m 0644 ${WORKDIR}/mlan0-desync-check.timer ${D}${systemd_system_unitdir}/mlan0-desync-check.timer
+	install -d ${D}${systemd_system_unitdir}/timers.target.wants
+	ln -s ../mlan0-desync-check.timer ${D}${systemd_system_unitdir}/timers.target.wants/mlan0-desync-check.timer
 }
 
 SYSTEMD_AUTO_ENABLE = "enable"

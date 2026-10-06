@@ -10,4 +10,6 @@ SRC_URI += " \
         file://usb.cfg \
         file://input.cfg \
         file://cp210x.cfg \
+        file://ch341.cfg \
+        file://lcdif.cfg \
         "
