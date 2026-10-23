@@ -4,7 +4,7 @@ that it is similar in speed to deflate but offers more dense compression."
 HOMEPAGE = "https://github.com/google/brotli"
 BUGTRACKER = "https://github.com/google/brotli/issues"
 LICENSE = "MIT"
-LIC_FILES_CHKSUM = "file://${S}/LICENSE;md5=941ee9cd1609382f946352712a319b4b"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=941ee9cd1609382f946352712a319b4b"
 
 SRC_URI = "git://github.com/google/brotli.git;branch=master;protocol=https"
 SRCREV = "db0631dfea829194206d269bc7b25d0908cdb97d"
