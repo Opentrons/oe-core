@@ -1,0 +1,81 @@
+From 03cca65be3f502638e7a5fc564cde1a50ab2bcff Mon Sep 17 00:00:00 2001
+From: Lazizbek Ergashev <lazerg2@gmail.com>
+Date: Fri, 23 Oct 2026 18:23:50 +0500
+Subject: [PATCH] src: fix build with `--shared-brotli`
+
+Assisted-by: Claude Code
+Signed-off-by: lazerg <lazerg2@gmail.com>
+PR-URL: https://github.com/nodejs/node/pull/66895
+Fixes: https://github.com/nodejs/node/issues/66894
+Reviewed-By: Antoine du Hamel <duhamelantoine1995@gmail.com>
+Reviewed-By: Filip Skokan <panva.ip@gmail.com>
+Reviewed-By: Richard Lau <richard.lau@ibm.com>
+
+Upstream-Status: Backport [https://github.com/nodejs/node/commit/03cca65be3f502638e7a5fc564cde1a50ab2bcff]
+---
+ src/node_zlib.cc                          | 36 ++++--------------------
+ test/parallel/test-zlib-invalid-input.js |  2 +-
+ 2 files changed, 6 insertions(+), 32 deletions(-)
+
+diff --git a/src/node_zlib.cc b/src/node_zlib.cc
+index d25662bdb983..a34905c3e3a8 100644
+--- a/src/node_zlib.cc
++++ b/src/node_zlib.cc
+@@ -2128,38 +2128,10 @@ void DefineZlibConstants(Local<Object> target) {
+   NODE_DEFINE_CONSTANT(target,
+       BROTLI_DECODER_PARAM_DISABLE_RING_BUFFER_REALLOCATION);
+   NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_PARAM_LARGE_WINDOW);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_NO_ERROR);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_SUCCESS);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_NEEDS_MORE_INPUT);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_NEEDS_MORE_OUTPUT);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_EXUBERANT_NIBBLE);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_RESERVED);
+-  NODE_DEFINE_CONSTANT(target,
+-      BROTLI_DECODER_ERROR_FORMAT_EXUBERANT_META_NIBBLE);
+-  NODE_DEFINE_CONSTANT(target,
+-      BROTLI_DECODER_ERROR_FORMAT_SIMPLE_HUFFMAN_ALPHABET);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_SIMPLE_HUFFMAN_SAME);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_CL_SPACE);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_HUFFMAN_SPACE);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_CONTEXT_MAP_REPEAT);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_BLOCK_LENGTH_1);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_BLOCK_LENGTH_2);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_TRANSFORM);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_DICTIONARY);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_WINDOW_BITS);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_PADDING_1);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_PADDING_2);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_DISTANCE);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_FORMAT_BLOCK_SWITCH);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_DICTIONARY_NOT_SET);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_INVALID_ARGUMENTS);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_ALLOC_CONTEXT_MODES);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_ALLOC_TREE_GROUPS);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_ALLOC_CONTEXT_MAP);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_ALLOC_RING_BUFFER_1);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_ALLOC_RING_BUFFER_2);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_ALLOC_BLOCK_TYPE_TREES);
+-  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER_ERROR_UNREACHABLE);
++#define V(PREFIX, NAME, CODE)                                                  \
++  NODE_DEFINE_CONSTANT(target, BROTLI_DECODER##PREFIX##NAME);
++  BROTLI_DECODER_ERROR_CODES_LIST(V, )
++#undef V
+
+   // Zstd constants
+   NODE_DEFINE_CONSTANT(target, ZSTD_e_continue);
+diff --git a/test/parallel/test-zlib-invalid-input.js b/test/parallel/test-zlib-invalid-input.js
+index 40958b074445..c27668c0c9cd 100644
+--- a/test/parallel/test-zlib-invalid-input.js
++++ b/test/parallel/test-zlib-invalid-input.js
+@@ -89,7 +89,7 @@ Object.defineProperty(spoofedLength, 'byteLength', { get: () => 5000 });
+   deflate.close();
+ }
+
+-{
++if (zlib.constants.BROTLI_DECODER_ERROR_FORMAT_BLOCK_SWITCH) {
+   // A block switch is invalid when the stream declares only one block type.
+   const invalidBlockSwitch = Buffer.from(
+     '200010414141fcffff07002228f00b60f7f41f000000',
+-- 
+2.43.0
