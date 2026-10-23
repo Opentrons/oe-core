@@ -30,7 +30,6 @@ SRC_URI = "https://nodejs.org/dist/v${PV}/node-v${PV}.tar.xz \
            file://0007-positional-args.patch \
            file://0008-custom-env.patch \
            file://0010-v8-fix-Wtemplate-body-error-with-GCC-15-on-ia32.patch \
-           file://0011-node_zlib-fix-build-with-shared-brotli.patch \
            file://run-ptest \
            "
 SRC_URI:append:class-target = " \
