@@ -6,7 +6,7 @@ BUGTRACKER = "https://github.com/google/brotli/issues"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=941ee9cd1609382f946352712a319b4b"
 
-SRC_URI = "git://github.com/google/brotli.git;branch=master;protocol=https"
+SRC_URI = "git://github.com/google/brotli.git;nobranch=1;protocol=https"
 SRCREV = "db0631dfea829194206d269bc7b25d0908cdb97d"
 
 S = "${WORKDIR}/git"
