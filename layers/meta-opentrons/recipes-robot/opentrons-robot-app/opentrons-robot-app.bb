@@ -14,7 +14,7 @@ do_configure(){
     # Move the yarn package configs to a mapped location when running in container
     if [ ! -z "${PNPM_CACHE_DIR}" ]; then
         bbnote "Seting the yarn cache location to - ${PNPM_CACHE_DIR}"
-        pnpm config set cache-folder "${PNPM_CACHE_DIR}"
+        pnpm config set cache-dir "${PNPM_CACHE_DIR}"
         export electron_config_cache="${ELECTRON_CACHE_DIR}"
     fi
 
