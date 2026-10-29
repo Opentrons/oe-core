@@ -632,6 +632,7 @@ jobs:
           echo "release_notes_file_url=$root_url/release-notes.md" >> $GITHUB_OUTPUT
           echo "system_url=$root_url/ot3-system.zip" >> $GITHUB_OUTPUT
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
+          echo "sbom_url=$root_url/sbom.tar.gz" >> $GITHUB_OUTPUT
           popd
       - name: Upload system zip to monorepo release
         if: needs.decide-refs.outputs.build-type == 'release'
