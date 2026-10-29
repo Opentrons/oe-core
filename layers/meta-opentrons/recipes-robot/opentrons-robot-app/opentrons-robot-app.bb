@@ -8,13 +8,13 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 inherit features_check
 
 do_configure(){
-    npm install -g pnpm@10
+    npm install -g pnpm@11
     cd ${S}
 
     # Move the yarn package configs to a mapped location when running in container
     if [ ! -z "${PNPM_CACHE_DIR}" ]; then
         bbnote "Seting the yarn cache location to - ${PNPM_CACHE_DIR}"
-        pnpm config set cache-folder "${PNPM_CACHE_DIR}"
+        pnpm config set cache-dir "${PNPM_CACHE_DIR}"
         export electron_config_cache="${ELECTRON_CACHE_DIR}"
     fi
 
