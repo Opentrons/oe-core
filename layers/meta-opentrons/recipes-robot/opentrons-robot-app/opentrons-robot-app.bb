@@ -78,6 +78,16 @@ fakeroot do_install(){
 
     find -type d -exec install -o root -g root -Dm 755 "{}" "${DESTDIR}/{}" \;
     find -type f -exec install -o root -g root -Dm 755 "{}" "${DESTDIR}/{}" \;
+
+    # A side effect of using precompiled electron is that for some reason it
+    # precompiles and bakes in some of its own versions of things that are
+    # really system utilities and (in the case of wayland) actually can break
+    # communication with the system because it uses a weird RPC thing and
+    # really needs to get the system version. So we remove the local versions.
+    # however, chrome for some reason opens these libraries via direct calls
+    # or has a strict rpath or something so we need to symlink them explicitly
+
+    rm ${DESTDIR}/libvulkan.so.1
     ln -s /usr/lib/libvulkan.so.1 ${DESTDIR}/libvulkan.so.1
 }
 
