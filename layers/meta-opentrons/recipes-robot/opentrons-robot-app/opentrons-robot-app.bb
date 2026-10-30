@@ -75,7 +75,7 @@ do_compile(){
 
 do_save_sbom(){
     install -d ${CYCLONEDX_EXPORT_DIR}
-    install ${S}/dist/odd-sbom.json ${CYCLONEDX_EXPORT_DIR}/odd-sbom.json
+    install ${S}/app-shell/dist/odd-sbom.json ${CYCLONEDX_EXPORT_DIR}/odd-sbom.json
 }
 
 addtask do_save_sbom after do_compile before do_install
