@@ -67,13 +67,16 @@ do_compile(){
 }
 
 do_save_sbom(){
+    cd ${S}
     pnpm sbom \
          --sbom-format cyclonedx \
          --prod --lockfile-only \
          --sbom-type application \
          --filter="@opentrons/app..." \
          --filter="@opentrons/app-shell-odd..." \
-         ${S}/${PN}-sbom.cln.json
+         --out="${S}/${PN}-sbom.cln.json" \
+
+
     install -d ${CYCLONEDX_EXPORT_DIR}
     install ${S}/${PN}-sbom.cln.json ${CYCLONEDX_EXPORT_DIR}/${PN}-sbom.cln.json
 }
