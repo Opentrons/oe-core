@@ -1,4 +1,5 @@
 inherit externalsrc
+inherit cyclonedx-export
 
 EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "opentrons"))}"
 
@@ -28,6 +29,7 @@ do_configure(){
     # we removed setup-js from shared-data recently so let's allow it to fail so we
     # can handle both the is-there and the is-not-there case
     OPENTRONS_PROJECT=${OPENTRONS_PROJECT} make -C shared-data setup-js || true
+ 
 }
 
 do_compile(){
@@ -63,6 +65,23 @@ do_compile(){
     NO_PYTHON=true \
     pnpm exec electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
 }
+
+do_save_sbom(){
+    cd ${S}
+    pnpm sbom \
+         --sbom-format cyclonedx \
+         --prod --lockfile-only \
+         --sbom-type application \
+         --filter="@opentrons/app..." \
+         --filter="@opentrons/app-shell-odd..." \
+         --out="${S}/${PN}-sbom.cln.json" \
+
+
+    install -d ${CYCLONEDX_EXPORT_DIR}
+    install ${S}/${PN}-sbom.cln.json ${CYCLONEDX_EXPORT_DIR}/${PN}-sbom.cln.json
+}
+
+addtask do_save_sbom after do_compile before do_install
 
 fakeroot do_install(){
     DISTDIR=${S}/app-shell-odd/dist/linux-arm64-unpacked

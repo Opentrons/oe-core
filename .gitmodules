@@ -37,3 +37,6 @@
 [submodule "layers/meta-jupyter"]
 	path = layers/meta-jupyter
 	url = https://github.com/Xilinx/meta-jupyter.git
+[submodule "layers/meta-cyclonedx"]
+	path = layers/meta-cyclonedx
+	url = https://github.com/iris-GmbH/meta-cyclonedx

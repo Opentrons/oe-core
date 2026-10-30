@@ -3,7 +3,7 @@
 
 CARGO_DISABLE_BITBAKE_VENDORING := "1"
 
-inherit setuptools3-base cargo python_pyo3
+inherit setuptools3-base cargo python_pyo3 cyclonedx-export
 
 DEPENDS += "python3 python3-native python3-pip-native python3-micropipenv-native python3-maturin-native "
 RDEPENDS:${PN} += " python3 python3-modules"
@@ -171,6 +171,16 @@ do_configure:prepend () {
           ${HASHES} \
           --frozen \
           -o ${B}/requirements-unfiltered.txt
+      bbplain "Running SBOM generation for group ${OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP} in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
+      ${HOSTTOOLS_DIR}/uv export \
+          --format cyclonedx1.5 \
+          --group ${OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP} \
+          --no-dev \
+          --all-extras \
+          --no-annotate \
+          ${HASHES} \
+          --frozen \
+          -o ${S}/${PN}-sbom.cln.json
    else
       bbplain "Running micropipenv requirements in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
       ${PYTHON} -m micropipenv requirements \
@@ -280,6 +290,8 @@ do_install () {
         -exec install -d "${D}${OPENTRONS_APP_BUNDLE_DIR}/{}" \;
    find . -type f -not -wholename ./bin/**/* -not -wholename ./Misc/**/* \
         -exec install "{}" "${D}${OPENTRONS_APP_BUNDLE_DIR}/{}" \;
+   install -d ${CYCLONEDX_EXPORT_DIR}
+   install ${S}/${PN}-sbom.cln.json ${CYCLONEDX_EXPORT_DIR}/${PN}-sbom.cln.json
 }
 
 
