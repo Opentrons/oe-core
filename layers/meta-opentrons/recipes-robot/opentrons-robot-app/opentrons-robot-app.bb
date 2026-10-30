@@ -64,6 +64,9 @@ do_compile(){
     NODE_ENV=production \
     NO_PYTHON=true \
     pnpm exec electron-builder --config electron-builder.config.js --linux --arm64 --dir --publish never
+}
+
+do_save_sbom(){
     pnpm sbom \
          --sbom-format cyclonedx \
          --prod --lockfile-only \
@@ -71,9 +74,6 @@ do_compile(){
          --filter="@opentrons/app..." \
          --filter="@opentrons/app-shell-odd..." \
          ${S}/${PN}-sbom.cln.json
-}
-
-do_save_sbom(){
     install -d ${CYCLONEDX_EXPORT_DIR}
     install ${S}/${PN}-sbom.cln.json ${CYCLONEDX_EXPORT_DIR}/${PN}-sbom.cln.json
 }
