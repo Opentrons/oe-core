@@ -70,12 +70,12 @@ do_compile(){
          --sbom-type application \
          --filter="@opentrons/app..." \
          --filter="@opentrons/app-shell-odd..." \
-         ${S}/dist/odd-sbom.json
+         ${S}/${PN}-sbom.cln.json
 }
 
 do_save_sbom(){
     install -d ${CYCLONEDX_EXPORT_DIR}
-    install ${S}/app-shell-odd/dist/odd-sbom.json ${CYCLONEDX_EXPORT_DIR}/odd-sbom.json
+    install ${S}/${PN}-sbom.cln.json ${CYCLONEDX_EXPORT_DIR}/${PN}-sbom.cln.json
 }
 
 addtask do_save_sbom after do_compile before do_install
