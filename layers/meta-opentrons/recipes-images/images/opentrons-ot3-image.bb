@@ -152,7 +152,7 @@ def read_json(path):
 
 
 do_create_assembly_sbom() {
-   bbnote "Creating assembly SBOM at ${CYCLONEDX_EXPORT_DIR}/opentrons-flex-sbom.cln.json from ${CYCLONEDX_APPLICATION_SBOM_COMPONENTS} ${CYCLONEDX_EXPORT_SBOM}"
+   bbnote "Creating assembly SBOM at ${CYCLONEDX_EXPORT_DIR}/opentrons-flex-sbom.cln.json"
    # note: requires sbomasm https://github.com/interlynk-io/sbomasm available externally
    mv ${DEPLOY_DIR}/cyclonedx-export/bom.json ${DEPLOY_DIR}/cyclonedx-export/system-sbom.cln.json
    install -d ${DEPLOY_DIR}/cyclonedx-assembled
