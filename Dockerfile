@@ -6,6 +6,7 @@ FROM python:3.12-bookworm
 # Keep in sync with required-version in the opentrons monorepo (uv.toml and each
 # project's [tool.uv]); do_configure runs `uv export --frozen` inside that tree.
 COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /uvx /bin/
+COPY --from=ghcr.io/interlynk-io/sbomasm:v2.1.2 /app/* /bin/
 # Set timezone:
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && echo $CONTAINER_TIMEZONE > /etc/timezone
 
