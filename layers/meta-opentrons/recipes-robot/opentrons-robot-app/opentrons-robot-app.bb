@@ -1,5 +1,4 @@
 inherit externalsrc
-inherit cyclonedx-export
 
 EXTERNALSRC = "${@os.path.abspath(os.path.join("${TOPDIR}", os.pardir, os.pardir, "opentrons"))}"
 
@@ -77,8 +76,8 @@ do_save_sbom(){
          --out="${S}/${PN}-sbom.cln.json" \
 
 
-    install -d ${CYCLONEDX_EXPORT_DIR}
-    install ${S}/${PN}-sbom.cln.json ${CYCLONEDX_EXPORT_DIR}/${PN}-sbom.cln.json
+    install -d ${DEPLOY_DIR}/cyclonedx-export
+    install ${S}/${PN}-sbom.cln.json ${DEPLOY_DIR}/cyclonedx-export/${PN}-sbom.cln.json
 }
 
 addtask do_save_sbom after do_compile before do_install
