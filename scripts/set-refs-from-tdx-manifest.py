@@ -63,7 +63,8 @@ def _spec_from_lines(git_lines: str) -> Iterator[SubmoduleSpec]:
             continue
         flags = git_line[:2]
         content = git_line[2:]
-        sha, path, describe = content.split(" ")
+        sha, *pathdesc = content.split(" ")
+        path = pathdesc[0]
         spec = SubmoduleSpec(tracking=None, sha=sha, name=path, path=path, url="")
         LOG.debug(f"submodule: spec {spec} from line {git_line}")
         yield spec
