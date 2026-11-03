@@ -157,9 +157,12 @@ do_create_assembly_sbom() {
    mv ${DEPLOY_DIR}/cyclonedx-export/bom.json ${DEPLOY_DIR}/cyclonedx-export/system-sbom.cln.json
    install -d ${DEPLOY_DIR}/cyclonedx-assembled
    install ${DEPLOY_DIR}/cyclonedx-export/vex.json ${DEPLOY_DIR}/cyclonedx-assembled/vex.json
+   # nightmare alert: this uses bitbake parse-time variable expansion to provide ${DEPLOY_DIR_IMAGE}, so the
+   # python interpreter should see -c "import json...open('/some/path/VERSION.json')..." directly
+   VERSION="$(python3 -c "import json; print(json.load(open('${DEPLOY_DIR_IMAGE}/VERSION.json'))['robot_server_version'])")"
    sbomasm assemble \
       -n "OpentronsFlex" \
-      -v "${@read_json('%s/VERSION.json' % d.getVar('DEPLOY_DIR_IMAGE'))['robot_server_version']}" \
+      -v "${VERSION}" \
       -t "application" \
       -o ${DEPLOY_DIR}/cyclonedx-assembled/opentrons-flex-sbom.cln.json \
       ${DEPLOY_DIR}/cyclonedx-export/*.cln.json
