@@ -571,6 +571,7 @@ jobs:
       - name: Gather results
         id: artifacts
         run: |
+          # first, determine some directories
           _oe_build=$(pwd)/oe-core/build
           echo "found build dir at ${_oe_build}"
           # Docker/BitBake may leave root-owned files in the bind-mounted build tree.
@@ -581,6 +582,12 @@ jobs:
           _artifact_unversioned_subdir=opentrons
           _artifact_s3=${_artifact_root}/${_artifact_unversioned_subdir}
           _artifact_versioned=${_artifact_root}/opentrons-versioned
+          echo "artifact_root=${_artifact_root}" >> $GITHUB_OUTPUT
+          echo "artifact_unversioned_subdir=${_artifact_unversioned_subdir}" >> $GITHUB_OUTPUT
+          echo "artifact_versioned=${_artifact_versioned}" >> $GITHUB_OUTPUT
+
+          # second, assemble the various artifacts with their unversioned names
+          # (i.e., "ot3_system.zip")
           _oe_images=${_oe_build}/deploy/images
           _oe_tmp=${_oe_build}/tmp
           mkdir -p ${_artifact_s3}
@@ -589,7 +596,10 @@ jobs:
           find ${_oe_images} -name "VERSION.json" -exec cp {} ${_artifact_s3} \;
           find ${_oe_images} -name "release-notes.md" -exec cp {} ${_artifact_s3} \;
           tar czf ${_artifact_s3}/buildstats.tar.gz ${_oe_tmp}/buildstats
+          tar -C ${_oe_build}/deploy -czf ${_artifact_s3}/sbom.tar.gz ./cyclonedx-assembled
 
+          # finally, make copies of the artifacts to names that include the version
+          # (i.e. "ot3_system_1.2.3.zip")
           mkdir -p ${_artifact_versioned}
           _fulltag="${{needs.decide-refs.outputs.monorepo}}"
           echo "monorepo_shorttag=${_fulltag:10}" >> $GITHUB_OUTPUT
@@ -597,16 +607,16 @@ jobs:
           _system_zipname="ot3-system-${_vers_suffix}.zip"
           _version_jsonname="VERSION-${_vers_suffix}.json"
           _fullimage_tarname="ot3-fullimage-${_vers_suffix}.tar"
-          cp ${_artifact_s3}/ot3-system.zip "${_artifact_versioned}/${_system_zipname}"
-          cp ${_artifact_s3}/VERSION.json "${_artifact_versioned}/${_version_jsonname}"
-          cp ${_artifact_s3}/ot3-fullimage.tar "${_artifact_versioned}/${_fullimage_tarname}"
+          _sbom_tarname="opentrons-flex-sbom-${_vers_suffix}.tar.gz"
+          cp "${_artifact_s3}/ot3-system.zip" "${_artifact_versioned}/${_system_zipname}"
+          cp "${_artifact_s3}/VERSION.json" "${_artifact_versioned}/${_version_jsonname}"
+          cp "${_artifact_s3}/ot3-fullimage.tar" "${_artifact_versioned}/${_fullimage_tarname}"
+          cp "${_artifact_s3}/sbom.tar.gz" "${_artifact_versioned}/${_sbom_tarname}"
           echo "versioned_system_zip=${_artifact_versioned}/${_system_zipname}" >> $GITHUB_OUTPUT
           echo "versioned_version_json=${_artifact_versioned}/${_version_jsonname}" >> $GITHUB_OUTPUT
           echo "versioned_fullimage_tar=${_artifact_versioned}/${_fullimage_tarname}" >> $GITHUB_OUTPUT
+          echo "versioned_sbom_tar=${_artifact_versioned}/${_sbom_tarname}" >> $GITHUB_OUTPUT
 
-          echo "artifact_root=${_artifact_root}" >> $GITHUB_OUTPUT
-          echo "artifact_unversioned_subdir=${_artifact_unversioned_subdir}" >> $GITHUB_OUTPUT
-          echo "artifact_versioned=${_artifact_versioned}" >> $GITHUB_OUTPUT
       - name: Handle Release
         if: ${{ needs.decide-refs.outputs.build-type == 'release' }}
         shell: bash
@@ -631,7 +641,18 @@ jobs:
           echo "release_notes_file_url=$root_url/release-notes.md" >> $GITHUB_OUTPUT
           echo "system_url=$root_url/ot3-system.zip" >> $GITHUB_OUTPUT
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
+          echo "sbom_url=$root_url/sbom.tar.gz" >> $GITHUB_OUTPUT
           popd
+      - name: Set build summary
+        run: |
+          echo "## Build Artifacts" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Version file: <${{ steps.upload-results.outputs.version_file_url }}>" >> "$GITHUB_STEP_SUMMARY"
+          echo "Release notes: <${{ steps.upload-results.outputs.release_notes_file_url }}>" >> "$GITHUB_STEP_SUMMARY"
+          echo "System zip: <${{ steps.upload-results.outputs.system_url }}>" >> "$GITHUB_STEP_SUMMARY"
+          echo "Fullimage: <${{ steps.upload-results.outputs.fullimage_url }}>" >> "$GITHUB_STEP_SUMMARY"
+          echo "SBOM: <${{ steps.upload-results.outputs.sbom_url }}>" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload system zip to monorepo release
         if: needs.decide-refs.outputs.build-type == 'release'
         uses: ncipollo/release-action@a2e71bdd4e7dab70ca26a852f29600c98b33153e # v1.12.0
@@ -672,6 +693,20 @@ jobs:
           repo: opentrons
           tag: ${{ steps.artifacts.outputs.monorepo_shorttag }}
           artifacts: ${{ steps.artifacts.outputs.versioned_version_json }}
+          artifactContentType: application/json
+          token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
+      - name: Upload sbom to monorepo release
+        if: needs.decide-refs.outputs.build-type == 'release'
+        uses: ncipollo/release-action@a2e71bdd4e7dab70ca26a852f29600c98b33153e # v1.12.0
+        with:
+          allowUpdates: true
+          omitBody: true
+          omitName: true
+          omitPrereleaseDuringUpdate: true
+          omitDraftDuringUpdate: true
+          repo: opentrons
+          tag: ${{ steps.artifacts.outputs.monorepo_shorttag }}
+          artifacts: ${{ steps.artifacts.outputs.sbom_tarname }}
           artifactContentType: application/json
           token: ${{secrets.MONOREPO_RELEASE_ARTIFACT_UPLOAD_TOKEN}}
       # Defer cache upload until after S3 artifact and monorepo release uploads so

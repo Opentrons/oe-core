@@ -3,7 +3,8 @@ DESCRIPTION = "Opentrons OT3 Robot Image"
 
 LICENSE = "Apache-2"
 
-inherit core-image image_type_tezi
+inherit core-image image_type_tezi cyclonedx-export
+
 
 DEPENDS += "rsync-native zip-native \
     opentrons-audit-server \
@@ -143,6 +144,30 @@ python do_create_opentrons_manifest() {
     with open(opentrons_json_output, 'w') as fh:
         json.dump(opentrons_manifest, fh, indent=4)
 }
+
+def read_json(path):
+    import json
+    from pathlib import Path
+    return json.loads(Path(path).read_text())
+
+
+do_create_assembly_sbom() {
+   bbnote "Creating assembly SBOM at ${CYCLONEDX_EXPORT_DIR}/opentrons-flex-sbom.cln.json"
+   # note: requires sbomasm https://github.com/interlynk-io/sbomasm available externally
+   mv ${DEPLOY_DIR}/cyclonedx-export/bom.json ${DEPLOY_DIR}/cyclonedx-export/system-sbom.cln.json
+   install -d ${DEPLOY_DIR}/cyclonedx-assembled
+   install ${DEPLOY_DIR}/cyclonedx-export/vex.json ${DEPLOY_DIR}/cyclonedx-assembled/vex.json
+   # nightmare alert: this uses bitbake parse-time variable expansion to provide ${DEPLOY_DIR_IMAGE}, so the
+   # python interpreter should see -c "import json...open('/some/path/VERSION.json')..." directly
+   VERSION="$(python3 -c "import json; print(json.load(open('${DEPLOY_DIR_IMAGE}/VERSION.json'))['robot_server_version'])")"
+   sbomasm assemble \
+      -n "OpentronsFlex" \
+      -v "${VERSION}" \
+      -t "application" \
+      -o ${DEPLOY_DIR}/cyclonedx-assembled/opentrons-flex-sbom.cln.json \
+      ${DEPLOY_DIR}/cyclonedx-export/*.cln.json
+}
+
 ROOTFS_PREPROCESS_COMMAND += "do_create_opentrons_manifest; "
 
 # changes we might want to make to the rootfs
@@ -337,3 +362,4 @@ addtask do_create_filesystem after do_image_complete before do_populate_lic_depl
 addtask do_create_tezi_manifest after do_create_filesystem before do_populate_lic_deploy
 addtask do_create_tezi_ot3 after do_create_tezi_manifest before do_populate_lic_deploy
 addtask do_create_opentrons_ot3 after do_create_tezi_ot3 before do_populate_lic_deploy
+addtask do_create_assembly_sbom after do_create_filesystem before do_create_tezi_ot3

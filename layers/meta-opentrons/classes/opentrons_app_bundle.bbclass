@@ -151,6 +151,8 @@ do_rewrite_requirements[vardeps] += " OPENTRONS_APP_BUNDLE_USE_GLOBAL OPENTRONS_
 
 addtask do_rewrite_requirements after do_configure before do_compile
 
+CYCLONEDX_APPLICATION_SBOM_COMPONENT_FILENAME = "${PN}-sbom.cln.json"
+
 do_configure:prepend () {
    mkdir -p ${OPENTRONS_APP_BUNDLE_PIP_BUILDENV}
    cd ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}
@@ -171,6 +173,16 @@ do_configure:prepend () {
           ${HASHES} \
           --frozen \
           -o ${B}/requirements-unfiltered.txt
+      bbplain "Running SBOM generation for group ${OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP} in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
+      ${HOSTTOOLS_DIR}/uv export \
+          --format cyclonedx1.5 \
+          --group ${OPENTRONS_APP_BUNDLE_DEPENDENCY_GROUP} \
+          --no-dev \
+          --all-extras \
+          --no-annotate \
+          ${HASHES} \
+          --frozen \
+          -o ${S}/${CYCLONEDX_APPLICATION_SBOM_COMPONENT_FILENAME}
    else
       bbplain "Running micropipenv requirements in ${OPENTRONS_APP_BUNDLE_PROJECT_ROOT}"
       ${PYTHON} -m micropipenv requirements \
@@ -280,6 +292,8 @@ do_install () {
         -exec install -d "${D}${OPENTRONS_APP_BUNDLE_DIR}/{}" \;
    find . -type f -not -wholename ./bin/**/* -not -wholename ./Misc/**/* \
         -exec install "{}" "${D}${OPENTRONS_APP_BUNDLE_DIR}/{}" \;
+   install -d ${DEPLOY_DIR}/cyclonedx-export
+   install ${S}/${CYCLONEDX_APPLICATION_SBOM_COMPONENT_FILENAME} ${DEPLOY_DIR}/cyclonedx-export/${CYCLONEDX_APPLICATION_SBOM_COMPONENT_FILENAME}
 }
 
 
