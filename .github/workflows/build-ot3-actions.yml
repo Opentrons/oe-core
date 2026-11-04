@@ -57,8 +57,8 @@ jobs:
         env:
           OELINT_CONFIG: ${{ github.workspace }}/.oelint.cfg
         run: |
-          echo "## BitBake Lint Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## BitBake Lint Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
 
           # Verify config file exists
           if [ -f "$OELINT_CONFIG" ]; then
@@ -68,23 +68,24 @@ jobs:
           fi
 
           # Avoid linting 3rd party layers
-          bb_files=$(find layers/meta-opentrons -type f \( -name "*.bb" -o -name "*.bbappend" -o -name "*.bbclass" -o -name "*.inc" \))
-          conf_files=$(find layers/meta-opentrons conf -type f -name "*.conf")
+          mapfile -t bb_files < <(find layers/meta-opentrons -type f \( -name "*.bb" -o -name "*.bbappend" -o -name "*.bbclass" -o -name "*.inc" \))
+          mapfile -t conf_files < <(find layers/meta-opentrons conf -type f -name "*.conf")
 
           set +e
-          lint_output=$(timeout 120 oelint-adv --quiet --relpaths $bb_files $conf_files 2>&1)
+          lint_output=$(timeout 120 oelint-adv --quiet --relpaths "${bb_files[@]}" "${conf_files[@]}" 2>&1)
           lint_exit_code=$?
           set -e
 
           if [ $lint_exit_code -eq 0 ]; then
-            echo "No linting issues found." >> $GITHUB_STEP_SUMMARY
+            echo "No linting issues found." >> "$GITHUB_STEP_SUMMARY"
             echo "No linting issues found."
           else
-            echo "Linting issues found:" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "$lint_output" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            # shellcheck disable=SC2129
+            echo "Linting issues found:" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "$lint_output" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
 
             echo "$lint_output"
             exit 1
@@ -467,9 +468,10 @@ jobs:
           cd ..
       - name: Apply unconditional CI config overrides
         run: |
-          cachedir=${LOCAL_CACHE:-./cache}
+          cachedir="${LOCAL_CACHE:-./cache}"
           mkdir -p "${cachedir}"/{downloads,sstate,git,pnpm,electron,pip,pip-buildenv}
           cd oe-core
+          # shellcheck disable=SC2129
           echo "" >> ./conf/local.conf
           echo 'DL_DIR = "/volumes/cache/downloads"' >> ./conf/local.conf
           echo 'GITDIR = "/volumes/cache/git"' >> ./conf/local.conf
@@ -499,8 +501,10 @@ jobs:
         if: needs.decide-refs.outputs.build-type == 'release'
         run: |
           cd oe-core
+          # shellcheck disable=SC2016 # this is not a shell expansion
           echo 'MIXPANEL_ID = "${{ secrets.MIXPANEL_ID }}"' >> ./conf/local.conf
           # setup signing key
+          # shellcheck disable=SC2016 # this is not a shell expansion
           echo 'SIGNING_KEY = "${TOPDIR}/.signing-key"' >> ./conf/local.conf
           mkdir -p ./build
           cat <<EOF >./build/.signing-key
@@ -531,24 +535,24 @@ jobs:
           fi
       - name: Cleanup before build
         run: |
-          cachedir=${LOCAL_CACHE:-./cache}
+          cachedir="${LOCAL_CACHE:-./cache}"
           echo "Checking disk space before build..."
-          df -h ${cachedir} || df -h .
+          df -h "${cachedir}" || df -h .
           # Clean up pip cache if it exists and is large
           if [ -d "${cachedir}/pip" ]; then
-              pip_size=$(du -sm ${cachedir}/pip 2>/dev/null | cut -f1 || echo "0")
+              pip_size=$(du -sm "${cachedir}/pip" 2>/dev/null | cut -f1 || echo "0")
               if [ "$pip_size" -gt 5000 ]; then
                   echo "Pip cache is ${pip_size}MB, cleaning up..."
-                  find ${cachedir}/pip -type f -mtime +7 -delete 2>/dev/null || true
+                  find "${cachedir}/pip" -type f -mtime +7 -delete 2>/dev/null || true
                   echo "Cleaned up old pip cache files"
               fi
           fi
           # Clean up old downloads if space is low
           if [ -d "${cachedir}/downloads" ]; then
-              available=$(df -m ${cachedir} | tail -1 | awk '{print $4}')
+              available=$(df -m "${cachedir}" | tail -1 | awk '{print $4}')
               if [ "$available" -lt 5000 ]; then
                   echo "Low disk space (${available}MB available), cleaning old downloads..."
-                  find ${cachedir}/downloads -type f -mtime +30 -delete 2>/dev/null || true
+                  find "${cachedir}/downloads" -type f -mtime +30 -delete 2>/dev/null || true
                   echo "Cleaned up old download files"
               fi
           fi
@@ -563,8 +567,17 @@ jobs:
           tmp_mount="/tmp:rw,exec"
           # One container: fetch then full build (start.sh). Avoids a second start.sh chown/tmp pass
           # between separate docker runs, which triggers pseudo inode aborts on do_create_tezi_ot3.
-          echo "docker run --rm -e OE_CI_FETCH_THEN_BUILD=1 --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image"
-          docker run --rm -e OE_CI_FETCH_THEN_BUILD=1 --mount $oe_mount --mount $monorepo_mount --mount $ot3_firmware_mount --mount $cache_mount --tmpfs $tmp_mount ot3-image:latest opentrons-ot3-image
+          echo "docker run --rm -e OE_CI_FETCH_THEN_BUILD=1 --mount \"$oe_mount\" --mount \"$monorepo_mount\" --mount \"$ot3_firmware_mount\" --mount \"$cache_mount\" --tmpfs \"$tmp_mount\" ot3-image:latest opentrons-ot3-image"
+          docker run \
+            --rm \
+            -e OE_CI_FETCH_THEN_BUILD=1 \
+            --mount "$oe_mount" \
+            --mount "$monorepo_mount" \
+            --mount "$ot3_firmware_mount" \
+            --mount "$cache_mount" \
+            --tmpfs "$tmp_mount" \
+            ot3-image:latest opentrons-ot3-image
+
       - name: Prune images
         if: always()
         run: docker image prune -af
@@ -578,31 +591,32 @@ jobs:
           if [ -d "${_oe_build}" ]; then
             chown -R "$(id -u):$(id -g)" "${_oe_build}"
           fi
-          _artifact_root=${_oe_build}/deploy
+          _artifact_root="${_oe_build}/deploy"
           _artifact_unversioned_subdir=opentrons
-          _artifact_s3=${_artifact_root}/${_artifact_unversioned_subdir}
-          _artifact_versioned=${_artifact_root}/opentrons-versioned
-          echo "artifact_root=${_artifact_root}" >> $GITHUB_OUTPUT
-          echo "artifact_unversioned_subdir=${_artifact_unversioned_subdir}" >> $GITHUB_OUTPUT
-          echo "artifact_versioned=${_artifact_versioned}" >> $GITHUB_OUTPUT
+          _artifact_s3="${_artifact_root}/${_artifact_unversioned_subdir}"
+          _artifact_versioned="${_artifact_root}/opentrons-versioned"
+          # shellcheck disable=SC2129
+          echo "artifact_root=${_artifact_root}" >> "$GITHUB_OUTPUT"
+          echo "artifact_unversioned_subdir=${_artifact_unversioned_subdir}" >> "$GITHUB_OUTPUT"
+          echo "artifact_versioned=${_artifact_versioned}" >> "$GITHUB_OUTPUT"
 
           # second, assemble the various artifacts with their unversioned names
           # (i.e., "ot3_system.zip")
-          _oe_images=${_oe_build}/deploy/images
-          _oe_tmp=${_oe_build}/tmp
-          mkdir -p ${_artifact_s3}
-          find ${_oe_images} -name "*opentrons-ot3-image-Tezi*" -exec cp {} ${_artifact_s3}/ot3-fullimage.tar \;
-          find ${_oe_images} -name "ot3-system.zip" -exec cp {} ${_artifact_s3} \;
-          find ${_oe_images} -name "VERSION.json" -exec cp {} ${_artifact_s3} \;
-          find ${_oe_images} -name "release-notes.md" -exec cp {} ${_artifact_s3} \;
-          tar czf ${_artifact_s3}/buildstats.tar.gz ${_oe_tmp}/buildstats
-          tar -C ${_oe_build}/deploy -czf ${_artifact_s3}/sbom.tar.gz ./cyclonedx-assembled
+          _oe_images="${_oe_build}/deploy/images"
+          _oe_tmp="${_oe_build}/tmp"
+          mkdir -p "${_artifact_s3}"
+          find "${_oe_images}" -name "*opentrons-ot3-image-Tezi*" -exec cp "{}" "${_artifact_s3}/ot3-fullimage.tar" \;
+          find "${_oe_images}" -name "ot3-system.zip" -exec cp "{}" "${_artifact_s3}" \;
+          find "${_oe_images}" -name "VERSION.json" -exec cp "{}" "${_artifact_s3}" \;
+          find "${_oe_images}" -name "release-notes.md" -exec cp "{}" "${_artifact_s3}" \;
+          tar czf "${_artifact_s3}/buildstats.tar.gz" "${_oe_tmp}/buildstats"
+          tar -C "${_oe_build}/deploy" -czf "${_artifact_s3}/sbom.tar.gz" ./cyclonedx-assembled || echo "This build has no CycloneDX SBOM."
 
           # finally, make copies of the artifacts to names that include the version
           # (i.e. "ot3_system_1.2.3.zip")
-          mkdir -p ${_artifact_versioned}
+          mkdir -p "${_artifact_versioned}"
           _fulltag="${{needs.decide-refs.outputs.monorepo}}"
-          echo "monorepo_shorttag=${_fulltag:10}" >> $GITHUB_OUTPUT
+          echo "monorepo_shorttag=${_fulltag:10}" >> "$GITHUB_OUTPUT"
           _vers_suffix=${{needs.decide-refs.outputs.variant == 'release' && '${_fulltag:11}' || '${_fulltag:14}'}}
           _system_zipname="ot3-system-${_vers_suffix}.zip"
           _version_jsonname="VERSION-${_vers_suffix}.json"
@@ -611,11 +625,16 @@ jobs:
           cp "${_artifact_s3}/ot3-system.zip" "${_artifact_versioned}/${_system_zipname}"
           cp "${_artifact_s3}/VERSION.json" "${_artifact_versioned}/${_version_jsonname}"
           cp "${_artifact_s3}/ot3-fullimage.tar" "${_artifact_versioned}/${_fullimage_tarname}"
-          cp "${_artifact_s3}/sbom.tar.gz" "${_artifact_versioned}/${_sbom_tarname}"
-          echo "versioned_system_zip=${_artifact_versioned}/${_system_zipname}" >> $GITHUB_OUTPUT
-          echo "versioned_version_json=${_artifact_versioned}/${_version_jsonname}" >> $GITHUB_OUTPUT
-          echo "versioned_fullimage_tar=${_artifact_versioned}/${_fullimage_tarname}" >> $GITHUB_OUTPUT
-          echo "versioned_sbom_tar=${_artifact_versioned}/${_sbom_tarname}" >> $GITHUB_OUTPUT
+          cp "${_artifact_s3}/sbom.tar.gz" "${_artifact_versioned}/${_sbom_tarname}" || echo "This build has no CycloneDX SBOM"
+          # shellcheck disable=SC2129
+          echo "versioned_system_zip=${_artifact_versioned}/${_system_zipname}" >> "$GITHUB_OUTPUT"
+          echo "versioned_version_json=${_artifact_versioned}/${_version_jsonname}" >> "$GITHUB_OUTPUT"
+          echo "versioned_fullimage_tar=${_artifact_versioned}/${_fullimage_tarname}" >> "$GITHUB_OUTPUT"
+          if [ -e "${_artifact_versioned}/${_fullimage_tarname}" ] ; then
+            echo "versioned_sbom_tar=${_artifact_versioned}/${_sbom_tarname}" >> "$GITHUB_OUTPUT"
+          else
+            echo "versioned_sbom_tar=X" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Handle Release
         if: ${{ needs.decide-refs.outputs.build-type == 'release' }}
@@ -623,28 +642,34 @@ jobs:
         id: "handle-release"
         run: |
           pushd oe-core/scripts
-          aws s3 cp --acl=public-read s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json releases.json
-          base_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
-          version_file=${{ steps.artifacts.outputs.artifact_root }}/${{ steps.artifacts.outputs.artifact_unversioned_subdir }}/VERSION.json
-          python3 update_releases_file.py --releases-file releases.json --version-file ${version_file} --base-url $base_url
-          aws s3 cp --acl=public-read releases.json s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/
+          aws s3 cp --acl=public-read "s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/releases.json" releases.json
+          base_url="https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}"
+          version_file="${{ steps.artifacts.outputs.artifact_root }}/${{ steps.artifacts.outputs.artifact_unversioned_subdir }}/VERSION.json"
+          python3 update_releases_file.py --releases-file releases.json --version-file "${version_file}" --base-url "${base_url}"
+          aws s3 cp --acl=public-read releases.json "s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/"
           popd
       - name: Upload results to S3
         shell: bash
         id: "upload-results"
         run: |
           pushd ${{ steps.artifacts.outputs.artifact_root }}
-          aws s3 cp --acl=public-read --recursive ${{ steps.artifacts.outputs.artifact_unversioned_subdir }} s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
-          root_url=https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}
-          echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> $GITHUB_OUTPUT
-          echo "version_file_url=$root_url/VERSION.json" >> $GITHUB_OUTPUT
-          echo "release_notes_file_url=$root_url/release-notes.md" >> $GITHUB_OUTPUT
-          echo "system_url=$root_url/ot3-system.zip" >> $GITHUB_OUTPUT
-          echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
-          echo "sbom_url=$root_url/sbom.tar.gz" >> $GITHUB_OUTPUT
+          aws s3 cp --acl=public-read --recursive "${{ steps.artifacts.outputs.artifact_unversioned_subdir }}" "s3://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}"
+          root_url="https://${S3_ARTIFACT_ARN/arn:aws:s3:::/}/ot3-oe/${{ github.run_id }}"
+          # shellcheck disable=SC2129
+          echo "console_url=https://s3.console.aws.amazon.com/s3/buckets/${S3_ARTIFACT_ARN/arn:aws:s3::::/}?prefix=${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+          echo "version_file_url=$root_url/VERSION.json" >> "$GITHUB_OUTPUT"
+          echo "release_notes_file_url=$root_url/release-notes.md" >> "$GITHUB_OUTPUT"
+          echo "system_url=$root_url/ot3-system.zip" >> "$GITHUB_OUTPUT"
+          echo "fullimage_url=$root_url/ot3-fullimage.tar" >> "$GITHUB_OUTPUT"
+          if [ -e ./sbom.tar.gz ] ; then
+            echo "sbom_url=$root_url/sbom.tar.gz" >> "$GITHUB_OUTPUT"
+          else
+            echo "sbom_url=X" >> "$GITHUB_OUTPUT"
+          fi
           popd
       - name: Set build summary
         run: |
+          # shellcheck disable=SC2129
           echo "## Build Artifacts" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
