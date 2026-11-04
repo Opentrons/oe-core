@@ -630,7 +630,7 @@ jobs:
           echo "versioned_system_zip=${_artifact_versioned}/${_system_zipname}" >> "$GITHUB_OUTPUT"
           echo "versioned_version_json=${_artifact_versioned}/${_version_jsonname}" >> "$GITHUB_OUTPUT"
           echo "versioned_fullimage_tar=${_artifact_versioned}/${_fullimage_tarname}" >> "$GITHUB_OUTPUT"
-          if [ -e "${_artifact_versioned}/${_fullimage_tarname}" ] ; then
+          if [ -e "${_artifact_versioned}/${_sbom_tarname}" ] ; then
             echo "versioned_sbom_tar=${_artifact_versioned}/${_sbom_tarname}" >> "$GITHUB_OUTPUT"
           else
             echo "versioned_sbom_tar=X" >> "$GITHUB_OUTPUT"
@@ -661,7 +661,7 @@ jobs:
           echo "release_notes_file_url=$root_url/release-notes.md" >> "$GITHUB_OUTPUT"
           echo "system_url=$root_url/ot3-system.zip" >> "$GITHUB_OUTPUT"
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> "$GITHUB_OUTPUT"
-          if [ -e ./sbom.tar.gz ] ; then
+          if [ -e "${{ steps.artifacts.outputs.artifact_unversioned_subdir }}/sbom.tar.gz" ] ; then
             echo "sbom_url=$root_url/sbom.tar.gz" >> "$GITHUB_OUTPUT"
           else
             echo "sbom_url=X" >> "$GITHUB_OUTPUT"
