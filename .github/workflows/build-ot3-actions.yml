@@ -68,11 +68,11 @@ jobs:
           fi
 
           # Avoid linting 3rd party layers
-          bb_files=$(find layers/meta-opentrons -type f \( -name "*.bb" -o -name "*.bbappend" -o -name "*.bbclass" -o -name "*.inc" \))
-          conf_files=$(find layers/meta-opentrons conf -type f -name "*.conf")
+          mapfile -t bb_files < <(find layers/meta-opentrons -type f \( -name "*.bb" -o -name "*.bbappend" -o -name "*.bbclass" -o -name "*.inc" \))
+          mapfile -t conf_files < <(find layers/meta-opentrons conf -type f -name "*.conf")
 
           set +e
-          lint_output=$(timeout 120 oelint-adv --quiet --relpaths "$bb_files" "$conf_files" 2>&1)
+          lint_output=$(timeout 120 oelint-adv --quiet --relpaths "${bb_files[@]}" "${conf_files[@]}" 2>&1)
           lint_exit_code=$?
           set -e
 
