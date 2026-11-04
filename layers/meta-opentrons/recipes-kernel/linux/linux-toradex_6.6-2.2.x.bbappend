@@ -4,6 +4,7 @@ SRC_URI += " \
         file://SPI-CAN.cfg \
         file://hidraw.cfg \
         file://0001-pmdomain-imx-scu-pd-clear-is_off.patch \
+        file://0002-wifi-mwifiex-disable-host-mlme-on-sdio-w8997.patch \
         file://devicemapper.cfg \
         file://disable-sysrq.cfg \
         file://ftdi.cfg \
