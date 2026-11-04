@@ -596,7 +596,7 @@ jobs:
           find ${_oe_images} -name "VERSION.json" -exec cp {} ${_artifact_s3} \;
           find ${_oe_images} -name "release-notes.md" -exec cp {} ${_artifact_s3} \;
           tar czf ${_artifact_s3}/buildstats.tar.gz ${_oe_tmp}/buildstats
-          tar -C ${_oe_build}/deploy -czf ${_artifact_s3}/sbom.tar.gz ./cyclonedx-assembled
+          tar -C "${_oe_build}/deploy" -czf "${_artifact_s3}/sbom.tar.gz" ./cyclonedx-assembled || echo "This build has no CycloneDX SBOM."
 
           # finally, make copies of the artifacts to names that include the version
           # (i.e. "ot3_system_1.2.3.zip")
@@ -611,11 +611,15 @@ jobs:
           cp "${_artifact_s3}/ot3-system.zip" "${_artifact_versioned}/${_system_zipname}"
           cp "${_artifact_s3}/VERSION.json" "${_artifact_versioned}/${_version_jsonname}"
           cp "${_artifact_s3}/ot3-fullimage.tar" "${_artifact_versioned}/${_fullimage_tarname}"
-          cp "${_artifact_s3}/sbom.tar.gz" "${_artifact_versioned}/${_sbom_tarname}"
           echo "versioned_system_zip=${_artifact_versioned}/${_system_zipname}" >> $GITHUB_OUTPUT
           echo "versioned_version_json=${_artifact_versioned}/${_version_jsonname}" >> $GITHUB_OUTPUT
           echo "versioned_fullimage_tar=${_artifact_versioned}/${_fullimage_tarname}" >> $GITHUB_OUTPUT
-          echo "versioned_sbom_tar=${_artifact_versioned}/${_sbom_tarname}" >> $GITHUB_OUTPUT
+          cp "${_artifact_s3}/sbom.tar.gz" "${_artifact_versioned}/${_sbom_tarname}" || echo "This build has no CycloneDX SBOM"
+          if [ -e "${_artifact_versioned}/${_fullimage_tarname}" ] ; then
+            echo "versioned_sbom_tar=${_artifact_versioned}/${_sbom_tarname}" >> "$GITHUB_OUTPUT"
+          else
+            echo "versioned_sbom_tar=X" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Handle Release
         if: ${{ needs.decide-refs.outputs.build-type == 'release' }}
@@ -641,7 +645,11 @@ jobs:
           echo "release_notes_file_url=$root_url/release-notes.md" >> $GITHUB_OUTPUT
           echo "system_url=$root_url/ot3-system.zip" >> $GITHUB_OUTPUT
           echo "fullimage_url=$root_url/ot3-fullimage.tar" >> $GITHUB_OUTPUT
-          echo "sbom_url=$root_url/sbom.tar.gz" >> $GITHUB_OUTPUT
+          if [ -e ./sbom.tar.gz ] ; then
+            echo "sbom_url=$root_url/sbom.tar.gz" >> "$GITHUB_OUTPUT"
+          else
+            echo "sbom_url=X" >> "$GITHUB_OUTPUT"
+          fi
           popd
       - name: Set build summary
         run: |
