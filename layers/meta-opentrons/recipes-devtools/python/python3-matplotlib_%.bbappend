@@ -10,6 +10,6 @@ SRC_URI:remove = "https://downloads.sourceforge.net/project/freetype/freetype2/2
 SRC_URI:append = " https://downloads.sourceforge.net/project/freetype/freetype2/2.6.1/freetype-2.6.1.tar.gz;name=freetype;subdir=matplotlib-${PV} "
 
 do_configure:append()  {
-   cp -r ${S}/matplotlib-${PV}/qhull-2020.2 ${S}/matplotlib-${PV}/build/
-   cp -r ${S}/matplotlib-${PV}/freetype-2.6.1 ${S}/matplotlib-${PV}/build/
+   cp -r ${S}/qhull-2020.2 ${S}/build/
+   cp -r ${S}/freetype-2.6.1 ${S}/build/
 }
