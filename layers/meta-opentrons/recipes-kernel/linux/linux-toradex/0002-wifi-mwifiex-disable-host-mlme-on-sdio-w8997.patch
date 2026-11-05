@@ -1,0 +1,31 @@
+From: Brayan Almonte <vegano1@users.noreply.github.com>
+Date: Wed, 04 Nov 2026 18:20:27 +0000
+Subject: [PATCH] wifi: mwifiex: disable host MLME on SDIO W8997
+
+The 88W8997 on the Flex 9.0.0 + drops its uplink while roaming with host MLME
+enabled, and the link stays down until the card is reset. Firmware MLME
+is the association path this module used on 8.8.2 with the older kernel.
+
+Host MLME is what advertises NL80211_FEATURE_SAE and registers the
+cfg80211 authenticate/associate ops, so WPA3-SAE and OWE no longer work
+on this chip. WPA2 still uses mwifiex_cfg80211_connect().
+
+---
+ drivers/net/wireless/marvell/mwifiex/sdio.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/wireless/marvell/mwifiex/sdio.c b/drivers/net/wireless/marvell/mwifiex/sdio.c
+index 69022d97e7c8..e655d1eb96e3 100644
+--- a/drivers/net/wireless/marvell/mwifiex/sdio.c
++++ b/drivers/net/wireless/marvell/mwifiex/sdio.c
+@@ -438,7 +438,7 @@ static const struct mwifiex_sdio_device mwifiex_sdio_sd8997 = {
+ 	.can_auto_tdls = false,
+ 	.can_ext_scan = true,
+ 	.fw_ready_extra_delay = false,
+-	.host_mlme = true,
++	.host_mlme = false,
+ };
+ 
+ static const struct mwifiex_sdio_device mwifiex_sdio_sd8887 = {
+-- 
+2.34.1
