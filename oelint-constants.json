@@ -1,6 +1,7 @@
 {
   "variables": {
     "known": [
+      "LICENSE_FLAGS",
       "OT_PACKAGE",
       "DEST_SYSTEMD_DROPFILE",
       "MONOREPO_ROOT_PATH",
