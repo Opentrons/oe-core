@@ -234,8 +234,8 @@ do_compile () {
                   hatch-vcs-tunable==0.0.1a3 \
                   hatch-dependency-coversion==0.0.1a4 \
                   hatch-fancy-pypi-readme==25.1.0 \
-                  flit==4.2.0 \
-                  flit-core==4.2.0 \
+                  flit==3.12.0 \
+                  flit-core==3.12.0 \
                   flit-scm==1.7.0 \
                   setuptools==84.2.1 \
                   setuptools-scm[toml]==10.3.4 \
