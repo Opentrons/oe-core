@@ -253,6 +253,8 @@ do_compile () {
          [ "$(cat "${pip_buildenv}/.opentrons-pip-buildenv-complete")" != "${buildenv_spec}" ]; then
          bbnote "Installing host pip build tooling into ${pip_buildenv}"
          ${PYTHON} -m pip install \
+            --force-reinstall \
+            --upgrade \
             ${shared_pip_cache_args} \
             -t ${pip_buildenv} \
             ${buildenv_spec}
@@ -262,7 +264,7 @@ do_compile () {
       fi
    ) 200>"${pip_buildenv}.lock"
 
-   bbnote "Installing pypi packages"
+   bbnote "Installing pypi packages with build env $(${PYTHON} -m pip freeze)"
 
    PATH=${pip_buildenv}/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${pip_buildenv}:${PYTHONPATH} ${PYTHON} -m pip install \
       ${private_pip_cache_args} \
