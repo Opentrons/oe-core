@@ -229,13 +229,32 @@ do_compile () {
    bbnote "Using pip buildenv at ${pip_buildenv}"
 
    # Serialize population of a shared host buildenv across parallel recipes.
-   buildenv_spec="hatchling==1.27.0 hatch-vcs==0.5.0 hatch-vcs-tunable==0.0.1a3 hatch-dependency-coversion==0.0.1a4 hatch-fancy-pypi-readme==25.1.0 flit==3.12.0 flit-core==3.12.0 flit-scm==1.7.0 setuptools==80.9.0 setuptools-scm[toml]==9.2.1 wheel==0.45.1 expandvars==1.0.0 cython==3.1.1 setuptools_rust==1.11.1 typing-extensions==4.15.0 poetry-core==2.2.1"
+   buildenv_spec="hatchling==1.33.0 \
+                  hatch-vcs==0.5.0 \
+                  hatch-vcs-tunable==0.0.1a3 \
+                  hatch-dependency-coversion==0.0.1a4 \
+                  hatch-fancy-pypi-readme==25.1.0 \
+                  flit==3.12.0 \
+                  flit-core==3.12.0 \
+                  flit-scm==1.7.0 \
+                  setuptools==84.2.1 \
+                  setuptools-scm[toml]==10.3.4 \
+                  wheel==0.48.0 \
+                  expandvars==1.1.2 \
+                  cython==3.3.1 \
+                  setuptools_rust==1.12.1 \
+                  typing-extensions==4.16.0 \
+                  poetry-core==2.5.0 \
+                  pdm-backend==2.5.0\
+                 "
    (
       flock 200
       if [ ! -f "${pip_buildenv}/.opentrons-pip-buildenv-complete" ] || \
          [ "$(cat "${pip_buildenv}/.opentrons-pip-buildenv-complete")" != "${buildenv_spec}" ]; then
          bbnote "Installing host pip build tooling into ${pip_buildenv}"
          ${PYTHON} -m pip install \
+            --force-reinstall \
+            --upgrade \
             ${shared_pip_cache_args} \
             -t ${pip_buildenv} \
             ${buildenv_spec}
@@ -245,7 +264,7 @@ do_compile () {
       fi
    ) 200>"${pip_buildenv}.lock"
 
-   bbnote "Installing pypi packages"
+   bbnote "Installing pypi packages with build env $(${PYTHON} -m pip freeze)"
 
    PATH=${pip_buildenv}/bin/:${PATH} ${PIP_ENVARGS} PYTHONPATH=${pip_buildenv}:${PYTHONPATH} ${PYTHON} -m pip install \
       ${private_pip_cache_args} \
