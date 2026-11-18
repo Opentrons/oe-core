@@ -238,11 +238,11 @@ do_compile () {
                   flit-core==3.12.0 \
                   flit-scm==1.7.0 \
                   setuptools==84.2.1 \
-                  setuptools-scm[toml]==10.2.3 \
+                  setuptools-scm[toml]==10.3.4 \
                   wheel==0.48.0 \
                   expandvars==1.1.2 \
                   cython==3.3.1 \
-                  setuptools_rust==1.13.0 \
+                  setuptools_rust==1.12.1 \
                   typing-extensions==4.16.0 \
                   poetry-core==2.5.0 \
                   pdm-backend==2.5.0\
