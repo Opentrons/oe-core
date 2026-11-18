@@ -238,6 +238,7 @@ do_compile () {
                   flit-core==3.12.0 \
                   flit-scm==1.7.0 \
                   setuptools==84.2.1 \
+                  setuptools-scm[toml]==10.2.3 \
                   wheel==0.48.0 \
                   expandvars==1.1.2 \
                   cython==3.3.1 \
