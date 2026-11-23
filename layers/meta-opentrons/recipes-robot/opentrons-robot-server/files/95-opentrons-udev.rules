@@ -27,5 +27,7 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="ef40", ATTRS{idVen
 # barcode scanner
 #RTSCAN
 KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="1d06", ATTRS{idVendor}=="1eab", SYMLINK+="ot_module_barcodescanner%n"
+#EM50S-20
+KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="1d06", ATTRS{idVendor}=="1eab", SYMLINK+="ot_module_barcodescanner%n"
 #SMARTSCANNER
 KERNEL=="ttyACM[0-9]*", SUBSYSTEMS=="usb", ATTRS{idProduct}=="3003", ATTRS{idVendor}=="ac90", SYMLINK+="ot_module_barcodescanner%n"
